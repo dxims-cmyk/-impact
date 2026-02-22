@@ -86,18 +86,13 @@ export function useSyncIntegration() {
   })
 }
 
-// Get OAuth connect URL
+// Navigate to OAuth connect URL (these routes do server-side redirects)
 export function useConnectIntegration() {
   return useMutation({
     mutationFn: async (provider: 'meta_ads' | 'google_ads' | 'tiktok_ads') => {
       const providerPath = provider.replace('_ads', '')
-      const res = await fetch(`/api/integrations/${providerPath}/connect`)
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to get connect URL')
-      }
-      const data = await res.json()
-      return data.url as string
+      window.location.href = `/api/integrations/${providerPath}/connect`
+      return providerPath
     },
   })
 }

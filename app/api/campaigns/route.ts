@@ -99,6 +99,18 @@ export async function GET(request: NextRequest) {
 
       return {
         ...campaign,
+        // Flatten performance metrics for frontend consumption
+        spent: performance?.spend || 0,
+        impressions: performance?.impressions || 0,
+        clicks: performance?.clicks || 0,
+        leads: performance?.leads || 0,
+        conversions: performance?.conversions || 0,
+        revenue: performance?.revenue || 0,
+        budget: campaign.budget_daily || campaign.budget_lifetime || null,
+        ctr,
+        cpc,
+        cpl,
+        roas,
         performance: performance ? {
           ...performance,
           ctr,

@@ -1,10 +1,10 @@
-// trigger/jobs/sync-meta-ads.ts
+// trigger/jobs/sync-google-ads.ts
 import { task, schedules, logger } from "@trigger.dev/sdk/v3"
 import { createAdminClient } from "@/lib/supabase/server"
-import { syncMetaAdsData, getLongLivedToken } from "@/lib/integrations/meta-ads"
+import { syncGoogleAdsData, refreshAccessToken } from "@/lib/integrations/google-ads"
 
-export const syncMetaAdsTask = schedules.task({
-  id: "sync-meta-ads",
+export const syncGoogleAdsTask = schedules.task({
+  id: "sync-google-ads",
   cron: "0 * * * *", // Every hour
   retry: {
     maxAttempts: 3,
@@ -13,15 +13,15 @@ export const syncMetaAdsTask = schedules.task({
     maxTimeoutInMs: 10000,
   },
   run: async () => {
-    logger.info("Starting Meta Ads sync")
+    logger.info("Starting Google Ads sync")
 
     const supabase = createAdminClient()
 
-    // Get all active Meta integrations
+    // Get all active Google integrations
     const { data: integrations, error: intError } = await supabase
       .from('integrations')
       .select('*')
-      .eq('provider', 'meta_ads')
+      .eq('provider', 'google_ads')
       .eq('status', 'connected')
 
     if (intError) {
@@ -30,7 +30,7 @@ export const syncMetaAdsTask = schedules.task({
     }
 
     if (!integrations || integrations.length === 0) {
-      logger.info("No Meta integrations to sync")
+      logger.info("No Google Ads integrations to sync")
       return { success: true, synced: 0 }
     }
 
@@ -51,7 +51,7 @@ export const syncMetaAdsTask = schedules.task({
           if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
             logger.info("Refreshing token", { integrationId: integration.id })
 
-            const newTokens = await getLongLivedToken(accessToken!)
+            const newTokens = await refreshAccessToken(integration.refresh_token!)
             accessToken = newTokens.access_token
 
             // Update stored token
@@ -59,6 +59,7 @@ export const syncMetaAdsTask = schedules.task({
               .from('integrations')
               .update({
                 access_token: accessToken,
+                refresh_token: newTokens.refresh_token,
                 token_expires_at: newTokens.expires_at?.toISOString()
               })
               .eq('id', integration.id)
@@ -66,7 +67,7 @@ export const syncMetaAdsTask = schedules.task({
         }
 
         // Sync data
-        await syncMetaAdsData(
+        await syncGoogleAdsData(
           accessToken!,
           integration.account_id!,
           integration.organization_id,
@@ -100,7 +101,7 @@ export const syncMetaAdsTask = schedules.task({
     const successCount = results.filter(r => r.success).length
     const failCount = results.filter(r => !r.success).length
 
-    logger.info("Meta Ads sync complete", {
+    logger.info("Google Ads sync complete", {
       total: integrations.length,
       success: successCount,
       failed: failCount
@@ -116,8 +117,8 @@ export const syncMetaAdsTask = schedules.task({
 })
 
 // Manual sync trigger
-export const manualSyncMetaAdsTask = task({
-  id: "sync-meta-ads-manual",
+export const manualSyncGoogleAdsTask = task({
+  id: "sync-google-ads-manual",
   retry: {
     maxAttempts: 3,
     factor: 2,
@@ -127,7 +128,7 @@ export const manualSyncMetaAdsTask = task({
   run: async (payload: { integrationId: string }) => {
     const { integrationId } = payload
 
-    logger.info("Starting manual Meta Ads sync", { integrationId })
+    logger.info("Starting manual Google Ads sync", { integrationId })
 
     const supabase = createAdminClient()
 
@@ -146,27 +147,28 @@ export const manualSyncMetaAdsTask = task({
       // Check if token needs refresh
       let accessToken = integration.access_token
 
-      if (integration.token_expires_at) {
+      if (integration.refresh_token && integration.token_expires_at) {
         const expiresAt = new Date(integration.token_expires_at)
         const now = new Date()
 
         if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
-          logger.info("Refreshing token for manual sync", { integrationId })
+          logger.info("Refreshing token", { integrationId })
 
-          const newTokens = await getLongLivedToken(accessToken!)
+          const newTokens = await refreshAccessToken(integration.refresh_token)
           accessToken = newTokens.access_token
 
           await supabase
             .from('integrations')
             .update({
               access_token: accessToken,
+              refresh_token: newTokens.refresh_token,
               token_expires_at: newTokens.expires_at?.toISOString()
             })
             .eq('id', integrationId)
         }
       }
 
-      await syncMetaAdsData(
+      await syncGoogleAdsData(
         accessToken!,
         integration.account_id!,
         integration.organization_id,

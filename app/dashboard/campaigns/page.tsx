@@ -52,9 +52,9 @@ const TikTokIcon = () => (
 
 const platforms = [
   { value: 'all', label: 'All Platforms' },
-  { value: 'meta_ads', label: 'Meta Ads' },
-  { value: 'google_ads', label: 'Google Ads' },
-  { value: 'tiktok_ads', label: 'TikTok Ads' },
+  { value: 'meta', label: 'Meta Ads' },
+  { value: 'google', label: 'Google Ads' },
+  { value: 'tiktok', label: 'TikTok Ads' },
 ]
 
 const statuses = [
@@ -151,27 +151,27 @@ export default function CampaignsPage() {
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
-      case 'meta_ads': return MetaIcon
-      case 'google_ads': return GoogleIcon
-      case 'tiktok_ads': return TikTokIcon
+      case 'meta': return MetaIcon
+      case 'google': return GoogleIcon
+      case 'tiktok': return TikTokIcon
       default: return MetaIcon
     }
   }
 
   const getPlatformStyle = (platform: string) => {
     switch (platform) {
-      case 'meta_ads': return 'bg-blue-100 text-blue-700'
-      case 'google_ads': return 'bg-red-100 text-red-700'
-      case 'tiktok_ads': return 'bg-gray-900 text-white'
+      case 'meta': return 'bg-blue-100 text-blue-700'
+      case 'google': return 'bg-red-100 text-red-700'
+      case 'tiktok': return 'bg-gray-900 text-white'
       default: return 'bg-gray-100 text-gray-700'
     }
   }
 
   const getPlatformLabel = (platform: string) => {
     switch (platform) {
-      case 'meta_ads': return 'Meta'
-      case 'google_ads': return 'Google'
-      case 'tiktok_ads': return 'TikTok'
+      case 'meta': return 'Meta'
+      case 'google': return 'Google'
+      case 'tiktok': return 'TikTok'
       default: return platform
     }
   }
@@ -459,7 +459,7 @@ export default function CampaignsPage() {
             ) : (
               filteredCampaigns.map((campaign) => {
                 const PlatformIcon = getPlatformIcon(campaign.platform)
-                const StatusIcon = getStatusIcon(campaign.status)
+                const StatusIcon = getStatusIcon(campaign.status || 'active')
                 const budgetPercent = campaign.budget ? ((campaign.spent || 0) / campaign.budget) * 100 : 0
                 const ctr = campaign.impressions ? ((campaign.clicks || 0) / campaign.impressions) * 100 : 0
                 const cpl = campaign.leads ? (campaign.spent || 0) / campaign.leads : 0
@@ -505,9 +505,9 @@ export default function CampaignsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${getStatusStyle(campaign.status)}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${getStatusStyle(campaign.status || 'active')}`}>
                         <StatusIcon className="w-3 h-3" />
-                        {campaign.status}
+                        {campaign.status || 'active'}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">

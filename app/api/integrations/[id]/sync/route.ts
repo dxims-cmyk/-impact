@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { syncMetaAdsData } from '@/lib/integrations/meta-ads'
+import { syncGoogleAdsData } from '@/lib/integrations/google-ads'
+import { syncTikTokAdsData } from '@/lib/integrations/tiktok-ads'
 
 // POST /api/integrations/[id]/sync - Manual sync
 export async function POST(
@@ -43,11 +45,21 @@ export async function POST(
         supabase
       )
     } else if (integration.provider === 'google_ads') {
-      // TODO: Implement Google Ads sync
-      return NextResponse.json({ error: 'Google Ads sync not yet implemented' }, { status: 501 })
+      await syncGoogleAdsData(
+        integration.access_token!,
+        integration.account_id!,
+        integration.organization_id,
+        integration.id,
+        supabase
+      )
     } else if (integration.provider === 'tiktok_ads') {
-      // TODO: Implement TikTok Ads sync
-      return NextResponse.json({ error: 'TikTok Ads sync not yet implemented' }, { status: 501 })
+      await syncTikTokAdsData(
+        integration.access_token!,
+        integration.account_id!,
+        integration.organization_id,
+        integration.id,
+        supabase
+      )
     }
 
     // Update last sync time

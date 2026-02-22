@@ -2,14 +2,27 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AdCampaign, AdPerformance } from '@/types/database'
 
+interface CampaignWithMetrics extends AdCampaign {
+  spent: number
+  impressions: number
+  clicks: number
+  leads: number
+  conversions: number
+  revenue: number
+  budget: number | null
+  ctr: number
+  cpc: number
+  cpl: number
+  roas: number
+  performance?: AdPerformance | null
+  integration?: {
+    provider: string
+    account_name: string
+  }
+}
+
 interface CampaignsResponse {
-  campaigns: (AdCampaign & {
-    performance?: AdPerformance
-    integration?: {
-      provider: string
-      account_name: string
-    }
-  })[]
+  campaigns: CampaignWithMetrics[]
   pagination: {
     page: number
     limit: number
@@ -118,20 +131,49 @@ export function useCampaignMetrics(dateRange?: { start: string; end: string }) {
   })
 }
 
-// Sync campaigns from integration
+// Sync campaigns from all connected ad integrations
 export function useSyncCampaigns() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (integrationId: string) => {
-      const res = await fetch(`/api/integrations/${integrationId}/sync`, {
-        method: 'POST',
-      })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to sync campaigns')
+    mutationFn: async () => {
+      // Fetch all integrations to find connected ad platforms
+      const intRes = await fetch('/api/integrations')
+      if (!intRes.ok) {
+        throw new Error('Failed to fetch integrations')
       }
-      return res.json()
+      const integrations = await intRes.json()
+
+      const adIntegrations = integrations.filter(
+        (i: { provider: string; status: string }) =>
+          ['meta_ads', 'google_ads', 'tiktok_ads'].includes(i.provider) &&
+          i.status === 'connected'
+      )
+
+      if (adIntegrations.length === 0) {
+        throw new Error('No connected ad integrations found')
+      }
+
+      // Sync each integration
+      const results = await Promise.allSettled(
+        adIntegrations.map(async (integration: { id: string }) => {
+          const res = await fetch(`/api/integrations/${integration.id}/sync`, {
+            method: 'POST',
+          })
+          if (!res.ok) {
+            const error = await res.json()
+            throw new Error(error.error || 'Failed to sync')
+          }
+          return res.json()
+        })
+      )
+
+      const failures = results.filter(r => r.status === 'rejected')
+      if (failures.length > 0 && failures.length === results.length) {
+        throw new Error('All syncs failed')
+      }
+
+      return { synced: results.filter(r => r.status === 'fulfilled').length, total: results.length }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] })

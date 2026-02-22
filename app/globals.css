@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   IMPACT ENGINE - AM:PM Design System
+   ============================================ */
+
+:root {
+  --font-body: 'Inter', system-ui, sans-serif;
+  --color-navy: #0B1220;
+  --color-navy-deep: #070D17;
+  --color-navy-light: #132035;
+  --color-ivory: #F5F5DC;
+  --color-camel: #D4A574;
+  --color-impact: #6E0F1A;
+  --color-impact-light: #8B1422;
+  --color-warm-white: #FAF8F5;
+
+  --background: 0 0% 100%;
+  --foreground: 215 28% 9%;
+  --border: 214.3 31.8% 91.4%;
+  --ring: 346 78% 25%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply antialiased;
+    background-color: #FAF8F5;
+    color: #0B1220;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+    line-height: 1.1;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+  }
+
+  /* AM:PM Impact-style primary button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center
+           px-6 py-3
+           bg-impact text-ivory
+           font-semibold text-sm
+           rounded-full
+           transition-all duration-300
+           hover:bg-impact-light hover:-translate-y-0.5
+           focus:outline-none focus:ring-2 focus:ring-impact focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 48px;
+    box-shadow: 0 4px 14px rgba(110, 15, 26, 0.25);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 24px rgba(110, 15, 26, 0.4);
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center
+           px-6 py-3
+           bg-transparent text-navy
+           font-semibold text-sm
+           rounded-full
+           border-2 border-navy/20
+           transition-all duration-300
+           hover:border-navy/40 hover:bg-navy/5
+           focus:outline-none focus:ring-2 focus:ring-impact focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 48px;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply text-navy/70 px-4 py-2 rounded-lg font-medium
+           hover:bg-navy/5 transition-colors
+           focus:outline-none focus:ring-2 focus:ring-impact focus:ring-offset-2;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full px-4 py-3 rounded-lg
+           border border-gray-300 bg-white
+           text-navy placeholder:text-navy/40
+           focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent
+           transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-navy/80 mb-1.5;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-hot {
+    @apply bg-impact/10 text-impact;
+  }
+
+  .badge-warm {
+    @apply bg-camel/20 text-chocolate;
+  }
+
+  .badge-cold {
+    @apply bg-vision/10 text-vision;
+  }
+
+  .badge-new {
+    @apply bg-impact/10 text-impact;
+  }
+
+  .badge-qualified {
+    @apply bg-impact-light/10 text-impact-light;
+  }
+
+  .badge-booked {
+    @apply bg-studio/10 text-studio;
+  }
+
+  .badge-won {
+    @apply bg-studio/10 text-studio;
+  }
+
+  .badge-lost {
+    @apply bg-chocolate/10 text-chocolate;
+  }
+
+  /* Sidebar navigation */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg
+           text-navy/70 font-medium text-sm
+           transition-all duration-200
+           hover:bg-navy/5 hover:text-navy;
+  }
+  .nav-link.active {
+    @apply bg-impact/10 text-impact;
+  }
+}
+
+/* Scrollbar - AM:PM style */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(11, 18, 32, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 18, 32, 0.4);
+}
+
+/* Selection */
+::selection {
+  background: #6E0F1A;
+  color: #F5F5DC;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse glow for CTAs */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(110, 15, 26, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(110, 15, 26, 0.5); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

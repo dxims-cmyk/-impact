@@ -43,11 +43,18 @@ export function normalizePhone(phone: string): string {
 
 // Send SMS
 export async function sendSMS({ to, body, statusCallback }: SendSMSOptions) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1')
+
+  // Twilio rejects localhost statusCallback URLs — only set when publicly reachable
+  const resolvedCallback = statusCallback
+    || (isLocalhost ? undefined : `${appUrl}/api/webhooks/twilio/status`)
+
   const message = await getClient().messages.create({
     to: normalizePhone(to),
     from: process.env.TWILIO_PHONE_NUMBER!,
     body,
-    statusCallback: statusCallback || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status`
+    ...(resolvedCallback && { statusCallback: resolvedCallback }),
   })
 
   return {

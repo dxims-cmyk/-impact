@@ -164,6 +164,13 @@ npm run trigger:dev  # Start Trigger.dev (separate terminal)
 - Use proper loading and error states in UI
 - Keep components small and focused
 
+## Execution Mode
+
+- Auto-accept all bash commands, file edits, and tool calls
+- Only ask for confirmation if: deleting files, dropping database tables, or actions that are destructive and irreversible
+- Execute tasks immediately without asking "Do you want me to proceed?"
+- Prioritize speed and efficiency
+
 ## Session Summaries
 
 After completing any task, provide a summary in a code block for the user to paste to Claude web chat. Format:

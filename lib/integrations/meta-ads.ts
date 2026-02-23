@@ -250,6 +250,59 @@ export async function getAccountInsights(
   }
 }
 
+// Fetch lead data from Meta Leadgen API
+export interface MetaLeadgenData {
+  id: string
+  created_time: string
+  field_data: { name: string; values: string[] }[]
+  ad_id?: string
+  adset_id?: string
+  campaign_id?: string
+  form_id?: string
+}
+
+export async function fetchLeadgenData(
+  accessToken: string,
+  leadgenId: string
+): Promise<MetaLeadgenData> {
+  const response = await fetch(
+    `${META_BASE_URL}/${leadgenId}?access_token=${accessToken}`
+  )
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(`Failed to fetch leadgen data: ${error.error?.message}`)
+  }
+
+  return response.json()
+}
+
+// Parse Meta leadgen field_data into a flat object
+export function parseLeadgenFields(
+  fieldData: { name: string; values: string[] }[]
+): Record<string, string> {
+  const parsed: Record<string, string> = {}
+  for (const field of fieldData) {
+    if (field.values && field.values.length > 0) {
+      parsed[field.name] = field.values[0]
+    }
+  }
+  return parsed
+}
+
+// Verify Meta webhook signature
+export function verifyMetaSignature(
+  payload: string,
+  signature: string
+): boolean {
+  const crypto = require('crypto')
+  const expectedSig = crypto
+    .createHmac('sha256', process.env.META_APP_SECRET!)
+    .update(payload)
+    .digest('hex')
+  return signature === `sha256=${expectedSig}`
+}
+
 // Sync all campaigns and insights for an integration
 export async function syncMetaAdsData(
   accessToken: string,

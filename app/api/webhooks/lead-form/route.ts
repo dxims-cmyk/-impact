@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Extract UTM params from query string if not in body
+  // Merge query string params into body (org identifiers, UTM, source)
   const { searchParams } = new URL(request.url)
-  const utmParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
-  for (const param of utmParams) {
+  const mergeParams = ['org_id', 'org_slug', 'source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']
+  for (const param of mergeParams) {
     if (!data[param] && searchParams.get(param)) {
       data[param] = searchParams.get(param)
     }

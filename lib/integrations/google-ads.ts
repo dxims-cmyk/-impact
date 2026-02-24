@@ -3,6 +3,16 @@
 const GOOGLE_API_VERSION = 'v16'
 const GOOGLE_ADS_BASE_URL = `https://googleads.googleapis.com/${GOOGLE_API_VERSION}`
 
+// Safe JSON parser — avoids "Unexpected token '<'" crash when API returns HTML
+async function safeJson(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error(`API returned non-JSON (HTTP ${response.status}): ${text.slice(0, 200)}`)
+  }
+}
+
 export interface GoogleTokens {
   access_token: string
   refresh_token: string
@@ -63,18 +73,17 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleTokens>
     }),
   })
 
+  const data = await safeJson(response)
+
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Failed to exchange code: ${error.error_description || error.error}`)
+    throw new Error(`Failed to exchange code: ${(data as any).error_description || (data as any).error || response.status}`)
   }
 
-  const data = await response.json()
-
   return {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
+    access_token: data.access_token as string,
+    refresh_token: data.refresh_token as string,
     expires_at: data.expires_in
-      ? new Date(Date.now() + data.expires_in * 1000)
+      ? new Date(Date.now() + (data.expires_in as number) * 1000)
       : undefined,
   }
 }
@@ -92,18 +101,17 @@ export async function refreshAccessToken(refreshToken: string): Promise<GoogleTo
     }),
   })
 
+  const data = await safeJson(response)
+
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Failed to refresh token: ${error.error_description || error.error}`)
+    throw new Error(`Failed to refresh token: ${(data as any).error_description || (data as any).error || response.status}`)
   }
 
-  const data = await response.json()
-
   return {
-    access_token: data.access_token,
+    access_token: data.access_token as string,
     refresh_token: refreshToken, // Refresh token doesn't change
     expires_at: data.expires_in
-      ? new Date(Date.now() + data.expires_in * 1000)
+      ? new Date(Date.now() + (data.expires_in as number) * 1000)
       : undefined,
   }
 }
@@ -120,13 +128,13 @@ export async function getAccessibleCustomers(accessToken: string): Promise<strin
     }
   )
 
+  const data = await safeJson(response)
+
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(`Failed to get customers: ${JSON.stringify(error)}`)
+    throw new Error(`Failed to get customers: ${JSON.stringify(data)}`)
   }
 
-  const data = await response.json()
-  return data.resourceNames?.map((name: string) => name.split('/')[1]) || []
+  return ((data.resourceNames as string[]) || []).map((name: string) => name.split('/')[1])
 }
 
 // Get customer details
@@ -161,8 +169,8 @@ export async function getCustomerDetails(
     return null
   }
 
-  const data = await response.json()
-  const result = data.results?.[0]
+  const data = await safeJson(response)
+  const result = (data.results as any[])?.[0]
 
   if (!result) return null
 

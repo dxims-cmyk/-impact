@@ -1,6 +1,6 @@
 // lib/integrations/google-ads.ts
 
-const GOOGLE_API_VERSION = 'v16'
+const GOOGLE_API_VERSION = 'v18'
 const GOOGLE_ADS_BASE_URL = `https://googleads.googleapis.com/${GOOGLE_API_VERSION}`
 
 // Safe JSON parser — avoids "Unexpected token '<'" crash when API returns HTML

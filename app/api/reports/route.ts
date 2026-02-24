@@ -112,10 +112,10 @@ export async function POST(request: NextRequest) {
     const daysDiff = Math.ceil((new Date(period_end).getTime() - new Date(period_start).getTime()) / (1000 * 60 * 60 * 24))
     const prevStart = new Date(new Date(period_start).getTime() - daysDiff * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-    // Get current period leads
+    // Get current period leads (include source for breakdown)
     const { data: leads } = await supabase
       .from('leads')
-      .select('id, stage, score')
+      .select('id, stage, score, source')
       .eq('organization_id', userData.organization_id)
       .gte('created_at', period_start)
       .lte('created_at', period_end)
@@ -167,6 +167,32 @@ export async function POST(request: NextRequest) {
       .sort((a, b) => b.leads - a.leads)
       .slice(0, 5)
 
+    // Aggregate lead sources
+    const sourceColors: Record<string, string> = {
+      'meta_ads': '#1877F2',
+      'google_ads': '#4285F4',
+      'form': '#6E0F1A',
+      'manual': '#64748b',
+      'calendly': '#006BFF',
+      'calcom': '#292929',
+      'zapier': '#FF4A00',
+      'webhook': '#8B5CF6',
+    }
+    const sourceMap = new Map<string, number>()
+    for (const lead of leads || []) {
+      const src = lead.source || 'manual'
+      sourceMap.set(src, (sourceMap.get(src) || 0) + 1)
+    }
+    const sourceBreakdown = Array.from(sourceMap.entries())
+      .map(([source, count]) => ({
+        source: source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        leads: count,
+        percentage: leadsCount > 0 ? Math.round((count / leadsCount) * 100) : 0,
+        cpl: totalSpend > 0 && leadsCount > 0 ? totalSpend / leadsCount : 0,
+        color: sourceColors[source] || '#94a3b8',
+      }))
+      .sort((a, b) => b.leads - a.leads)
+
     // Build metrics object
     const metrics = {
       leads: leadsCount,
@@ -179,6 +205,7 @@ export async function POST(request: NextRequest) {
       revenue: totalRevenue,
       roas,
       top_campaigns: topCampaigns,
+      sourceBreakdown,
     }
 
     // Generate AI summary

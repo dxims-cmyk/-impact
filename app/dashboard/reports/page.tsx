@@ -325,9 +325,9 @@ export default function ReportsPage() {
             {isGenerating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Download className="w-4 h-4" />
+              <FileText className="w-4 h-4" />
             )}
-            {isGenerating ? 'Generating...' : 'Export PDF'}
+            {isGenerating ? 'Generating...' : 'Generate Report'}
           </button>
         </div>
       </div>

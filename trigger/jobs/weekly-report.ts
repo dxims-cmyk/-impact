@@ -135,10 +135,10 @@ async function gatherOrgMetrics(
   periodStart: string,
   periodEnd: string
 ) {
-  // Get leads for period
+  // Get leads for period (include source for breakdown)
   const { data: leads } = await supabase
     .from('leads')
-    .select('id, stage, created_at')
+    .select('id, stage, created_at, source')
     .eq('organization_id', orgId)
     .gte('created_at', periodStart)
     .lte('created_at', periodEnd + 'T23:59:59')
@@ -209,6 +209,32 @@ async function gatherOrgMetrics(
     .sort((a, b) => b.leads - a.leads)
     .slice(0, 5) || []
 
+  // Aggregate lead sources
+  const sourceColors: Record<string, string> = {
+    'meta_ads': '#1877F2',
+    'google_ads': '#4285F4',
+    'form': '#6E0F1A',
+    'manual': '#64748b',
+    'calendly': '#006BFF',
+    'calcom': '#292929',
+    'zapier': '#FF4A00',
+    'webhook': '#8B5CF6',
+  }
+  const sourceMap = new Map<string, number>()
+  for (const lead of leads || []) {
+    const src = (lead as { source?: string }).source || 'manual'
+    sourceMap.set(src, (sourceMap.get(src) || 0) + 1)
+  }
+  const sourceBreakdown = Array.from(sourceMap.entries())
+    .map(([source, count]) => ({
+      source: source.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      leads: count,
+      percentage: leadCount > 0 ? Math.round((count / leadCount) * 100) : 0,
+      cpl: totalSpend > 0 && leadCount > 0 ? totalSpend / leadCount : 0,
+      color: sourceColors[source] || '#94a3b8',
+    }))
+    .sort((a, b) => b.leads - a.leads)
+
   return {
     leads: leadCount,
     leads_change: Math.round(leadsChange),
@@ -219,6 +245,7 @@ async function gatherOrgMetrics(
     won: wonCount,
     revenue: totalRevenue,
     roas,
-    top_campaigns: topCampaigns
+    top_campaigns: topCampaigns,
+    sourceBreakdown,
   }
 }

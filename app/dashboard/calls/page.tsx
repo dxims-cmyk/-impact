@@ -9,8 +9,6 @@ import {
   User,
   ChevronDown,
   ChevronUp,
-  Play,
-  Pause,
   PhoneIncoming,
   PhoneOutgoing,
   PhoneMissed,
@@ -57,12 +55,12 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // Direction icon
-function DirectionIcon({ direction }: { direction: string }) {
+function DirectionIcon({ direction, status }: { direction: string; status: string }) {
+  if (status === 'missed') {
+    return <PhoneMissed className="w-4 h-4 text-impact" />
+  }
   if (direction === 'outbound') {
     return <PhoneOutgoing className="w-4 h-4 text-navy/50" />
-  }
-  if (direction === 'missed') {
-    return <PhoneMissed className="w-4 h-4 text-impact" />
   }
   return <PhoneIncoming className="w-4 h-4 text-studio" />
 }
@@ -70,7 +68,6 @@ function DirectionIcon({ direction }: { direction: string }) {
 // Expandable call row
 function CallRow({ call }: { call: Call }) {
   const [expanded, setExpanded] = useState(false)
-  const [playing, setPlaying] = useState(false)
 
   const leadName = call.lead
     ? [call.lead.first_name, call.lead.last_name].filter(Boolean).join(' ') || 'Unknown'
@@ -91,7 +88,7 @@ function CallRow({ call }: { call: Call }) {
       >
         {/* Direction icon */}
         <div className="w-10 h-10 rounded-xl bg-navy/5 flex items-center justify-center flex-shrink-0">
-          <DirectionIcon direction={call.direction} />
+          <DirectionIcon direction={call.direction} status={call.status} />
         </div>
 
         {/* Caller info */}
@@ -156,30 +153,6 @@ function CallRow({ call }: { call: Call }) {
             <div>
               <h4 className="text-sm font-semibold text-navy mb-2">Recording</h4>
               <div className="flex items-center gap-3">
-                <audio
-                  id={`audio-${call.id}`}
-                  src={call.recording_url}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onEnded={() => setPlaying(false)}
-                  className="hidden"
-                />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const audio = document.getElementById(`audio-${call.id}`) as HTMLAudioElement
-                    if (audio) {
-                      if (playing) {
-                        audio.pause()
-                      } else {
-                        audio.play()
-                      }
-                    }
-                  }}
-                  className="w-10 h-10 rounded-xl bg-impact text-ivory flex items-center justify-center hover:bg-impact/90 transition-colors"
-                >
-                  {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                </button>
                 <div className="flex-1">
                   <audio
                     src={call.recording_url}

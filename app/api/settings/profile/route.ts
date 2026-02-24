@@ -6,6 +6,8 @@ import { z } from 'zod'
 const updateProfileSchema = z.object({
   full_name: z.string().min(1).max(255).optional(),
   avatar_url: z.string().url().optional().nullable(),
+  phone: z.string().max(50).optional(),
+  job_title: z.string().max(255).optional(),
 })
 
 // PATCH /api/settings/profile - Update user profile

@@ -268,8 +268,17 @@ export default function ReportsPage() {
     }
   }
 
-  const handleSendReport = async (_reportId: string) => {
-    toast.success('Report emailed')
+  const handleSendReport = async (reportId: string) => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/send`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to send')
+      }
+      toast.success('Report emailed to your inbox')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to send report')
+    }
   }
 
   const getReportName = (report: Report) => {

@@ -89,7 +89,7 @@ export default function LeadDetailPage() {
 
   const handleStageChange = async (newStage: string) => {
     try {
-      await updateLead.mutateAsync({ id: leadId, stage: newStage as any })
+      await updateLead.mutateAsync({ id: leadId, data: { stage: newStage } })
       toast.success(`Stage updated to ${newStage}`)
       refetchLead()
       refetchTimeline()

@@ -147,6 +147,8 @@ export default function SettingsPage() {
     try {
       await updateProfile.mutateAsync({
         fullName: `${firstName} ${lastName}`.trim(),
+        phone: phone || undefined,
+        jobTitle: jobTitle || undefined,
       })
       toast.success('Profile updated successfully')
     } catch (error) {

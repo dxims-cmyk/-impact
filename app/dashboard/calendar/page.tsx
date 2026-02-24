@@ -93,7 +93,7 @@ export default function CalendarPage(): JSX.Element {
   }
 
   const formatTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleTimeString('en-GB', {
+    return new Date(dateString).toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit',
     })
@@ -306,7 +306,7 @@ export default function CalendarPage(): JSX.Element {
               {/* Week Header */}
               <div className="grid grid-cols-8 border-b border-gray-100">
                 <div className="p-3 text-center border-r border-gray-100">
-                  <span className="text-xs font-medium text-navy/40">GMT</span>
+                  <span className="text-xs font-medium text-navy/40">{Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace('_', ' ') || 'Local'}</span>
                 </div>
                 {weekDates.map((date, i) => (
                   <div

@@ -72,7 +72,7 @@ export default function AutomationsPage() {
   const deleteAutomation = useDeleteAutomation()
 
   // Fetch single automation for editing (with actions)
-  const { data: editAutomationData } = useAutomation(editAutomationId || '')
+  const { data: editAutomationData, isLoading: editLoading } = useAutomation(editAutomationId || '')
 
   const automations = data?.automations || []
 
@@ -447,11 +447,21 @@ export default function AutomationsPage() {
       )}
 
       {/* Automation Builder Modal */}
-      <AutomationBuilder
-        isOpen={builderOpen && (!editAutomationId || !!editAutomationData)}
-        onClose={handleCloseBuilder}
-        automation={editAutomationId ? editAutomationData || undefined : undefined}
-      />
+      {builderOpen && editAutomationId && editLoading ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={handleCloseBuilder} />
+          <div className="relative bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-impact animate-spin" />
+            <p className="text-sm text-navy/60">Loading automation...</p>
+          </div>
+        </div>
+      ) : (
+        <AutomationBuilder
+          isOpen={builderOpen && (!editAutomationId || !!editAutomationData)}
+          onClose={handleCloseBuilder}
+          automation={editAutomationId ? editAutomationData || undefined : undefined}
+        />
+      )}
     </div>
   )
 }

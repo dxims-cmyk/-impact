@@ -34,6 +34,8 @@ export function useUpdateProfile() {
     mutationFn: async (data: {
       fullName?: string
       avatarUrl?: string
+      phone?: string
+      jobTitle?: string
     }) => {
       const res = await fetch('/api/settings/profile', {
         method: 'PATCH',
@@ -41,6 +43,8 @@ export function useUpdateProfile() {
         body: JSON.stringify({
           full_name: data.fullName,
           avatar_url: data.avatarUrl,
+          phone: data.phone,
+          job_title: data.jobTitle,
         }),
       })
       if (!res.ok) {

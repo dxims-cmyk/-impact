@@ -2,6 +2,7 @@
 import { task, logger } from "@trigger.dev/sdk/v3"
 import { createAdminClient } from "@/lib/supabase/server"
 import { qualifyLead } from "@/lib/ai/claude"
+import { triggerAutomations } from './run-automation'
 
 export const qualifyLeadTask = task({
   id: "qualify-lead",
@@ -70,6 +71,23 @@ export const qualifyLeadTask = task({
     if (updateError) {
       logger.error("Failed to update lead", { error: updateError })
       return { success: false, error: "Failed to update lead" }
+    }
+
+    // Trigger automations based on qualification results
+    triggerAutomations({
+      organizationId: lead.organization_id,
+      leadId: leadId,
+      triggerType: 'lead_scored',
+      triggerData: { score: qualification.score, temperature: qualification.temperature },
+    }).catch(() => {})
+
+    if (qualification.temperature) {
+      triggerAutomations({
+        organizationId: lead.organization_id,
+        leadId: leadId,
+        triggerType: 'lead_qualified',
+        triggerData: { temperature: qualification.temperature },
+      }).catch(() => {})
     }
 
     // Log activity

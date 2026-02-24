@@ -6,6 +6,7 @@ import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
 import { z } from 'zod'
 import { checkRateLimit, getIdentifier } from '@/lib/rate-limit'
+import { triggerAutomations } from '@/trigger/jobs/run-automation'
 
 // Public lead submission schema
 const leadSubmissionSchema = z.object({
@@ -343,6 +344,13 @@ export async function POST(request: NextRequest) {
       console.error('Failed to send auto-response email:', error)
     })
   }
+
+  // Trigger 'form_submitted' automations
+  triggerAutomations({
+    organizationId: orgId!,
+    leadId: lead.id,
+    triggerType: 'form_submitted',
+  }).catch(() => {})
 
   // Trigger background jobs — fire and forget, don't block the response
   Promise.all([

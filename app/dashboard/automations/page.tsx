@@ -6,188 +6,180 @@ import {
   Plus,
   Play,
   Pause,
-  MoreHorizontal,
   Clock,
-  Users,
   Mail,
   MessageSquare,
   Phone,
   Calendar,
   Target,
-  Sparkles,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  Settings,
-  Copy,
   Trash2,
   Edit2,
   ToggleLeft,
   ToggleRight,
-  Filter,
   TrendingUp,
-  Bell,
   Workflow,
+  UserPlus,
+  FileText,
+  Loader2,
+  AlertCircle,
+  Send,
+  Tag,
+  Globe,
+  Check,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAutomations, useAutomation, useToggleAutomation, useDeleteAutomation } from '@/lib/hooks'
+import AutomationBuilder from '@/components/automations/AutomationBuilder'
+import { Automation, AutomationAction } from '@/types/database'
 
-// Sample automations data
-const automationsData = [
-  {
-    id: '1',
-    name: 'Speed to Lead',
-    description: 'Send instant SMS when a new lead is captured from any source',
-    trigger: 'Lead Created',
-    actions: ['Send SMS', 'AI Qualify'],
-    status: 'active',
-    runsToday: 23,
-    runsTotal: 1456,
-    successRate: 98.5,
-    lastRun: '5 min ago',
-    icon: Zap,
-  },
-  {
-    id: '2',
-    name: 'AI Lead Qualification',
-    description: 'Automatically score and tag leads using AI analysis',
-    trigger: 'Lead Created',
-    actions: ['AI Analysis', 'Update Score', 'Add Tags'],
-    status: 'active',
-    runsToday: 23,
-    runsTotal: 1456,
-    successRate: 99.2,
-    lastRun: '5 min ago',
-    icon: Sparkles,
-  },
-  {
-    id: '3',
-    name: 'AI Conversation Handler',
-    description: 'Auto-reply to inbound messages with AI (max 3 turns)',
-    trigger: 'Message Received',
-    actions: ['AI Generate Reply', 'Send Message', 'Update Lead'],
-    status: 'active',
-    runsToday: 45,
-    runsTotal: 2341,
-    successRate: 94.8,
-    lastRun: '2 min ago',
-    icon: MessageSquare,
-  },
-  {
-    id: '4',
-    name: 'Appointment Reminder',
-    description: 'Send reminder SMS 24h and 1h before scheduled appointments',
-    trigger: 'Scheduled Time',
-    actions: ['Send SMS', 'Send Email'],
-    status: 'active',
-    runsToday: 8,
-    runsTotal: 567,
-    successRate: 100,
-    lastRun: '1 hour ago',
-    icon: Calendar,
-  },
-  {
-    id: '5',
-    name: 'Weekly Performance Report',
-    description: 'Generate and send AI-powered weekly report every Monday',
-    trigger: 'Scheduled (Monday 7am)',
-    actions: ['Generate Report', 'AI Summary', 'Send Email'],
-    status: 'active',
-    runsToday: 0,
-    runsTotal: 12,
-    successRate: 100,
-    lastRun: '5 days ago',
-    icon: TrendingUp,
-  },
-  {
-    id: '6',
-    name: 'Lead Decay Alert',
-    description: 'Notify team when qualified leads haven\'t been contacted in 48h',
-    trigger: 'Scheduled Check',
-    actions: ['Check Activity', 'Send Alert', 'Update Priority'],
-    status: 'paused',
-    runsToday: 0,
-    runsTotal: 89,
-    successRate: 100,
-    lastRun: '2 days ago',
-    icon: AlertCircle,
-  },
-  {
-    id: '7',
-    name: 'Hot Lead Notification',
-    description: 'Instant Slack notification when a lead is scored 8+',
-    trigger: 'Lead Score Updated',
-    actions: ['Check Score', 'Send Slack'],
-    status: 'active',
-    runsToday: 5,
-    runsTotal: 234,
-    successRate: 100,
-    lastRun: '3 hours ago',
-    icon: Bell,
-  },
-  {
-    id: '8',
-    name: 'Post-Call Follow-up',
-    description: 'Send thank you email after completed discovery calls',
-    trigger: 'Call Completed',
-    actions: ['Wait 30min', 'Send Email'],
-    status: 'active',
-    runsToday: 3,
-    runsTotal: 156,
-    successRate: 97.4,
-    lastRun: '4 hours ago',
-    icon: Phone,
-  },
-]
+// ─── Trigger / Action display helpers ────────────────────────────────
+type TriggerType = Automation['trigger_type']
+type ActionType = AutomationAction['action_type']
 
-const triggerTypes = [
-  { value: 'all', label: 'All Triggers' },
-  { value: 'lead', label: 'Lead Events' },
-  { value: 'message', label: 'Message Events' },
-  { value: 'schedule', label: 'Scheduled' },
-  { value: 'call', label: 'Call Events' },
-]
+const TRIGGER_META: Record<TriggerType, { label: string; icon: typeof Zap }> = {
+  lead_created: { label: 'Lead Created', icon: UserPlus },
+  lead_scored: { label: 'Lead Scored', icon: Target },
+  lead_qualified: { label: 'Lead Qualified', icon: Check },
+  appointment_booked: { label: 'Appointment Booked', icon: Calendar },
+  appointment_cancelled: { label: 'Appointment Cancelled', icon: X },
+  form_submitted: { label: 'Form Submitted', icon: FileText },
+  tag_added: { label: 'Tag Added', icon: Tag },
+}
 
-const templates = [
-  {
-    name: 'Speed to Lead',
-    description: 'Instantly engage new leads with personalized SMS',
-    category: 'Lead Capture',
-  },
-  {
-    name: 'Nurture Sequence',
-    description: '5-part email sequence for cold leads',
-    category: 'Nurturing',
-  },
-  {
-    name: 'Re-engagement',
-    description: 'Win back leads that went cold',
-    category: 'Recovery',
-  },
-  {
-    name: 'Appointment Booking',
-    description: 'Guide qualified leads to book a call',
-    category: 'Conversion',
-  },
-]
+const ACTION_META: Record<ActionType, { label: string; icon: typeof Mail }> = {
+  send_email: { label: 'Email', icon: Mail },
+  send_whatsapp: { label: 'WhatsApp', icon: MessageSquare },
+  send_sms: { label: 'SMS', icon: Phone },
+  send_slack: { label: 'Slack', icon: Send },
+  add_tag: { label: 'Tag', icon: Tag },
+  assign_user: { label: 'Assign', icon: UserPlus },
+  create_task: { label: 'Task', icon: FileText },
+  wait: { label: 'Wait', icon: Clock },
+  webhook: { label: 'Webhook', icon: Globe },
+}
 
+// ─── Page Component ──────────────────────────────────────────────────
 export default function AutomationsPage() {
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [triggerFilter, setTriggerFilter] = useState('all')
-  const [selectedAutomation, setSelectedAutomation] = useState<typeof automationsData[0] | null>(null)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  const [builderOpen, setBuilderOpen] = useState(false)
+  const [editAutomationId, setEditAutomationId] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  const filteredAutomations = automationsData.filter(auto => {
-    const matchesStatus = statusFilter === 'all' || auto.status === statusFilter
-    return matchesStatus
+  // Data fetching
+  const { data, isLoading, error } = useAutomations()
+  const toggleAutomation = useToggleAutomation()
+  const deleteAutomation = useDeleteAutomation()
+
+  // Fetch single automation for editing (with actions)
+  const { data: editAutomationData } = useAutomation(editAutomationId || '')
+
+  const automations = data?.automations || []
+
+  // Filter
+  const filteredAutomations = automations.filter((a) => {
+    if (statusFilter === 'active') return a.is_active
+    if (statusFilter === 'inactive') return !a.is_active
+    return true
   })
 
-  const activeCount = automationsData.filter(a => a.status === 'active').length
-  const totalRuns = automationsData.reduce((sum, a) => sum + a.runsToday, 0)
-  const avgSuccess = automationsData.reduce((sum, a) => sum + a.successRate, 0) / automationsData.length
+  // Stats
+  const activeCount = automations.filter((a) => a.is_active).length
+  const totalActions = automations.reduce((sum, a) => sum + (a.action_count || 0), 0)
+  const totalRuns = automations.reduce((sum, a) => sum + (a.recent_run_count || 0), 0)
 
-  const toggleStatus = (id: string) => {
-    toast('Coming Soon', { description: 'Automation toggle will be available soon.' })
+  // Handlers
+  function handleToggle(id: string) {
+    toggleAutomation.mutate(id, {
+      onError: (err) => toast.error(err.message),
+    })
   }
 
+  function handleEdit(id: string) {
+    setEditAutomationId(id)
+    setBuilderOpen(true)
+  }
+
+  function handleDelete(id: string) {
+    deleteAutomation.mutate(id, {
+      onSuccess: () => {
+        toast.success('Automation deleted')
+        setDeleteConfirmId(null)
+      },
+      onError: (err) => toast.error(err.message),
+    })
+  }
+
+  function handleCloseBuilder() {
+    setBuilderOpen(false)
+    setEditAutomationId(null)
+  }
+
+  // ─── Loading state ─────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-7 w-40 bg-gray-200 rounded-lg animate-pulse mb-2" />
+            <div className="h-4 w-64 bg-gray-100 rounded-lg animate-pulse" />
+          </div>
+          <div className="h-10 w-40 bg-gray-200 rounded-xl animate-pulse" />
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 animate-pulse mb-3" />
+              <div className="h-7 w-16 bg-gray-200 rounded animate-pulse mb-1" />
+              <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Cards skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gray-100 animate-pulse" />
+                <div>
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                </div>
+              </div>
+              <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-4" />
+              <div className="flex gap-2 mb-4">
+                <div className="h-6 w-16 bg-gray-100 rounded-lg animate-pulse" />
+                <div className="h-6 w-16 bg-gray-100 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Error state ───────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Automations</h1>
+          <p className="text-navy/60">Automate your lead nurturing and follow-up workflows</p>
+        </div>
+        <div className="bg-white rounded-2xl p-8 border border-red-100 shadow-sm text-center">
+          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-medium text-navy mb-1">Failed to load automations</p>
+          <p className="text-xs text-navy/50">{error.message}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Main render ───────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -196,14 +188,20 @@ export default function AutomationsPage() {
           <h1 className="text-2xl font-bold text-navy">Automations</h1>
           <p className="text-navy/60">Automate your lead nurturing and follow-up workflows</p>
         </div>
-        <button className="btn-primary flex items-center gap-2 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
+        <button
+          onClick={() => {
+            setEditAutomationId(null)
+            setBuilderOpen(true)
+          }}
+          className="btn-primary flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           New Automation
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-studio/10 flex items-center justify-center">
@@ -220,35 +218,25 @@ export default function AutomationsPage() {
               <Zap className="w-5 h-5 text-impact" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-navy mb-1">{totalRuns}</p>
-          <p className="text-sm text-navy/50">Runs Today</p>
+          <p className="text-2xl font-bold text-navy mb-1">{totalActions}</p>
+          <p className="text-sm text-navy/50">Total Actions</p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-vision/10 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-vision" />
+              <TrendingUp className="w-5 h-5 text-vision" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-navy mb-1">{avgSuccess.toFixed(1)}%</p>
-          <p className="text-sm text-navy/50">Avg Success Rate</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-camel/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-camel" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-navy mb-1">2.3s</p>
-          <p className="text-sm text-navy/50">Avg Response Time</p>
+          <p className="text-2xl font-bold text-navy mb-1">{totalRuns}</p>
+          <p className="text-sm text-navy/50">Runs (Last 30 Days)</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-          {['all', 'active', 'paused'].map((status) => (
+          {(['all', 'active', 'inactive'] as const).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
@@ -262,119 +250,208 @@ export default function AutomationsPage() {
             </button>
           ))}
         </div>
+        <span className="text-sm text-navy/40">
+          {filteredAutomations.length} automation{filteredAutomations.length !== 1 ? 's' : ''}
+        </span>
       </div>
+
+      {/* Empty state */}
+      {filteredAutomations.length === 0 && (
+        <div className="bg-white rounded-2xl p-12 border border-gray-100 shadow-sm text-center">
+          <div className="w-16 h-16 rounded-2xl bg-impact/10 flex items-center justify-center mx-auto mb-4">
+            <Workflow className="w-8 h-8 text-impact" />
+          </div>
+          <h3 className="text-lg font-semibold text-navy mb-2">
+            {statusFilter === 'all'
+              ? 'No automations yet'
+              : `No ${statusFilter} automations`}
+          </h3>
+          <p className="text-sm text-navy/50 mb-6 max-w-md mx-auto">
+            {statusFilter === 'all'
+              ? 'Create your first automation to start automating lead nurturing, follow-ups, and notifications.'
+              : `You don't have any ${statusFilter} automations. Try changing the filter.`}
+          </p>
+          {statusFilter === 'all' && (
+            <button
+              onClick={() => {
+                setEditAutomationId(null)
+                setBuilderOpen(true)
+              }}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create First Automation
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Automations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {filteredAutomations.map((automation) => {
-          const Icon = automation.icon
+      {filteredAutomations.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filteredAutomations.map((automation) => {
+            const trigger = TRIGGER_META[automation.trigger_type]
+            const TriggerIcon = trigger?.icon || Zap
+            const isToggling = toggleAutomation.isPending && toggleAutomation.variables === automation.id
 
-          return (
-            <div
-              key={automation.id}
-              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-impact/20 transition-all group"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    automation.status === 'active' ? 'bg-impact/10' : 'bg-gray-100'
-                  }`}>
-                    <Icon className={`w-6 h-6 ${automation.status === 'active' ? 'text-impact' : 'text-gray-400'}`} />
+            return (
+              <div
+                key={automation.id}
+                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-impact/20 transition-all group"
+              >
+                {/* Top row */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        automation.is_active ? 'bg-impact/10' : 'bg-gray-100'
+                      }`}
+                    >
+                      <TriggerIcon
+                        className={`w-6 h-6 ${
+                          automation.is_active ? 'text-impact' : 'text-gray-400'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-navy group-hover:text-impact transition-colors">
+                        {automation.name}
+                      </h3>
+                      <p className="text-xs text-navy/50">
+                        {trigger?.label || automation.trigger_type}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-navy group-hover:text-impact transition-colors">
-                      {automation.name}
-                    </h3>
-                    <p className="text-sm text-navy/50">{automation.trigger}</p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleToggle(automation.id)}
+                      className="p-1"
+                      title={automation.is_active ? 'Pause' : 'Activate'}
+                      disabled={isToggling}
+                    >
+                      {isToggling ? (
+                        <Loader2 className="w-8 h-8 text-navy/30 animate-spin" />
+                      ) : automation.is_active ? (
+                        <ToggleRight className="w-8 h-8 text-studio" />
+                      ) : (
+                        <ToggleLeft className="w-8 h-8 text-gray-300" />
+                      )}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleStatus(automation.id)}
-                    className="p-1"
-                    title={automation.status === 'active' ? 'Pause' : 'Activate'}
-                  >
-                    {automation.status === 'active' ? (
-                      <ToggleRight className="w-8 h-8 text-studio" />
-                    ) : (
-                      <ToggleLeft className="w-8 h-8 text-gray-300" />
-                    )}
-                  </button>
-                  <button className="p-2 rounded-lg opacity-0 group-hover:opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                    <MoreHorizontal className="w-4 h-4 text-navy/60" />
-                  </button>
-                </div>
-              </div>
 
-              <p className="text-sm text-navy/70 mb-4">{automation.description}</p>
+                {/* Description */}
+                {automation.description && (
+                  <p className="text-sm text-navy/70 mb-3">{automation.description}</p>
+                )}
 
-              {/* Actions Flow */}
-              <div className="flex items-center gap-2 mb-4 flex-wrap">
-                {automation.actions.map((action, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-lg bg-navy/5 text-xs font-medium text-navy">
-                      {action}
+                {/* Action count badge */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-navy/5 text-xs font-medium text-navy">
+                    <Zap className="w-3 h-3" />
+                    {automation.action_count} action{automation.action_count !== 1 ? 's' : ''}
+                  </span>
+                  {automation.recent_run_count > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-studio/5 text-xs font-medium text-studio">
+                      <TrendingUp className="w-3 h-3" />
+                      {automation.recent_run_count} runs
                     </span>
-                    {i < automation.actions.length - 1 && (
-                      <ArrowRight className="w-3 h-3 text-navy/30" />
+                  )}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                      automation.is_active
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-gray-100 text-navy/40'
+                    }`}
+                  >
+                    {automation.is_active ? (
+                      <>
+                        <Play className="w-3 h-3" />
+                        Active
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-3 h-3" />
+                        Inactive
+                      </>
                     )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-navy/50">
-                    <span className="font-semibold text-navy">{automation.runsToday}</span> today
-                  </span>
-                  <span className="text-navy/50">
-                    <span className="font-semibold text-navy">{automation.runsTotal}</span> total
-                  </span>
-                  <span className="text-navy/50">
-                    <span className="font-semibold text-studio">{automation.successRate}%</span> success
                   </span>
                 </div>
-                <span className="text-xs text-navy/40 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {automation.lastRun}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
 
-      {/* Templates Section */}
-      <div className="bg-gradient-to-br from-impact/5 to-camel/5 rounded-2xl p-6 border border-impact/10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-impact flex items-center justify-center">
-              <Workflow className="w-4 h-4 text-ivory" />
+                {/* Bottom row: actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <p className="text-xs text-navy/40">
+                    Created {new Date(automation.created_at).toLocaleDateString()}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleEdit(automation.id)}
+                      className="p-2 rounded-lg text-navy/40 hover:text-impact hover:bg-impact/5 transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirmId(automation.id)}
+                      className="p-2 rounded-lg text-navy/40 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteConfirmId(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl p-6 max-w-sm mx-4">
+            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6 text-red-500" />
             </div>
-            <h2 className="text-lg font-semibold text-navy">Automation Templates</h2>
+            <h3 className="text-lg font-semibold text-navy text-center mb-2">
+              Delete Automation?
+            </h3>
+            <p className="text-sm text-navy/60 text-center mb-6">
+              This will permanently remove this automation and all its actions. This cannot be undone.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-navy/60 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deleteAutomation.isPending}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleteAutomation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </button>
+            </div>
           </div>
-          <button className="text-sm font-medium text-navy/30 cursor-not-allowed flex items-center gap-1" title="Coming Soon" disabled>
-            Browse All <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {templates.map((template) => (
-            <button
-              key={template.name}
-              className="p-4 rounded-xl bg-white border border-gray-100 text-left opacity-60 cursor-not-allowed"
-              title="Coming Soon"
-              disabled
-            >
-              <span className="text-xs font-medium text-impact/70 mb-1 block">{template.category}</span>
-              <h4 className="font-semibold text-navy mb-1">
-                {template.name}
-              </h4>
-              <p className="text-sm text-navy/60">{template.description}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
+
+      {/* Automation Builder Modal */}
+      <AutomationBuilder
+        isOpen={builderOpen && (!editAutomationId || !!editAutomationData)}
+        onClose={handleCloseBuilder}
+        automation={editAutomationId ? editAutomationData || undefined : undefined}
+      />
     </div>
   )
 }

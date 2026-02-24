@@ -5,6 +5,7 @@ import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
 import { z } from 'zod'
 import { sanitizeFilterValue } from '@/lib/utils'
+import { triggerAutomations } from '@/trigger/jobs/run-automation'
 
 // Validation schema for creating leads
 const createLeadSchema = z.object({
@@ -200,6 +201,13 @@ export async function POST(request: NextRequest) {
   Promise.all(jobs).catch((error) => {
     console.error('Failed to trigger background jobs:', error)
   })
+
+  // Trigger 'lead_created' automations
+  triggerAutomations({
+    organizationId: userData.organization_id,
+    leadId: lead.id,
+    triggerType: 'lead_created',
+  }).catch(() => {})
 
   return NextResponse.json({ lead }, { status: 201 })
 }

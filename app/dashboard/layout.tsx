@@ -12,6 +12,7 @@ import {
   Calendar,
   BarChart3,
   FileText,
+  FormInput,
   Settings,
   Plug,
   LogOut,
@@ -41,6 +42,7 @@ const navigation = [
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },
   { name: 'Automations', href: '/dashboard/automations', icon: Zap },
   { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
+  { name: 'Forms', href: '/dashboard/settings/forms', icon: FormInput },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   { name: 'Help', href: '/dashboard/help', icon: HelpCircle },
 ]

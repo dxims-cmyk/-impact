@@ -637,6 +637,99 @@ export interface Database {
           ended_at?: string | null
         }
       }
+      automations: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          description: string | null
+          trigger_type: 'lead_created' | 'lead_scored' | 'lead_qualified' | 'appointment_booked' | 'appointment_cancelled' | 'form_submitted' | 'tag_added'
+          trigger_config: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          description?: string | null
+          trigger_type: 'lead_created' | 'lead_scored' | 'lead_qualified' | 'appointment_booked' | 'appointment_cancelled' | 'form_submitted' | 'tag_added'
+          trigger_config?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          description?: string | null
+          trigger_type?: 'lead_created' | 'lead_scored' | 'lead_qualified' | 'appointment_booked' | 'appointment_cancelled' | 'form_submitted' | 'tag_added'
+          trigger_config?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      automation_actions: {
+        Row: {
+          id: string
+          automation_id: string
+          action_type: 'send_email' | 'send_whatsapp' | 'send_sms' | 'send_slack' | 'add_tag' | 'assign_user' | 'create_task' | 'wait' | 'webhook'
+          action_config: Json
+          action_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          automation_id: string
+          action_type: 'send_email' | 'send_whatsapp' | 'send_sms' | 'send_slack' | 'add_tag' | 'assign_user' | 'create_task' | 'wait' | 'webhook'
+          action_config?: Json
+          action_order: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          automation_id?: string
+          action_type?: 'send_email' | 'send_whatsapp' | 'send_sms' | 'send_slack' | 'add_tag' | 'assign_user' | 'create_task' | 'wait' | 'webhook'
+          action_config?: Json
+          action_order?: number
+          created_at?: string
+        }
+      }
+      automation_runs: {
+        Row: {
+          id: string
+          automation_id: string
+          lead_id: string | null
+          status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+          started_at: string
+          completed_at: string | null
+          error: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          automation_id: string
+          lead_id?: string | null
+          status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+          started_at?: string
+          completed_at?: string | null
+          error?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          automation_id?: string
+          lead_id?: string | null
+          status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+          started_at?: string
+          completed_at?: string | null
+          error?: string | null
+          metadata?: Json | null
+        }
+      }
     }
   }
 }
@@ -661,3 +754,12 @@ export type LeadInsert = Database['public']['Tables']['leads']['Insert']
 export type LeadUpdate = Database['public']['Tables']['leads']['Update']
 export type MessageInsert = Database['public']['Tables']['messages']['Insert']
 export type ActivityInsert = Database['public']['Tables']['lead_activities']['Insert']
+
+// Automation types
+export type Automation = Database['public']['Tables']['automations']['Row']
+export type AutomationInsert = Database['public']['Tables']['automations']['Insert']
+export type AutomationUpdate = Database['public']['Tables']['automations']['Update']
+export type AutomationAction = Database['public']['Tables']['automation_actions']['Row']
+export type AutomationActionInsert = Database['public']['Tables']['automation_actions']['Insert']
+export type AutomationActionUpdate = Database['public']['Tables']['automation_actions']['Update']
+export type AutomationRun = Database['public']['Tables']['automation_runs']['Row']

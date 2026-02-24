@@ -1,8 +1,18 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Simple in-memory rate limiting for middleware
+// In-memory rate limiting for middleware (per edge isolate)
+const MAX_MAP_SIZE = 10000
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function cleanupExpired(): void {
+  const now = Date.now()
+  for (const [key, entry] of rateLimitMap) {
+    if (entry.resetAt < now) {
+      rateLimitMap.delete(key)
+    }
+  }
+}
 
 function checkRateLimit(ip: string, limit: number = 100): boolean {
   const now = Date.now()
@@ -11,6 +21,14 @@ function checkRateLimit(ip: string, limit: number = 100): boolean {
   const entry = rateLimitMap.get(ip)
 
   if (!entry || entry.resetAt < now) {
+    // Prevent unbounded growth — evict expired entries if map is large
+    if (rateLimitMap.size >= MAX_MAP_SIZE) {
+      cleanupExpired()
+      // If still too large after cleanup, clear everything (safe — just resets limits)
+      if (rateLimitMap.size >= MAX_MAP_SIZE) {
+        rateLimitMap.clear()
+      }
+    }
     rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs })
     return true
   }
@@ -21,18 +39,6 @@ function checkRateLimit(ip: string, limit: number = 100): boolean {
 
   entry.count++
   return true
-}
-
-// Clean up old entries periodically (every 5 minutes)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of rateLimitMap) {
-      if (entry.resetAt < now) {
-        rateLimitMap.delete(key)
-      }
-    }
-  }, 5 * 60 * 1000)
 }
 
 export async function middleware(request: NextRequest) {

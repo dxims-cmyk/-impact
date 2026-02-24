@@ -195,13 +195,14 @@ export default function ReportsPage() {
   }, [latestReport])
 
   // Fetch real chart data from API
-  const { data: chartData, isLoading: chartsLoading } = useQuery({
+  const { data: chartData, isLoading: chartsLoading, error: chartsError } = useQuery({
     queryKey: ['report-charts'],
     queryFn: async () => {
       const res = await fetch('/api/reports/stats')
       if (!res.ok) throw new Error('Failed to fetch chart data')
       return res.json()
     },
+    retry: 1,
   })
 
   const leadsOverTimeData = chartData?.dailyLeads || []
@@ -402,6 +403,14 @@ export default function ReportsPage() {
           </div>
           {chartsLoading ? (
             <div className="h-64 bg-gray-50 rounded-xl animate-pulse" />
+          ) : chartsError ? (
+            <div className="h-64 flex items-center justify-center text-navy/50">
+              <div className="text-center">
+                <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Unable to load chart data</p>
+                <p className="text-xs mt-1">Please try refreshing the page</p>
+              </div>
+            </div>
           ) : leadsOverTimeData.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-navy/50">
               <div className="text-center">
@@ -459,6 +468,14 @@ export default function ReportsPage() {
           </div>
           {chartsLoading ? (
             <div className="h-64 bg-gray-50 rounded-xl animate-pulse" />
+          ) : chartsError ? (
+            <div className="h-64 flex items-center justify-center text-navy/50">
+              <div className="text-center">
+                <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Unable to load chart data</p>
+                <p className="text-xs mt-1">Please try refreshing the page</p>
+              </div>
+            </div>
           ) : scoreDistributionData.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-navy/50">
               <div className="text-center">

@@ -48,7 +48,6 @@ const tabs = [
   { id: 'notifications', name: 'Notifications', icon: Bell },
   { id: 'security', name: 'Security', icon: Lock },
   { id: 'branding', name: 'Branding', icon: Palette },
-  { id: 'billing', name: 'Billing', icon: CreditCard },
 ]
 
 const defaultNotificationSettings = [

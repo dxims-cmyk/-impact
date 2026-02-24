@@ -158,7 +158,7 @@ export default function DashboardLayout({
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const isActive = pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              (item.href !== '/dashboard' && item.href !== '/dashboard/settings' && pathname.startsWith(item.href))
 
             return (
               <Link

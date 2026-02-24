@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search,
-  Filter,
   Plus,
   Phone,
   Mail,
@@ -385,29 +384,42 @@ function LeadsPageContent() {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
 
-          {/* More Filters */}
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-            <Filter className="w-4 h-4" />
-            More Filters
-          </button>
         </div>
 
         {/* Bulk Actions */}
         {selectedLeads.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
             <span className="text-sm text-navy/60">{selectedLeads.length} selected</span>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Send Email
-            </button>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Send SMS
-            </button>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Change Stage
-            </button>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Assign
-            </button>
+            <select
+              onChange={async (e) => {
+                const stage = e.target.value
+                if (!stage) return
+                try {
+                  const res = await fetch('/api/leads/bulk', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedLeads, stage }),
+                  })
+                  if (!res.ok) throw new Error('Failed')
+                  toast.success(`${selectedLeads.length} leads updated to ${stage}`)
+                  setSelectedLeads([])
+                  refetch()
+                } catch {
+                  toast.error('Failed to update leads')
+                }
+                e.target.value = ''
+              }}
+              className="text-sm font-medium text-navy px-3 py-1.5 rounded-lg border border-gray-200 bg-white"
+              defaultValue=""
+            >
+              <option value="" disabled>Change Stage...</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="booked">Booked</option>
+              <option value="converted">Converted</option>
+              <option value="lost">Lost</option>
+            </select>
             <button
               onClick={handleBulkDelete}
               disabled={deleteLead.isPending}

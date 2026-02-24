@@ -1,7 +1,8 @@
 'use client'
 
 import { Sparkles, TrendingUp, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react'
-import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { formatRelativeTime } from '@/lib/utils'
 
 interface Insight {
   type: 'success' | 'warning' | 'recommendation'
@@ -13,32 +14,10 @@ interface Insight {
   }
 }
 
-// Demo insights - replace with AI-generated
-const demoInsights: Insight[] = [
-  {
-    type: 'success',
-    title: 'Strong week for lead quality',
-    description: 'Hot leads are up 40% compared to last week. Your Meta campaign "Spring Promo" is driving most high-intent traffic.',
-  },
-  {
-    type: 'warning',
-    title: 'Response time slipping',
-    description: 'Average first response time is now 4.2 hours. Speed-to-lead automation could help recover 15% more leads.',
-    action: {
-      label: 'Enable automation',
-      href: '/dashboard/automations',
-    },
-  },
-  {
-    type: 'recommendation',
-    title: 'Consider increasing budget',
-    description: 'Your CPL dropped 18% this week. At current ROAS of 3.2x, increasing spend by £500/week could yield 20+ additional leads.',
-    action: {
-      label: 'View campaigns',
-      href: '/dashboard/campaigns',
-    },
-  },
-]
+interface InsightsResponse {
+  insights: Insight[]
+  updatedAt: string
+}
 
 function InsightCard({ insight }: { insight: Insight }) {
   const icons = {
@@ -46,15 +25,15 @@ function InsightCard({ insight }: { insight: Insight }) {
     warning: AlertTriangle,
     recommendation: Sparkles,
   }
-  
+
   const colors = {
     success: 'text-green-600 bg-green-50',
     warning: 'text-amber-600 bg-amber-50',
     recommendation: 'text-brand-600 bg-brand-50',
   }
-  
+
   const Icon = icons[insight.type]
-  
+
   return (
     <div className="p-4 rounded-lg bg-gray-50">
       <div className="flex items-start gap-3">
@@ -65,7 +44,7 @@ function InsightCard({ insight }: { insight: Insight }) {
           <h4 className="font-medium text-gray-900">{insight.title}</h4>
           <p className="mt-1 text-sm text-gray-600">{insight.description}</p>
           {insight.action && (
-            <a 
+            <a
               href={insight.action.href}
               className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
             >
@@ -79,16 +58,34 @@ function InsightCard({ insight }: { insight: Insight }) {
   )
 }
 
+function InsightSkeleton() {
+  return (
+    <div className="p-4 rounded-lg bg-gray-50 animate-pulse">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gray-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-200 rounded w-full" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function AIInsights() {
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsRefreshing(false)
-  }
-  
+  const { data, isLoading, isFetching, refetch } = useQuery<InsightsResponse>({
+    queryKey: ['dashboard-insights'],
+    queryFn: async () => {
+      const res = await fetch('/api/dashboard/insights')
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to fetch insights')
+      }
+      return res.json()
+    },
+  })
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -96,23 +93,35 @@ export function AIInsights() {
           <Sparkles className="w-5 h-5 text-brand-600" />
           <h2 className="text-lg font-semibold text-gray-900">AI Insights</h2>
         </div>
-        <button 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
           className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 text-gray-500 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 text-gray-500 ${isFetching ? 'animate-spin' : ''}`} />
         </button>
       </div>
-      
+
       <div className="space-y-3">
-        {demoInsights.map((insight, index) => (
-          <InsightCard key={index} insight={insight} />
-        ))}
+        {isLoading ? (
+          <>
+            <InsightSkeleton />
+            <InsightSkeleton />
+            <InsightSkeleton />
+          </>
+        ) : data?.insights && data.insights.length > 0 ? (
+          data.insights.map((insight, index) => (
+            <InsightCard key={index} insight={insight} />
+          ))
+        ) : (
+          <div className="p-4 rounded-lg bg-gray-50 text-center">
+            <p className="text-sm text-gray-500">No data yet. Add leads to start seeing insights.</p>
+          </div>
+        )}
       </div>
-      
+
       <p className="mt-4 text-xs text-gray-400 text-center">
-        Updated 5 minutes ago
+        {data?.updatedAt ? `Updated ${formatRelativeTime(data.updatedAt)}` : isLoading ? 'Loading...' : 'No data'}
       </p>
     </div>
   )

@@ -20,11 +20,23 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get integration
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Get integration — scoped to user's org
   const { data: integration, error: intError } = await supabase
     .from('integrations')
     .select('*')
     .eq('id', id)
+    .eq('organization_id', userData.organization_id)
     .single()
 
   if (intError || !integration) {

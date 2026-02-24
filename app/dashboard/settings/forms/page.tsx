@@ -690,13 +690,6 @@ export default function FormsSettingsPage() {
               <button className="px-4 py-2 rounded-xl text-sm font-medium bg-impact text-ivory">
                 Inline
               </button>
-              <button
-                disabled
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 text-navy/30 cursor-not-allowed"
-                title="Coming soon"
-              >
-                Popup
-              </button>
             </div>
 
             {/* Code block */}
@@ -717,18 +710,11 @@ export default function FormsSettingsPage() {
               </button>
             </div>
 
-            {/* Width selector (disabled) */}
+            {/* Width selector */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-navy/50">Width:</span>
               <button className="px-3 py-1.5 rounded-lg text-xs font-medium bg-impact/10 text-impact">
                 Full
-              </button>
-              <button
-                disabled
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-navy/30 cursor-not-allowed"
-                title="Coming soon"
-              >
-                Fixed px
               </button>
             </div>
 

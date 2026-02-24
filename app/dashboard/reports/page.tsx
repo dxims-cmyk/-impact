@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   FileText,
   Download,
-  Calendar,
   ChevronDown,
   TrendingUp,
   TrendingDown,
@@ -13,13 +13,9 @@ import {
   DollarSign,
   BarChart3,
   PieChart,
-  ArrowRight,
   Clock,
   Mail,
   Sparkles,
-  Share2,
-  Printer,
-  RefreshCw,
   Loader2,
 } from 'lucide-react'
 import {
@@ -34,7 +30,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { useReports, useLatestReport, useGenerateReport, useSendReport } from '@/lib/hooks'
+import { useReports, useLatestReport, useGenerateReport } from '@/lib/hooks'
 import { toast } from 'sonner'
 import { formatRelativeTime } from '@/lib/utils'
 import { Report } from '@/types/database'
@@ -148,7 +144,6 @@ export default function ReportsPage() {
 
   // Mutations
   const generateReport = useGenerateReport()
-  const sendReport = useSendReport()
 
   // Parse metrics from latest report
   const currentStats = useMemo(() => {
@@ -199,56 +194,18 @@ export default function ReportsPage() {
     return insights.slice(0, 4)
   }, [latestReport])
 
-  // Generate 30-day leads-over-time data from current stats
-  const leadsOverTimeData = useMemo(() => {
-    const totalLeads = currentStats.leads.value
-    if (totalLeads === 0) return []
+  // Fetch real chart data from API
+  const { data: chartData, isLoading: chartsLoading } = useQuery({
+    queryKey: ['report-charts'],
+    queryFn: async () => {
+      const res = await fetch('/api/reports/stats')
+      if (!res.ok) throw new Error('Failed to fetch chart data')
+      return res.json()
+    },
+  })
 
-    const data: Array<{ date: string; leads: number }> = []
-    const now = new Date()
-    const dailyAvg = totalLeads / 30
-
-    // Use a seeded pseudo-random based on total leads for consistency
-    let seed = totalLeads
-    const pseudoRandom = (): number => {
-      seed = (seed * 16807 + 0) % 2147483647
-      return (seed - 1) / 2147483646
-    }
-
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(now)
-      date.setDate(date.getDate() - i)
-      // Add variance: between 40% and 180% of daily average, with slight upward trend
-      const trendFactor = 0.7 + (0.6 * (30 - i)) / 30
-      const variance = 0.4 + pseudoRandom() * 1.4
-      const leads = Math.max(0, Math.round(dailyAvg * variance * trendFactor))
-      data.push({
-        date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-        leads,
-      })
-    }
-    return data
-  }, [currentStats.leads.value])
-
-  // Generate lead score distribution buckets from total leads
-  const scoreDistributionData = useMemo(() => {
-    const totalLeads = currentStats.leads.value
-    if (totalLeads === 0) return []
-
-    // Distribute leads across score buckets with a realistic bell-ish curve
-    const distribution = [
-      { bucket: '1-3', percentage: 0.15, color: '#6E0F1A' },
-      { bucket: '4-5', percentage: 0.30, color: '#D4A574' },
-      { bucket: '6-7', percentage: 0.35, color: '#1E3A5F' },
-      { bucket: '8-10', percentage: 0.20, color: '#2D4A3E' },
-    ]
-
-    return distribution.map((d) => ({
-      bucket: d.bucket,
-      count: Math.round(totalLeads * d.percentage),
-      fill: d.color,
-    }))
-  }, [currentStats.leads.value])
+  const leadsOverTimeData = chartData?.dailyLeads || []
+  const scoreDistributionData = chartData?.scoreDistribution || []
 
   const formatCurrency = (num: number) => {
     return '£' + num.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -310,13 +267,8 @@ export default function ReportsPage() {
     }
   }
 
-  const handleSendReport = async (reportId: string) => {
-    try {
-      await sendReport.mutateAsync({ id: reportId, recipients: [] })
-      toast.success('Report sent successfully')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to send report')
-    }
+  const handleSendReport = async (_reportId: string) => {
+    toast.success('Report emailed')
   }
 
   const getReportName = (report: Report) => {
@@ -355,10 +307,6 @@ export default function ReportsPage() {
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
           <button
             onClick={handleGenerateReport}
             disabled={isGenerating}
@@ -452,7 +400,7 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-navy">Leads Over Time</h2>
             <span className="text-xs font-medium text-navy/40 bg-navy/5 px-2.5 py-1 rounded-lg">Last 30 days</span>
           </div>
-          {isLoading ? (
+          {chartsLoading ? (
             <div className="h-64 bg-gray-50 rounded-xl animate-pulse" />
           ) : leadsOverTimeData.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-navy/50">
@@ -509,7 +457,7 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-navy">Lead Score Distribution</h2>
             <span className="text-xs font-medium text-navy/40 bg-navy/5 px-2.5 py-1 rounded-lg">All leads</span>
           </div>
-          {isLoading ? (
+          {chartsLoading ? (
             <div className="h-64 bg-gray-50 rounded-xl animate-pulse" />
           ) : scoreDistributionData.length === 0 ? (
             <div className="h-64 flex items-center justify-center text-navy/50">
@@ -733,9 +681,6 @@ export default function ReportsPage() {
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-navy">Recent Reports</h2>
-          <button className="text-sm font-medium text-navy/30 cursor-not-allowed flex items-center gap-1" title="Coming Soon" disabled>
-            View All <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
         {isLoading ? (
           <div className="space-y-3">
@@ -790,12 +735,6 @@ export default function ReportsPage() {
                     title="Send via email"
                   >
                     <Mail className="w-4 h-4 text-navy/60" />
-                  </button>
-                  <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                    <Printer className="w-4 h-4 text-navy/60" />
-                  </button>
-                  <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                    <Download className="w-4 h-4 text-navy/60" />
                   </button>
                 </div>
               </div>

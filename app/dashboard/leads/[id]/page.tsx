@@ -16,7 +16,6 @@ import {
   Sparkles,
   Send,
   MoreHorizontal,
-  Edit2,
   Trash2,
   User,
   Tag,
@@ -239,9 +238,6 @@ export default function LeadDetailPage() {
             ) : (
               <Sparkles className="w-4 h-4 text-impact" />
             )}
-          </button>
-          <button className="p-2.5 rounded-xl border border-gray-200 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-            <Edit2 className="w-4 h-4 text-navy/60" />
           </button>
           <button
             onClick={handleDelete}

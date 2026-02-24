@@ -29,14 +29,16 @@ async function resolveOrgId(
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Verify ManyChat webhook secret if MANYCHAT_WEBHOOK_SECRET is set
+  // Verify ManyChat webhook secret — fail closed if not configured
   const webhookSecret = process.env.MANYCHAT_WEBHOOK_SECRET
-  if (webhookSecret) {
-    const authHeader = request.headers.get('authorization') || ''
-    const token = authHeader.replace('Bearer ', '')
-    if (token !== webhookSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+  if (!webhookSecret) {
+    console.error('ManyChat webhook: MANYCHAT_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+  const authHeader = request.headers.get('authorization') || ''
+  const token = authHeader.replace('Bearer ', '')
+  if (token !== webhookSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   const supabase = createAdminClient()

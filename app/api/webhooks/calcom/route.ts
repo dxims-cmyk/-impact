@@ -29,21 +29,24 @@ async function resolveOrgId(
 }
 
 export async function POST(request: NextRequest) {
-  // Verify Cal.com webhook signature if CALCOM_WEBHOOK_SECRET is set
+  // Verify Cal.com webhook signature — fail closed if not configured
   const webhookSecret = process.env.CALCOM_WEBHOOK_SECRET
   const rawBody = await request.text()
 
-  if (webhookSecret) {
-    const signature = request.headers.get('x-cal-signature-256') || ''
-    const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex')
+  if (!webhookSecret) {
+    console.error('Cal.com webhook: CALCOM_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
 
-    try {
-      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
-      }
-    } catch {
+  const signature = request.headers.get('x-cal-signature-256') || ''
+  const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex')
+
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
     }
+  } catch {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 
   const supabase = createAdminClient()

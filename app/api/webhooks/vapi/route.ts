@@ -110,14 +110,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true, note: 'Unrecognised payload format' })
   }
 
-  // Optional webhook secret validation
+  // Verify Vapi webhook secret — fail closed if not configured
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET
-  if (webhookSecret) {
-    const authHeader = request.headers.get('authorization') || request.headers.get('x-vapi-secret')
-    if (authHeader !== webhookSecret && authHeader !== `Bearer ${webhookSecret}`) {
-      console.error('Vapi webhook: invalid secret')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 200 })
-    }
+  if (!webhookSecret) {
+    console.error('Vapi webhook: VAPI_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+  const authHeader = request.headers.get('authorization') || request.headers.get('x-vapi-secret')
+  if (authHeader !== webhookSecret && authHeader !== `Bearer ${webhookSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
   const eventType = payload.type

@@ -5,13 +5,10 @@ import Link from 'next/link'
 import {
   Search,
   Filter,
-  MoreHorizontal,
   Phone,
   Mail,
   MessageSquare,
   Send,
-  Paperclip,
-  Smile,
   Sparkles,
   Clock,
   CheckCheck,
@@ -19,10 +16,7 @@ import {
   ChevronDown,
   User,
   Building2,
-  Star,
-  Archive,
   Trash2,
-  Reply,
   Loader2,
   RefreshCw,
 } from 'lucide-react'
@@ -346,15 +340,6 @@ export default function ConversationsPage() {
                 <Link href={`/dashboard/leads/${selectedConversation.lead_id}`} className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="View Lead">
                   <User className="w-4 h-4 text-navy/60" />
                 </Link>
-                <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                  <Star className="w-4 h-4 text-navy/60" />
-                </button>
-                <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                  <Archive className="w-4 h-4 text-navy/60" />
-                </button>
-                <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                  <MoreHorizontal className="w-4 h-4 text-navy/60" />
-                </button>
               </div>
             </div>
 
@@ -459,14 +444,6 @@ export default function ConversationsPage() {
                       }
                     }}
                   />
-                  <div className="absolute bottom-3 right-3 flex items-center gap-1">
-                    <button className="p-1.5 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                      <Paperclip className="w-4 h-4 text-navy/40" />
-                    </button>
-                    <button className="p-1.5 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                      <Smile className="w-4 h-4 text-navy/40" />
-                    </button>
-                  </div>
                 </div>
                 <button
                   onClick={handleSendMessage}
@@ -492,10 +469,6 @@ export default function ConversationsPage() {
                     <Sparkles className="w-3 h-3" />
                   )}
                   Generate AI Reply
-                </button>
-                <button className="text-xs text-navy/30 cursor-not-allowed flex items-center gap-1" title="Coming Soon" disabled>
-                  <Reply className="w-3 h-3" />
-                  Use Template
                 </button>
               </div>
             </div>

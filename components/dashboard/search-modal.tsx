@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search,
   X,
   User,
-  MessageSquare,
   Calendar,
   FileText,
   ArrowRight,
-  Command,
+  Loader2,
 } from 'lucide-react'
 
 interface SearchResult {
@@ -21,52 +20,95 @@ interface SearchResult {
   href: string
 }
 
-// Mock search results - in real app this would be an API call
-const mockResults: SearchResult[] = [
-  { id: '1', type: 'lead', title: 'Sarah Johnson', subtitle: 'TechCorp Ltd • Hot Lead', href: '/dashboard/leads/1' },
-  { id: '2', type: 'lead', title: 'James Wilson', subtitle: 'Startup.io • Warm Lead', href: '/dashboard/leads/2' },
-  { id: '3', type: 'lead', title: 'Emma Davis', subtitle: 'Creative Agency • Cold Lead', href: '/dashboard/leads/3' },
-  { id: '4', type: 'conversation', title: 'Sarah Johnson', subtitle: 'Last message: That sounds great!', href: '/dashboard/conversations' },
-  { id: '5', type: 'appointment', title: 'Discovery Call - Sarah Johnson', subtitle: 'Tomorrow at 10:00 AM', href: '/dashboard/calendar' },
-  { id: '6', type: 'campaign', title: 'Summer Sale 2024', subtitle: 'Meta Ads • Active', href: '/dashboard/campaigns' },
-]
-
 interface SearchModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-export function SearchModal({ isOpen, onClose }: SearchModalProps) {
+export function SearchModal({ isOpen, onClose }: SearchModalProps): JSX.Element | null {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const router = useRouter()
 
+  // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus()
       setQuery('')
       setResults([])
       setSelectedIndex(0)
+      setIsLoading(false)
+    } else {
+      // Clean up on close
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (abortRef.current) abortRef.current.abort()
     }
   }, [isOpen])
 
-  useEffect(() => {
-    if (query.trim()) {
-      // Filter mock results - in real app this would be an API call
-      const filtered = mockResults.filter(
-        r => r.title.toLowerCase().includes(query.toLowerCase()) ||
-             r.subtitle.toLowerCase().includes(query.toLowerCase())
-      )
-      setResults(filtered)
-      setSelectedIndex(0)
-    } else {
-      setResults([])
-    }
-  }, [query])
+  const fetchResults = useCallback(async (searchQuery: string): Promise<void> => {
+    // Abort any in-flight request
+    if (abortRef.current) abortRef.current.abort()
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setResults([])
+      setIsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    setIsLoading(true)
+
+    try {
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery.trim())}`,
+        { signal: controller.signal }
+      )
+
+      if (!res.ok) {
+        setResults([])
+        return
+      }
+
+      const data = await res.json()
+      setResults(data.results || [])
+      setSelectedIndex(0)
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      setResults([])
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsLoading(false)
+      }
+    }
+  }, [])
+
+  // Debounced search on query change
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    if (!query.trim() || query.trim().length < 2) {
+      setResults([])
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    debounceRef.current = setTimeout(() => {
+      fetchResults(query)
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [query, fetchResults])
+
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setSelectedIndex(i => Math.min(i + 1, results.length - 1))
@@ -81,10 +123,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }
 
-  const getIcon = (type: string) => {
+  const getIcon = (type: string): typeof User => {
     switch (type) {
       case 'lead': return User
-      case 'conversation': return MessageSquare
       case 'appointment': return Calendar
       case 'campaign': return FileText
       default: return User
@@ -103,14 +144,18 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* Search Input */}
           <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-            <Search className="w-5 h-5 text-gray-400" />
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 text-impact animate-spin" />
+            ) : (
+              <Search className="w-5 h-5 text-gray-400" />
+            )}
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search leads, conversations, campaigns..."
+              placeholder="Search leads, appointments, campaigns..."
               className="flex-1 text-lg outline-none placeholder:text-gray-400"
             />
             <button
@@ -123,14 +168,19 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
           {/* Results */}
           <div className="max-h-[400px] overflow-y-auto">
-            {query.trim() === '' ? (
+            {query.trim().length < 2 ? (
               <div className="p-8 text-center text-gray-400">
                 <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Start typing to search...</p>
               </div>
+            ) : isLoading && results.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <Loader2 className="w-12 h-12 mx-auto mb-3 animate-spin opacity-50" />
+                <p>Searching...</p>
+              </div>
             ) : results.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
-                <p>No results found for "{query}"</p>
+                <p>No results found for &ldquo;{query}&rdquo;</p>
               </div>
             ) : (
               <div className="p-2">
@@ -170,12 +220,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           <div className="p-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-400">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">↑</kbd>
-                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">↓</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">&uarr;</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">&darr;</kbd>
                 to navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">↵</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">&crarr;</kbd>
                 to select
               </span>
             </div>

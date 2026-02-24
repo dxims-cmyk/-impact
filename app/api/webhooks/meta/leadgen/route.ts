@@ -61,13 +61,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const { leadgen_id, page_id, form_id, adgroup_id, ad_id, created_time } = change.value
 
       try {
-        // Find the Meta integration by page_id stored in metadata, or fall back to any connected Meta integration
-        const { data: integration } = await supabase
+        // Find the Meta integration by page_id in metadata, then fall back to account_id match
+        let integration: Record<string, unknown> | null = null
+
+        // Try matching by page_id stored in integration metadata
+        const { data: byPage } = await supabase
           .from('integrations')
           .select('*')
           .eq('provider', 'meta_ads')
           .eq('status', 'connected')
+          .contains('metadata', { page_id: page_id || pageId })
           .single()
+
+        if (byPage) {
+          integration = byPage
+        } else {
+          // Fall back: if only one connected Meta integration, use it
+          const { data: allMeta } = await supabase
+            .from('integrations')
+            .select('*')
+            .eq('provider', 'meta_ads')
+            .eq('status', 'connected')
+
+          if (allMeta && allMeta.length === 1) {
+            integration = allMeta[0]
+          } else if (allMeta && allMeta.length > 1) {
+            console.error('Meta webhook: multiple integrations found, cannot determine org for page', page_id || pageId)
+            continue
+          }
+        }
 
         if (!integration) {
           console.error('Meta webhook: no connected Meta integration found')

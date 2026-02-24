@@ -6,13 +6,11 @@ import {
   Building2,
   Bell,
   Lock,
-  Palette,
   Globe,
   CreditCard,
   Users,
   Mail,
   Phone,
-  Camera,
   Save,
   ChevronRight,
   Shield,
@@ -47,7 +45,6 @@ const tabs = [
   { id: 'team', name: 'Team', icon: Users },
   { id: 'notifications', name: 'Notifications', icon: Bell },
   { id: 'security', name: 'Security', icon: Lock },
-  { id: 'branding', name: 'Branding', icon: Palette },
 ]
 
 const defaultNotificationSettings = [
@@ -305,13 +302,6 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-2xl bg-camel/20 flex items-center justify-center text-2xl font-semibold text-camel">
                       {user?.full_name ? getInitials(user.full_name) : 'U'}
-                    </div>
-                    <div>
-                      <button className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed flex items-center gap-2" title="Coming Soon" disabled>
-                        <Camera className="w-4 h-4" />
-                        Change Photo
-                      </button>
-                      <p className="text-xs text-navy/40 mt-1">JPG, PNG. Max 2MB</p>
                     </div>
                   </div>
 
@@ -730,9 +720,9 @@ export default function SettingsPage() {
                       <p className="text-sm text-navy/50">Add an extra layer of security</p>
                     </div>
                   </div>
-                  <button className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                    Enable 2FA
-                  </button>
+                  <span className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40">
+                    Coming Soon
+                  </span>
                 </div>
               </div>
 
@@ -747,66 +737,10 @@ export default function SettingsPage() {
                       <p className="text-sm text-navy/50">Manage your API access tokens</p>
                     </div>
                   </div>
-                  <button className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                    Manage Keys
-                  </button>
+                  <span className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40">
+                    Coming Soon
+                  </span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'branding' && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-navy mb-1">White Label Settings</h2>
-                <p className="text-sm text-navy/50">Customize the portal for your clients</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-navy mb-1.5">Logo</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                      <Camera className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <button className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                      Upload Logo
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-navy mb-1.5">Primary Color</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      defaultValue="#6E0F1A"
-                      className="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      defaultValue="#6E0F1A"
-                      className="w-32 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-navy mb-1.5">Custom Domain</label>
-                  <input
-                    type="text"
-                    placeholder="portal.yourdomain.com"
-                    className="w-full max-w-md px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
-                  />
-                  <p className="text-xs text-navy/40 mt-1">Point your CNAME record to portal.impactengine.io</p>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-gray-100">
-                <button className="btn-primary flex items-center gap-2 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </button>
               </div>
             </div>
           )}

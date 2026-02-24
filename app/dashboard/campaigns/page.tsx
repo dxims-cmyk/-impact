@@ -20,7 +20,6 @@ import {
   RefreshCw,
   Trash2,
   ChevronDown,
-  Calendar,
   ArrowUpDown,
   Loader2,
 } from 'lucide-react'
@@ -410,12 +409,6 @@ export default function CampaignsPage() {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
 
-          {/* Date Range */}
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy/40 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-            <Calendar className="w-4 h-4" />
-            Last 30 Days
-            <ChevronDown className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Bulk Actions */}

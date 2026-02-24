@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from '@/lib/hooks'
+import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment, useLeads } from '@/lib/hooks'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Appointment } from '@/types/database'
@@ -44,6 +44,7 @@ export default function CalendarPage(): JSX.Element {
   const [newStartTime, setNewStartTime] = useState('09:00')
   const [newEndTime, setNewEndTime] = useState('09:30')
   const [newDescription, setNewDescription] = useState('')
+  const [newLeadId, setNewLeadId] = useState('')
 
   // Get date range for query based on view
   const dateRange = useMemo(() => {
@@ -64,6 +65,10 @@ export default function CalendarPage(): JSX.Element {
     end.setDate(end.getDate() + 7)
     return { start, end }
   }, [currentDate, view])
+
+  // Fetch leads for appointment creation
+  const { data: leadsData } = useLeads({ limit: 200 })
+  const availableLeads = leadsData?.leads || []
 
   // Fetch appointments
   const { data: appointmentsData, isLoading, isFetching, refetch } = useAppointments({
@@ -180,6 +185,7 @@ export default function CalendarPage(): JSX.Element {
         description: newDescription || undefined,
         startTime: new Date(`${newDate}T${newStartTime}:00`).toISOString(),
         endTime: new Date(`${newDate}T${newEndTime}:00`).toISOString(),
+        leadId: newLeadId || undefined,
       })
       toast.success('Appointment created')
       setShowNewModal(false)
@@ -188,6 +194,7 @@ export default function CalendarPage(): JSX.Element {
       setNewStartTime('09:00')
       setNewEndTime('09:30')
       setNewDescription('')
+      setNewLeadId('')
       refetch()
     } catch {
       toast.error('Failed to create appointment')
@@ -663,6 +670,23 @@ export default function CalendarPage(): JSX.Element {
                 placeholder="e.g. Discovery Call"
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-navy/70 mb-1">Lead (optional)</label>
+              <select
+                value={newLeadId}
+                onChange={(e) => setNewLeadId(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+              >
+                <option value="">No lead linked</option>
+                {availableLeads.map((lead: any) => (
+                  <option key={lead.id} value={lead.id}>
+                    {[lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email || 'Unnamed'}
+                    {lead.company ? ` — ${lead.company}` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

@@ -246,7 +246,8 @@ export default function FormsSettingsPage() {
 
   // ---------- Embed code ----------
 
-  const embedCode = `<script src="https://impact-full.vercel.app/api/embed/form?org=${encodeURIComponent(orgSlug)}&accent=${encodeURIComponent(config.appearance.accentColor)}&title=${encodeURIComponent(config.appearance.title)}&subtitle=${encodeURIComponent(config.appearance.subtitle)}&btn=${encodeURIComponent(config.appearance.submitButtonText)}"></script>`
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''
+  const embedCode = `<script src="${baseUrl}/api/embed/form?org=${encodeURIComponent(orgSlug)}&accent=${encodeURIComponent(config.appearance.accentColor)}&title=${encodeURIComponent(config.appearance.title)}&subtitle=${encodeURIComponent(config.appearance.subtitle)}&btn=${encodeURIComponent(config.appearance.submitButtonText)}"></script>`
 
   const handleCopyEmbed = async () => {
     try {

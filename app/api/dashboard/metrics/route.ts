@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
   // Get previous week ad performance
   const { data: prevAdPerf } = await supabase
     .from('ad_performance')
-    .select('spend, leads')
+    .select('spend, leads, revenue')
     .eq('organization_id', orgId)
     .gte('date', twoWeeksAgo.toISOString().split('T')[0])
     .lt('date', weekAgo.toISOString().split('T')[0])
@@ -80,6 +80,9 @@ export async function GET(request: NextRequest) {
 
   // Calculate ROAS
   const roas = currentSpend > 0 ? currentRevenue / currentSpend : 0
+  const prevRevenue = prevAdPerf?.reduce((sum, p) => sum + ((p as any).revenue || 0), 0) || 0
+  const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0
+  const roasChange = prevRoas > 0 ? ((roas - prevRoas) / prevRoas) * 100 : 0
 
   // Get booked appointments this week
   const { count: bookedCount } = await supabase
@@ -127,7 +130,7 @@ export async function GET(request: NextRequest) {
     booked: bookedCount || 0,
     bookedChange: Math.round(bookedChange),
     roas: Math.round(roas * 10) / 10,
-    roasChange: 0, // Would need additional calculation
+    roasChange: Math.round(roasChange),
     pipeline,
     recentLeads: recentLeads || [],
   })

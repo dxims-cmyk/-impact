@@ -21,6 +21,7 @@ import {
   Bell,
   Phone,
   Shield,
+  HelpCircle,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SearchModal } from '@/components/dashboard/search-modal'
@@ -41,6 +42,7 @@ const navigation = [
   { name: 'Automations', href: '/dashboard/automations', icon: Zap },
   { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Help', href: '/dashboard/help', icon: HelpCircle },
 ]
 
 export default function DashboardLayout({

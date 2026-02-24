@@ -19,6 +19,7 @@ import {
   Loader2,
   RefreshCw,
   Trash2,
+  Download,
 } from 'lucide-react'
 import { useLeads, useDeleteLead } from '@/lib/hooks'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -107,6 +108,7 @@ function LeadsPageContent() {
   const [sortField, setSortField] = useState(initialSort)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialOrder)
   const [showNewLeadModal, setShowNewLeadModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
@@ -210,6 +212,71 @@ function LeadsPageContent() {
     }
   }
 
+  const handleExport = async (): Promise<void> => {
+    setIsExporting(true)
+    try {
+      const params = new URLSearchParams()
+      params.set('limit', '10000')
+      if (stageFilter !== 'all') params.set('stage', stageFilter)
+      if (tempFilter !== 'all') params.set('temperature', tempFilter)
+      if (sourceFilter !== 'all') params.set('source', sourceFilter)
+      if (debouncedSearch) params.set('search', debouncedSearch)
+
+      const res = await fetch(`/api/leads?${params.toString()}`)
+      if (!res.ok) throw new Error('Failed to fetch leads')
+      const json = await res.json()
+      const allLeads: Lead[] = json.leads || []
+
+      if (allLeads.length === 0) {
+        toast.error('No leads to export')
+        return
+      }
+
+      const escapeCSV = (value: string | number | null | undefined): string => {
+        if (value === null || value === undefined) return ''
+        const str = String(value)
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }
+
+      const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Company', 'Stage', 'Score', 'Temperature', 'Source', 'AI Summary', 'Created At']
+      const rows = allLeads.map(lead => [
+        escapeCSV(lead.first_name),
+        escapeCSV(lead.last_name),
+        escapeCSV(lead.email),
+        escapeCSV(lead.phone),
+        escapeCSV(lead.company),
+        escapeCSV(lead.stage),
+        escapeCSV(lead.score),
+        escapeCSV(lead.temperature),
+        escapeCSV(lead.source),
+        escapeCSV(lead.ai_summary),
+        escapeCSV(lead.created_at),
+      ].join(','))
+
+      const csv = [headers.join(','), ...rows].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const date = new Date().toISOString().split('T')[0]
+      link.href = url
+      link.download = `leads-export-${date}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast.success('Leads exported')
+    } catch (error) {
+      console.error('Export failed:', error)
+      toast.error('Failed to export leads')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const getStageStyle = (stage: string) => {
     const styles: Record<string, string> = {
       new: 'bg-impact/10 text-impact',
@@ -248,6 +315,10 @@ function LeadsPageContent() {
             title="Refresh"
           >
             <RefreshCw className={`w-4 h-4 text-navy/60 ${isFetching ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={handleExport} disabled={isExporting} className="btn-secondary flex items-center gap-2">
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export
           </button>
           <button onClick={() => setShowNewLeadModal(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" />

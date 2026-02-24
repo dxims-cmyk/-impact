@@ -11,39 +11,31 @@ import {
   AlertCircle,
   CheckCheck,
   Settings,
-  Filter,
-  Trash2,
+  Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
+import {
+  useNotifications,
+  useMarkAllNotificationsRead,
+  useMarkNotificationsRead,
+} from '@/lib/hooks'
+import { formatRelativeTime } from '@/lib/utils'
 
-// TODO: Replace with real notifications from database
-// For now, showing empty state until notifications table is added
-interface Notification {
-  id: string
-  type: 'lead' | 'message' | 'appointment' | 'ai' | 'alert' | 'system'
-  title: string
-  description: string
-  time: string
-  read: boolean
-  href?: string
-}
-
-export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+export default function NotificationsPage(): JSX.Element {
+  const { data, isLoading } = useNotifications(50)
+  const markAllMutation = useMarkAllNotificationsRead()
+  const markReadMutation = useMarkNotificationsRead()
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
-  const filteredNotifications = filter === 'unread' 
-    ? notifications.filter(n => !n.read)
+  const notifications = data?.notifications ?? []
+  const unreadCount = data?.unreadCount ?? 0
+
+  const filteredNotifications = filter === 'unread'
+    ? notifications.filter(n => !n.is_read)
     : notifications
 
-  const unreadCount = notifications.filter(n => !n.read).length
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })))
-  }
-
-  const clearAll = () => {
-    setNotifications([])
+  const markAllAsRead = async (): Promise<void> => {
+    await markAllMutation.mutateAsync()
   }
 
   const getIcon = (type: string) => {
@@ -123,19 +115,15 @@ export default function NotificationsPage() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-sm font-medium text-impact hover:text-impact-light flex items-center gap-1"
+                disabled={markAllMutation.isPending}
+                className="text-sm font-medium text-impact hover:text-impact-light flex items-center gap-1 disabled:opacity-50"
               >
-                <CheckCheck className="w-4 h-4" />
+                {markAllMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-4 h-4" />
+                )}
                 Mark all read
-              </button>
-            )}
-            {notifications.length > 0 && (
-              <button
-                onClick={clearAll}
-                className="text-sm font-medium text-navy/50 hover:text-impact flex items-center gap-1 ml-4"
-              >
-                <Trash2 className="w-4 h-4" />
-                Clear all
               </button>
             )}
           </div>
@@ -143,14 +131,28 @@ export default function NotificationsPage() {
 
         {/* Notifications List */}
         <div className="divide-y divide-gray-50">
-          {filteredNotifications.length === 0 ? (
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="p-4 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gray-200 flex-shrink-0" />
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/3" />
+                    <div className="h-3 bg-gray-100 rounded w-2/3" />
+                    <div className="h-3 bg-gray-100 rounded w-1/4" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : filteredNotifications.length === 0 ? (
             <div className="p-12 text-center">
               <Bell className="w-16 h-16 mx-auto mb-4 text-gray-200" />
               <h3 className="text-lg font-semibold text-navy mb-2">
                 {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
               </h3>
               <p className="text-navy/50 max-w-sm mx-auto">
-                {filter === 'unread' 
+                {filter === 'unread'
                   ? "You're all caught up! Check back later for new updates."
                   : "When you receive leads, messages, or important updates, they'll appear here."
                 }
@@ -159,12 +161,18 @@ export default function NotificationsPage() {
           ) : (
             filteredNotifications.map((notification) => {
               const Icon = getIcon(notification.type)
+              const href = (notification.metadata as Record<string, unknown> | null)?.href as string | undefined
               return (
                 <Link
                   key={notification.id}
-                  href={notification.href || '#'}
+                  href={href || '#'}
+                  onClick={() => {
+                    if (!notification.is_read) {
+                      markReadMutation.mutate([notification.id])
+                    }
+                  }}
                   className={`block p-4 hover:bg-gray-50 transition-colors ${
-                    !notification.read ? 'bg-impact/5' : ''
+                    !notification.is_read ? 'bg-impact/5' : ''
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -173,15 +181,15 @@ export default function NotificationsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className={`font-semibold ${!notification.read ? 'text-navy' : 'text-navy/70'}`}>
+                        <p className={`font-semibold ${!notification.is_read ? 'text-navy' : 'text-navy/70'}`}>
                           {notification.title}
                         </p>
-                        {!notification.read && (
+                        {!notification.is_read && (
                           <span className="w-2 h-2 rounded-full bg-impact flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-sm text-navy/60">{notification.description}</p>
-                      <p className="text-xs text-navy/40 mt-2">{notification.time}</p>
+                      <p className="text-sm text-navy/60">{notification.body}</p>
+                      <p className="text-xs text-navy/40 mt-2">{formatRelativeTime(notification.created_at)}</p>
                     </div>
                   </div>
                 </Link>

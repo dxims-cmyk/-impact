@@ -131,6 +131,30 @@ export function useCampaignMetrics(dateRange?: { start: string; end: string }) {
   })
 }
 
+// Delete one or more campaigns
+export function useDeleteCampaigns() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch('/api/campaigns', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to delete campaigns')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] })
+      queryClient.invalidateQueries({ queryKey: ['campaign-metrics'] })
+    },
+  })
+}
+
 // Sync campaigns from all connected ad integrations
 export function useSyncCampaigns() {
   const queryClient = useQueryClient()

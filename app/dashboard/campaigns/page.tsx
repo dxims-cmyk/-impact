@@ -18,12 +18,13 @@ import {
   MoreHorizontal,
   ExternalLink,
   RefreshCw,
+  Trash2,
   ChevronDown,
   Calendar,
   ArrowUpDown,
   Loader2,
 } from 'lucide-react'
-import { useCampaigns, useCampaignMetrics, useSyncCampaigns } from '@/lib/hooks'
+import { useCampaigns, useCampaignMetrics, useSyncCampaigns, useDeleteCampaigns } from '@/lib/hooks'
 import { toast } from 'sonner'
 import { NewCampaignModal } from '@/components/dashboard/new-campaign-modal'
 import type { AdCampaign } from '@/types/database'
@@ -94,6 +95,7 @@ export default function CampaignsPage() {
   const { data: campaignsData, isLoading: campaignsLoading, refetch } = useCampaigns()
   const { data: metricsData, isLoading: metricsLoading } = useCampaignMetrics()
   const syncCampaigns = useSyncCampaigns()
+  const deleteCampaigns = useDeleteCampaigns()
 
   const campaigns = campaignsData?.campaigns || []
   const metrics = metricsData || { totalSpend: 0, totalImpressions: 0, totalClicks: 0, totalLeads: 0 }
@@ -146,6 +148,28 @@ export default function CampaignsPage() {
       refetch()
     } catch (error) {
       toast.error('Failed to sync campaigns')
+    }
+  }
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Delete campaign "${name}"? This cannot be undone.`)) return
+    try {
+      await deleteCampaigns.mutateAsync([id])
+      setSelectedCampaigns(prev => prev.filter(c => c !== id))
+      toast.success('Campaign deleted')
+    } catch {
+      toast.error('Failed to delete campaign')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedCampaigns.length} campaigns? This cannot be undone.`)) return
+    try {
+      await deleteCampaigns.mutateAsync(selectedCampaigns)
+      setSelectedCampaigns([])
+      toast.success(`${selectedCampaigns.length} campaigns deleted`)
+    } catch {
+      toast.error('Failed to delete campaigns')
     }
   }
 
@@ -398,14 +422,18 @@ export default function CampaignsPage() {
         {selectedCampaigns.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
             <span className="text-sm text-navy/60">{selectedCampaigns.length} selected</span>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Pause
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleteCampaigns.isPending}
+              className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+            >
+              {deleteCampaigns.isPending ? 'Deleting...' : 'Delete Selected'}
             </button>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Resume
-            </button>
-            <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-              Export
+            <button
+              onClick={() => setSelectedCampaigns([])}
+              className="text-sm font-medium text-navy/50 hover:text-navy"
+            >
+              Clear Selection
             </button>
           </div>
         )}
@@ -534,14 +562,13 @@ export default function CampaignsPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                          <BarChart3 className="w-4 h-4 text-navy/60" />
-                        </button>
-                        <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                          <ExternalLink className="w-4 h-4 text-navy/60" />
-                        </button>
-                        <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                          <MoreHorizontal className="w-4 h-4 text-navy/60" />
+                        <button
+                          onClick={() => handleDelete(campaign.id, campaign.name)}
+                          disabled={deleteCampaigns.isPending}
+                          className="p-2 rounded-lg hover:bg-red-50 text-navy/40 hover:text-red-600 transition-colors"
+                          title="Delete campaign"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

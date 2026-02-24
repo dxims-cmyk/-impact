@@ -228,3 +228,43 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ campaign }, { status: 201 })
 }
+
+// DELETE /api/campaigns - Delete one or more campaigns
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const supabase = createClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const ids: string[] = Array.isArray(body.ids) ? body.ids : body.id ? [body.id] : []
+
+  if (ids.length === 0) {
+    return NextResponse.json({ error: 'No campaign IDs provided' }, { status: 400 })
+  }
+
+  // Delete campaigns (cascade deletes ad_performance via FK, RLS ensures org isolation)
+  const { error: deleteError, count } = await supabase
+    .from('ad_campaigns')
+    .delete()
+    .in('id', ids)
+    .eq('organization_id', userData.organization_id)
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ deleted: count || ids.length })
+}

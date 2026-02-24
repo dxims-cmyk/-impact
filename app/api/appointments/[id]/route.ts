@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sendAppointmentStatusEmail } from '@/lib/integrations/resend'
 
 const updateAppointmentSchema = z.object({
   title: z.string().min(1).max(255).optional(),
@@ -108,6 +109,32 @@ export async function PATCH(
     })
   }
 
+  // Send email notification to prospect for confirmed/cancelled
+  if (
+    (validation.data.status === 'confirmed' || validation.data.status === 'cancelled') &&
+    appointment.lead?.email
+  ) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name, settings')
+      .eq('id', appointment.organization_id)
+      .single()
+
+    const orgSettings = org?.settings as { booking_link?: string } | null
+
+    sendAppointmentStatusEmail({
+      to: appointment.lead.email,
+      leadName: appointment.lead.first_name || 'there',
+      appointmentTitle: appointment.title,
+      eventType: validation.data.status as 'confirmed' | 'cancelled',
+      startTime: appointment.start_time,
+      endTime: appointment.end_time,
+      cancelReason: validation.data.cancel_reason,
+      orgName: org?.name || 'Our team',
+      bookingLink: orgSettings?.booking_link,
+    }).catch((err: unknown) => console.error('Failed to send appointment status email:', err))
+  }
+
   return NextResponse.json(appointment)
 }
 
@@ -123,6 +150,38 @@ export async function DELETE(
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Fetch appointment with lead data before deleting (for email notification)
+  const { data: appointment } = await supabase
+    .from('appointments')
+    .select(`
+      *,
+      lead:leads(id, first_name, last_name, email)
+    `)
+    .eq('id', id)
+    .single()
+
+  // Send deletion email to prospect if lead has email
+  if (appointment?.lead?.email) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name, settings')
+      .eq('id', appointment.organization_id)
+      .single()
+
+    const orgSettings = org?.settings as { booking_link?: string } | null
+
+    sendAppointmentStatusEmail({
+      to: appointment.lead.email,
+      leadName: appointment.lead.first_name || 'there',
+      appointmentTitle: appointment.title,
+      eventType: 'deleted',
+      startTime: appointment.start_time,
+      endTime: appointment.end_time,
+      orgName: org?.name || 'Our team',
+      bookingLink: orgSettings?.booking_link,
+    }).catch((err: unknown) => console.error('Failed to send appointment deletion email:', err))
   }
 
   const { error } = await supabase

@@ -208,6 +208,167 @@ function generateWeeklyReportEmail(data: Record<string, unknown>): string {
   `
 }
 
+// --- Appointment Status Emails (to prospects) ---
+
+export interface AppointmentStatusEmailOptions {
+  to: string
+  leadName: string
+  appointmentTitle: string
+  eventType: 'confirmed' | 'cancelled' | 'rescheduled' | 'deleted'
+  startTime?: string
+  endTime?: string
+  newStartTime?: string
+  newEndTime?: string
+  cancelReason?: string
+  orgName: string
+  bookingLink?: string
+}
+
+export async function sendAppointmentStatusEmail(options: AppointmentStatusEmailOptions): Promise<void> {
+  const { to, leadName, appointmentTitle, eventType, orgName } = options
+
+  const subjectMap: Record<typeof eventType, string> = {
+    confirmed: `Confirmed: ${appointmentTitle}`,
+    cancelled: `Cancelled: ${appointmentTitle}`,
+    rescheduled: `Rescheduled: ${appointmentTitle}`,
+    deleted: `Cancelled: ${appointmentTitle}`,
+  }
+
+  const html = generateAppointmentStatusEmail(options)
+
+  await sendEmail({
+    to,
+    subject: subjectMap[eventType],
+    html,
+    tags: [
+      { name: 'type', value: 'appointment_status' },
+      { name: 'event', value: eventType },
+    ],
+  })
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function generateAppointmentStatusEmail(options: AppointmentStatusEmailOptions): string {
+  const {
+    leadName,
+    appointmentTitle,
+    eventType,
+    startTime,
+    endTime,
+    newStartTime,
+    newEndTime,
+    cancelReason,
+    orgName,
+    bookingLink,
+  } = options
+
+  const accentColors: Record<typeof eventType, string> = {
+    confirmed: '#22c55e',
+    cancelled: '#ef4444',
+    rescheduled: '#f59e0b',
+    deleted: '#ef4444',
+  }
+
+  const accent = accentColors[eventType]
+
+  const statusLabels: Record<typeof eventType, string> = {
+    confirmed: 'Confirmed',
+    cancelled: 'Cancelled',
+    rescheduled: 'Rescheduled',
+    deleted: 'Cancelled',
+  }
+
+  const messageMap: Record<typeof eventType, string> = {
+    confirmed: `Your appointment has been confirmed. We look forward to speaking with you.`,
+    cancelled: `Your appointment has been cancelled.${cancelReason ? ` Reason: ${cancelReason}` : ''}`,
+    rescheduled: `Your appointment has been rescheduled to a new time.`,
+    deleted: `Your appointment has been cancelled.${cancelReason ? ` Reason: ${cancelReason}` : ''}`,
+  }
+
+  // Time display
+  let timeHtml = ''
+  if (eventType === 'rescheduled' && startTime && newStartTime) {
+    timeHtml = `
+      <div style="margin: 20px 0; padding: 16px; background: #fefce8; border-radius: 8px;">
+        <p style="margin: 0 0 8px; color: #92400e; font-size: 13px; text-transform: uppercase; font-weight: 600;">Previous Time</p>
+        <p style="margin: 0; text-decoration: line-through; color: #9ca3af;">${formatDateTime(startTime)}</p>
+        <p style="margin: 16px 0 8px; color: #92400e; font-size: 13px; text-transform: uppercase; font-weight: 600;">New Time</p>
+        <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 16px;">${formatDateTime(newStartTime)}</p>
+      </div>
+    `
+  } else if (startTime && (eventType === 'confirmed' || eventType === 'cancelled' || eventType === 'deleted')) {
+    timeHtml = `
+      <div style="margin: 20px 0; padding: 16px; background: #f9fafb; border-radius: 8px; text-align: center;">
+        <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 16px;">${formatDateTime(startTime)}</p>
+      </div>
+    `
+  }
+
+  // CTA for cancelled/deleted with booking link
+  let ctaHtml = ''
+  if ((eventType === 'cancelled' || eventType === 'deleted') && bookingLink) {
+    ctaHtml = `
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${bookingLink}" style="display: inline-block; background: ${accent}; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Book Again</a>
+      </div>
+    `
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: #0C1220; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center;">
+          <img src="https://impact-full.vercel.app/ampm-header-logo.png" alt="AM:PM Media" style="height: 40px;" />
+        </div>
+
+        <!-- Status Badge -->
+        <div style="background: ${accent}; padding: 12px; text-align: center;">
+          <span style="color: white; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+            Appointment ${statusLabels[eventType]}
+          </span>
+        </div>
+
+        <!-- Card -->
+        <div style="background: white; padding: 30px; border-radius: 0 0 12px 12px;">
+          <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Hi ${leadName},</p>
+          <p style="margin: 0 0 20px; color: #374151; font-size: 15px; line-height: 1.6;">${messageMap[eventType]}</p>
+
+          <div style="border-left: 3px solid ${accent}; padding-left: 16px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: 600; color: #1f2937; font-size: 16px;">${appointmentTitle}</p>
+            <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">with ${orgName}</p>
+          </div>
+
+          ${timeHtml}
+          ${ctaHtml}
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+          <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+            This is an automated message from ${orgName} via AM:PM Media.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+}
+
 function generateAppointmentReminderEmail(data: Record<string, unknown>): string {
   return `
     <!DOCTYPE html>

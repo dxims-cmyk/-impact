@@ -114,8 +114,8 @@ export async function PATCH(
     (validation.data.status === 'confirmed' || validation.data.status === 'cancelled') &&
     appointment.lead?.email
   ) {
-    const { data: org } = await supabase
-      .from('organizations')
+    const { data: org } = await (supabase
+      .from('organizations') as any)
       .select('name, settings')
       .eq('id', appointment.organization_id)
       .single()
@@ -153,8 +153,8 @@ export async function DELETE(
   }
 
   // Fetch appointment with lead data before deleting (for email notification)
-  const { data: appointment } = await supabase
-    .from('appointments')
+  const { data: appointment } = await (supabase
+    .from('appointments') as any)
     .select(`
       *,
       lead:leads(id, first_name, last_name, email)
@@ -164,8 +164,8 @@ export async function DELETE(
 
   // Send deletion email to prospect if lead has email
   if (appointment?.lead?.email) {
-    const { data: org } = await supabase
-      .from('organizations')
+    const { data: org } = await (supabase
+      .from('organizations') as any)
       .select('name, settings')
       .eq('id', appointment.organization_id)
       .single()

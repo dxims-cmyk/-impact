@@ -14,8 +14,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // Admin check
-  const { data: userData } = await supabase
-    .from('users')
+  const { data: userData } = await (supabase
+    .from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -26,8 +26,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Fetch all orgs with their owners
   const admin = createAdminClient()
-  const { data: orgs, error } = await admin
-    .from('organizations')
+  const { data: orgs, error } = await (admin
+    .from('organizations') as any)
     .select('id, name, slug, subscription_tier, subscription_status, created_at, settings')
     .order('created_at', { ascending: false })
 
@@ -36,16 +36,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // Get users for each org
-  const orgIds = orgs?.map(o => o.id) || []
-  const { data: users } = await admin
-    .from('users')
+  const orgIds = (orgs || []).map((o: any) => o.id)
+  const { data: users } = await (admin
+    .from('users') as any)
     .select('id, email, full_name, role, organization_id, created_at')
     .in('organization_id', orgIds)
 
   // Combine
-  const enriched = (orgs || []).map(org => ({
+  const enriched = (orgs || []).map((org: any) => ({
     ...org,
-    users: (users || []).filter(u => u.organization_id === org.id),
+    users: (users || []).filter((u: any) => u.organization_id === org.id),
   }))
 
   return NextResponse.json(enriched)
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Admin check
-  const { data: userData } = await supabase
-    .from('users')
+  const { data: userData } = await (supabase
+    .from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -131,8 +131,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 2. Create organization
     const slug = slugify(businessName)
-    const { data: org, error: orgError } = await admin
-      .from('organizations')
+    const { data: org, error: orgError } = await (admin
+      .from('organizations') as any)
       .insert({
         name: businessName,
         slug: `${slug}-${Date.now().toString(36)}`,
@@ -151,8 +151,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // 3. Create user row linked to org
-    const { error: userError } = await admin
-      .from('users')
+    const { error: userError } = await (admin
+      .from('users') as any)
       .insert({
         id: authData.user.id,
         email,

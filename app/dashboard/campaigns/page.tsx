@@ -5,8 +5,6 @@ import {
   Search,
   Filter,
   Plus,
-  TrendingUp,
-  TrendingDown,
   DollarSign,
   Users,
   Target,
@@ -260,14 +258,7 @@ export default function CampaignsPage() {
             <div className="w-10 h-10 rounded-xl bg-impact/10 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-impact" />
             </div>
-            {isLoading ? (
-              <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />
-            ) : (
-              <div className="flex items-center gap-1 text-sm font-medium text-studio">
-                <TrendingUp className="w-4 h-4" />
-                12%
-              </div>
-            )}
+            {isLoading && <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />}
           </div>
           {isLoading ? (
             <div className="w-24 h-7 bg-gray-200 animate-pulse rounded mb-1" />
@@ -282,14 +273,7 @@ export default function CampaignsPage() {
             <div className="w-10 h-10 rounded-xl bg-vision/10 flex items-center justify-center">
               <Eye className="w-5 h-5 text-vision" />
             </div>
-            {isLoading ? (
-              <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />
-            ) : (
-              <div className="flex items-center gap-1 text-sm font-medium text-studio">
-                <TrendingUp className="w-4 h-4" />
-                8%
-              </div>
-            )}
+            {isLoading && <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />}
           </div>
           {isLoading ? (
             <div className="w-20 h-7 bg-gray-200 animate-pulse rounded mb-1" />
@@ -304,14 +288,7 @@ export default function CampaignsPage() {
             <div className="w-10 h-10 rounded-xl bg-camel/10 flex items-center justify-center">
               <MousePointer className="w-5 h-5 text-camel" />
             </div>
-            {isLoading ? (
-              <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />
-            ) : (
-              <div className="flex items-center gap-1 text-sm font-medium text-studio">
-                <TrendingUp className="w-4 h-4" />
-                5%
-              </div>
-            )}
+            {isLoading && <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />}
           </div>
           {isLoading ? (
             <div className="w-16 h-7 bg-gray-200 animate-pulse rounded mb-1" />
@@ -326,14 +303,7 @@ export default function CampaignsPage() {
             <div className="w-10 h-10 rounded-xl bg-studio/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-studio" />
             </div>
-            {isLoading ? (
-              <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />
-            ) : (
-              <div className="flex items-center gap-1 text-sm font-medium text-studio">
-                <TrendingUp className="w-4 h-4" />
-                18%
-              </div>
-            )}
+            {isLoading && <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />}
           </div>
           {isLoading ? (
             <div className="w-12 h-7 bg-gray-200 animate-pulse rounded mb-1" />
@@ -348,14 +318,7 @@ export default function CampaignsPage() {
             <div className="w-10 h-10 rounded-xl bg-impact/10 flex items-center justify-center">
               <Target className="w-5 h-5 text-impact" />
             </div>
-            {isLoading ? (
-              <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />
-            ) : (
-              <div className="flex items-center gap-1 text-sm font-medium text-impact">
-                <TrendingDown className="w-4 h-4" />
-                -8%
-              </div>
-            )}
+            {isLoading && <div className="w-12 h-4 bg-gray-200 animate-pulse rounded" />}
           </div>
           {isLoading ? (
             <div className="w-20 h-7 bg-gray-200 animate-pulse rounded mb-1" />

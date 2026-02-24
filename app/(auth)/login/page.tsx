@@ -167,7 +167,7 @@ function LoginForm() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 space-y-2">
+        <div className="text-center mt-6">
           <Link href="/forgot-password" className="text-sm text-ivory/50 hover:text-ivory/70 transition-colors">
             Forgot your password?
           </Link>

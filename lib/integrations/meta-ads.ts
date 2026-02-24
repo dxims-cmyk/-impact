@@ -1,4 +1,5 @@
 // lib/integrations/meta-ads.ts
+import crypto from 'crypto'
 
 const META_API_VERSION = 'v18.0'
 const META_BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`
@@ -295,7 +296,6 @@ export function verifyMetaSignature(
   payload: string,
   signature: string
 ): boolean {
-  const crypto = require('crypto')
   const expectedSig = crypto
     .createHmac('sha256', process.env.META_APP_SECRET!)
     .update(payload)

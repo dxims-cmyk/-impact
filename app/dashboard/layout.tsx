@@ -17,7 +17,6 @@ import {
   Plug,
   LogOut,
   Zap,
-  ChevronDown,
   Search,
   Bell,
   Phone,
@@ -54,7 +53,6 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [orgMenuOpen, setOrgMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [newLeadOpen, setNewLeadOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -132,26 +130,17 @@ export default function DashboardLayout({
           </Link>
         </div>
 
-        {/* Organization Selector */}
+        {/* Organization */}
         <div className="px-4 py-4 border-b border-ivory/10">
-          <button
-            onClick={() => setOrgMenuOpen(!orgMenuOpen)}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-navy-light hover:bg-navy-light/80 transition-all duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-impact rounded-lg flex items-center justify-center text-sm font-semibold text-ivory">
-                {userLoading ? '...' : orgInitials}
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-ivory">{userLoading ? 'Loading...' : orgName}</p>
-                <p className="text-xs text-ivory/50">{tierLabels[subscriptionTier]}</p>
-              </div>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <div className="w-9 h-9 bg-impact rounded-lg flex items-center justify-center text-sm font-semibold text-ivory">
+              {userLoading ? '...' : orgInitials}
             </div>
-            <ChevronDown className={cn(
-              "w-4 h-4 text-ivory/50 transition-transform duration-200",
-              orgMenuOpen && "rotate-180"
-            )} />
-          </button>
+            <div>
+              <p className="text-sm font-semibold text-ivory">{userLoading ? 'Loading...' : orgName}</p>
+              <p className="text-xs text-ivory/50">{tierLabels[subscriptionTier]}</p>
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}

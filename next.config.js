@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
+    // TODO: Remove after regenerating Supabase types to match actual schema
     ignoreBuildErrors: true,
   },
   eslint: {

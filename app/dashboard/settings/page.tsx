@@ -7,19 +7,12 @@ import {
   Bell,
   Lock,
   Globe,
-  CreditCard,
   Users,
   Mail,
   Phone,
   Save,
   ChevronRight,
-  Shield,
-  Key,
   Smartphone,
-  Moon,
-  Sun,
-  Check,
-  AlertCircle,
   Loader2,
   X,
   Trash2,
@@ -709,115 +702,9 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-studio/10 flex items-center justify-center">
-                      <Shield className="w-6 h-6 text-studio" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-navy">Two-Factor Authentication</h3>
-                      <p className="text-sm text-navy/50">Add an extra layer of security</p>
-                    </div>
-                  </div>
-                  <span className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40">
-                    Coming Soon
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-navy/5 flex items-center justify-center">
-                      <Key className="w-6 h-6 text-navy/60" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-navy">API Keys</h3>
-                      <p className="text-sm text-navy/50">Manage your API access tokens</p>
-                    </div>
-                  </div>
-                  <span className="px-4 py-2 rounded-xl bg-navy/5 text-sm font-medium text-navy/40">
-                    Coming Soon
-                  </span>
-                </div>
-              </div>
             </div>
           )}
 
-          {activeTab === 'billing' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-lg font-semibold text-navy mb-1">Current Plan</h2>
-                    <p className="text-sm text-navy/50">
-                      You're on the {organization?.subscription_tier || 'Launch'} plan
-                    </p>
-                  </div>
-                  <button className="btn-primary opacity-50 cursor-not-allowed" title="Coming Soon" disabled>Upgrade Plan</button>
-                </div>
-
-                <div className="p-4 rounded-xl bg-impact/5 border border-impact/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-navy">{organization?.subscription_tier || 'Launch'} Plan</span>
-                    <span className="text-2xl font-bold text-navy">£297<span className="text-sm font-normal text-navy/50">/mo</span></span>
-                  </div>
-                  <div className="text-sm text-navy/60 space-y-1">
-                    <p className="flex items-center gap-2"><Check className="w-4 h-4 text-studio" /> Up to 1,000 leads/month</p>
-                    <p className="flex items-center gap-2"><Check className="w-4 h-4 text-studio" /> Unlimited team members</p>
-                    <p className="flex items-center gap-2"><Check className="w-4 h-4 text-studio" /> AI lead qualification</p>
-                    <p className="flex items-center gap-2"><Check className="w-4 h-4 text-studio" /> All integrations</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="font-semibold text-navy mb-4">Payment Method</h3>
-                <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-8 rounded bg-navy/10 flex items-center justify-center text-xs font-bold text-navy">
-                      VISA
-                    </div>
-                    <div>
-                      <p className="font-medium text-navy">•••• •••• •••• 4242</p>
-                      <p className="text-sm text-navy/50">Expires 12/25</p>
-                    </div>
-                  </div>
-                  <button className="text-sm font-medium text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-                    Update
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="font-semibold text-navy mb-4">Billing History</h3>
-                <div className="space-y-2">
-                  {[
-                    { date: 'Jan 1, 2024', amount: '£297.00', status: 'Paid' },
-                    { date: 'Dec 1, 2023', amount: '£297.00', status: 'Paid' },
-                    { date: 'Nov 1, 2023', amount: '£297.00', status: 'Paid' },
-                  ].map((invoice, i) => (
-                    <div key={i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                      <div>
-                        <p className="font-medium text-navy text-sm">{invoice.date}</p>
-                        <p className="text-xs text-navy/50">{organization?.subscription_tier || 'Launch'} Plan - Monthly</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-medium text-navy">{invoice.amount}</span>
-                        <span className="px-2 py-0.5 rounded-full bg-studio/10 text-studio text-xs font-medium">
-                          {invoice.status}
-                        </span>
-                        <button className="text-sm text-navy/30 cursor-not-allowed" title="Coming Soon" disabled>
-                          Download
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

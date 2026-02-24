@@ -62,9 +62,10 @@ export async function exchangeCodeForTokens(code: string): Promise<MetaTokens> {
 
   const response = await fetch(`${META_BASE_URL}/oauth/access_token`, {
     method: 'POST',
-    body: params,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   })
-  
+
   if (!response.ok) {
     const error = await response.json()
     throw new Error(`Failed to exchange code: ${error.error?.message}`)
@@ -91,9 +92,10 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<MetaTo
 
   const response = await fetch(`${META_BASE_URL}/oauth/access_token`, {
     method: 'POST',
-    body: params,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   })
-  
+
   if (!response.ok) {
     const error = await response.json()
     throw new Error(`Failed to get long-lived token: ${error.error?.message}`)

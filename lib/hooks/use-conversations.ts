@@ -160,6 +160,9 @@ export function useGenerateAIReply() {
       }
       return res.json()
     },
+    onError: (error: Error) => {
+      console.error('Failed to generate AI reply:', error.message)
+    },
   })
 }
 

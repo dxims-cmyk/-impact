@@ -16,11 +16,27 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: report, error } = await supabase
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  let query = supabase
     .from('reports')
     .select('*')
     .eq('id', id)
-    .single()
+
+  if (!userData.is_agency_user) {
+    query = query.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: report, error } = await query.single()
 
   if (error) {
     if (error.code === 'PGRST116') {

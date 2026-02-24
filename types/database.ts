@@ -114,6 +114,8 @@ export interface Database {
           converted_at: string | null
           lost_at: string | null
           lost_reason: string | null
+          invoice_id: string | null
+          invoice_status: 'none' | 'draft' | 'sent' | 'viewed' | 'paid' | null
         }
         Insert: {
           id?: string
@@ -145,6 +147,8 @@ export interface Database {
           converted_at?: string | null
           lost_at?: string | null
           lost_reason?: string | null
+          invoice_id?: string | null
+          invoice_status?: 'none' | 'draft' | 'sent' | 'viewed' | 'paid' | null
         }
         Update: {
           id?: string
@@ -176,6 +180,8 @@ export interface Database {
           converted_at?: string | null
           lost_at?: string | null
           lost_reason?: string | null
+          invoice_id?: string | null
+          invoice_status?: 'none' | 'draft' | 'sent' | 'viewed' | 'paid' | null
         }
       }
       lead_activities: {
@@ -231,6 +237,8 @@ export interface Database {
           status: 'open' | 'closed' | 'snoozed'
           last_message_at: string | null
           unread_count: number
+          ai_handling: 'off' | 'active' | 'paused' | 'handed_off'
+          ai_message_count: number
           created_at: string
         }
         Insert: {
@@ -241,6 +249,8 @@ export interface Database {
           status?: 'open' | 'closed' | 'snoozed'
           last_message_at?: string | null
           unread_count?: number
+          ai_handling?: 'off' | 'active' | 'paused' | 'handed_off'
+          ai_message_count?: number
           created_at?: string
         }
         Update: {
@@ -251,6 +261,8 @@ export interface Database {
           status?: 'open' | 'closed' | 'snoozed'
           last_message_at?: string | null
           unread_count?: number
+          ai_handling?: 'off' | 'active' | 'paused' | 'handed_off'
+          ai_message_count?: number
           created_at?: string
         }
       }
@@ -364,7 +376,7 @@ export interface Database {
         Row: {
           id: string
           organization_id: string
-          provider: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat'
+          provider: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat' | 'xero' | 'vapi' | 'slack' | 'calcom' | 'zapier'
           status: 'pending' | 'connected' | 'error' | 'disconnected'
           access_token: string | null
           refresh_token: string | null
@@ -380,7 +392,7 @@ export interface Database {
         Insert: {
           id?: string
           organization_id: string
-          provider: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat'
+          provider: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat' | 'xero' | 'vapi' | 'slack' | 'calcom' | 'zapier'
           status?: 'pending' | 'connected' | 'error' | 'disconnected'
           access_token?: string | null
           refresh_token?: string | null
@@ -396,7 +408,7 @@ export interface Database {
         Update: {
           id?: string
           organization_id?: string
-          provider?: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat'
+          provider?: 'meta_ads' | 'google_ads' | 'tiktok_ads' | 'manychat' | 'xero' | 'vapi' | 'slack' | 'calcom' | 'zapier'
           status?: 'pending' | 'connected' | 'error' | 'disconnected'
           access_token?: string | null
           refresh_token?: string | null
@@ -572,6 +584,59 @@ export interface Database {
           created_at?: string
         }
       }
+      calls: {
+        Row: {
+          id: string
+          organization_id: string
+          lead_id: string | null
+          vapi_call_id: string
+          phone_number: string | null
+          caller_name: string | null
+          direction: 'inbound' | 'outbound'
+          duration_seconds: number | null
+          status: 'in_progress' | 'completed' | 'missed' | 'failed'
+          transcript: string | null
+          recording_url: string | null
+          summary: string | null
+          metadata: Json | null
+          created_at: string
+          ended_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          lead_id?: string | null
+          vapi_call_id: string
+          phone_number?: string | null
+          caller_name?: string | null
+          direction?: 'inbound' | 'outbound'
+          duration_seconds?: number | null
+          status?: 'in_progress' | 'completed' | 'missed' | 'failed'
+          transcript?: string | null
+          recording_url?: string | null
+          summary?: string | null
+          metadata?: Json | null
+          created_at?: string
+          ended_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          lead_id?: string | null
+          vapi_call_id?: string
+          phone_number?: string | null
+          caller_name?: string | null
+          direction?: 'inbound' | 'outbound'
+          duration_seconds?: number | null
+          status?: 'in_progress' | 'completed' | 'missed' | 'failed'
+          transcript?: string | null
+          recording_url?: string | null
+          summary?: string | null
+          metadata?: Json | null
+          created_at?: string
+          ended_at?: string | null
+        }
+      }
     }
   }
 }
@@ -589,6 +654,7 @@ export type AdCampaign = Database['public']['Tables']['ad_campaigns']['Row']
 export type AdPerformance = Database['public']['Tables']['ad_performance']['Row']
 export type Report = Database['public']['Tables']['reports']['Row']
 export type Notification = Database['public']['Tables']['notifications']['Row']
+export type Call = Database['public']['Tables']['calls']['Row']
 
 // Insert types
 export type LeadInsert = Database['public']['Tables']['leads']['Insert']

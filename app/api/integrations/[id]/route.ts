@@ -16,10 +16,22 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Get user's org for filtering
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
   const { data: integration, error } = await supabase
     .from('integrations')
     .select('id, provider, status, account_name, account_id, last_sync_at, sync_error, metadata, created_at')
     .eq('id', id)
+    .eq('organization_id', userData.organization_id)
     .single()
 
   if (error) {

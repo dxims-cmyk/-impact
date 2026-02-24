@@ -1,0 +1,42 @@
+// app/api/integrations/stripe/connect/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getConnectAuthUrl } from '@/lib/integrations/stripe'
+import crypto from 'crypto'
+
+// GET /api/integrations/stripe/connect - Redirect to Stripe Connect OAuth
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const supabase = createClient()
+
+  // Check auth
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id) {
+    return NextResponse.redirect(new URL('/dashboard/integrations?error=no_organization', request.url))
+  }
+
+  // Generate state token for CSRF protection
+  const state = crypto.randomBytes(32).toString('hex')
+
+  // Encode org_id in state (matches Meta OAuth pattern)
+  const statePayload = Buffer.from(JSON.stringify({
+    orgId: userData.organization_id,
+    token: state,
+    timestamp: Date.now(),
+  })).toString('base64')
+
+  // Redirect to Stripe Connect authorize URL
+  const authUrl = getConnectAuthUrl(statePayload)
+
+  return NextResponse.redirect(authUrl)
+}

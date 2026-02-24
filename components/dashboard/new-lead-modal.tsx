@@ -12,6 +12,7 @@ import {
   Tag,
   Sparkles,
   Loader2,
+  Send,
 } from 'lucide-react'
 
 interface NewLeadModalProps {
@@ -53,6 +54,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
     stage: 'new',
     notes: '',
     autoQualify: true,
+    sendWelcome: false,
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -75,6 +77,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
           phone: formData.phone || undefined,
           company: formData.company || undefined,
           source: formData.source,
+          send_welcome: formData.sendWelcome,
         }),
       })
 
@@ -97,6 +100,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
         stage: 'new',
         notes: '',
         autoQualify: true,
+        sendWelcome: false,
       })
 
       onClose()
@@ -308,6 +312,30 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
               >
                 <div className={`w-6 h-6 rounded-full bg-white shadow transition-transform ${
                   formData.autoQualify ? 'translate-x-5' : 'translate-x-0.5'
+                }`} />
+              </button>
+            </div>
+
+            {/* Send Welcome Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-navy/5 border border-navy/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-navy flex items-center justify-center">
+                  <Send className="w-5 h-5 text-ivory" />
+                </div>
+                <div>
+                  <p className="font-medium text-navy">Send Welcome Email</p>
+                  <p className="text-sm text-navy/50">Auto-contact the lead with an intro email</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, sendWelcome: !formData.sendWelcome })}
+                className={`w-12 h-7 rounded-full transition-colors ${
+                  formData.sendWelcome ? 'bg-impact' : 'bg-gray-200'
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                  formData.sendWelcome ? 'translate-x-5' : 'translate-x-0.5'
                 }`} />
               </button>
             </div>

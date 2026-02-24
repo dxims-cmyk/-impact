@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { syncMetaAdsData } from '@/lib/integrations/meta-ads'
 import { syncGoogleAdsData } from '@/lib/integrations/google-ads'
 import { syncTikTokAdsData } from '@/lib/integrations/tiktok-ads'
+import { decryptTokens } from '@/lib/encryption'
 
 // POST /api/integrations/[id]/sync - Manual sync
 export async function POST(
@@ -35,10 +36,20 @@ export async function POST(
   }
 
   try {
+    // Decrypt token from DB
+    let accessToken: string
+    try {
+      const decrypted = decryptTokens({ access_token: integration.access_token! })
+      accessToken = decrypted.access_token
+    } catch {
+      // Fallback for pre-encryption plaintext tokens
+      accessToken = integration.access_token!
+    }
+
     // Sync based on provider
     if (integration.provider === 'meta_ads') {
       await syncMetaAdsData(
-        integration.access_token!,
+        accessToken,
         integration.account_id!,
         integration.organization_id,
         integration.id,
@@ -46,7 +57,7 @@ export async function POST(
       )
     } else if (integration.provider === 'google_ads') {
       await syncGoogleAdsData(
-        integration.access_token!,
+        accessToken,
         integration.account_id!,
         integration.organization_id,
         integration.id,
@@ -54,7 +65,7 @@ export async function POST(
       )
     } else if (integration.provider === 'tiktok_ads') {
       await syncTikTokAdsData(
-        integration.access_token!,
+        accessToken,
         integration.account_id!,
         integration.organization_id,
         integration.id,

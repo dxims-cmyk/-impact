@@ -7,6 +7,16 @@ const updateConversationSchema = z.object({
   status: z.enum(['open', 'closed', 'snoozed']).optional(),
 })
 
+// Helper: get user's org
+async function getUserOrg(supabase: ReturnType<typeof createClient>, userId: string) {
+  const { data } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', userId)
+    .single()
+  return data
+}
+
 // GET /api/conversations/[id] - Get conversation with messages
 export async function GET(
   request: NextRequest,
@@ -21,8 +31,14 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get conversation with lead info and messages
-  const { data: conversation, error } = await supabase
+  // Get user's org
+  const userData = await getUserOrg(supabase, user.id)
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Get conversation with lead info and messages — filtered by org
+  let query = supabase
     .from('conversations')
     .select(`
       *,
@@ -30,7 +46,12 @@ export async function GET(
       messages(id, content, direction, status, is_ai_generated, ai_confidence, created_at, sent_at, delivered_at, read_at)
     `)
     .eq('id', id)
-    .single()
+
+  if (!userData.is_agency_user) {
+    query = query.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: conversation, error } = await query.single()
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -72,13 +93,23 @@ export async function PATCH(
     }, { status: 400 })
   }
 
-  // Update conversation
-  const { data: conversation, error } = await supabase
+  // Get user's org
+  const userData = await getUserOrg(supabase, user.id)
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Update conversation — filtered by org
+  let updateQuery = supabase
     .from('conversations')
     .update(validation.data)
     .eq('id', id)
-    .select()
-    .single()
+
+  if (!userData.is_agency_user) {
+    updateQuery = updateQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: conversation, error } = await updateQuery.select().single()
 
   if (error) {
     if (error.code === 'PGRST116') {

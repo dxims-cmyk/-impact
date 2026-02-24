@@ -2,6 +2,7 @@
 import { task, schedules, logger } from "@trigger.dev/sdk/v3"
 import { createAdminClient } from "@/lib/supabase/server"
 import { syncTikTokAdsData, refreshAccessToken } from "@/lib/integrations/tiktok-ads"
+import { decryptTokens, encryptTokens } from "@/lib/encryption"
 
 export const syncTikTokAdsTask = schedules.task({
   id: "sync-tiktok-ads",
@@ -40,10 +41,19 @@ export const syncTikTokAdsTask = schedules.task({
 
     for (const integration of integrations) {
       try {
-        // Check if token needs refresh
-        let accessToken = integration.access_token
+        // Decrypt tokens from DB
+        let accessToken: string
+        let refreshToken: string | undefined
+        try {
+          const decrypted = decryptTokens({ access_token: integration.access_token!, refresh_token: integration.refresh_token })
+          accessToken = decrypted.access_token
+          refreshToken = decrypted.refresh_token
+        } catch {
+          accessToken = integration.access_token!
+          refreshToken = integration.refresh_token || undefined
+        }
 
-        if (integration.refresh_token && integration.token_expires_at) {
+        if (refreshToken && integration.token_expires_at) {
           const expiresAt = new Date(integration.token_expires_at)
           const now = new Date()
 
@@ -51,15 +61,16 @@ export const syncTikTokAdsTask = schedules.task({
           if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
             logger.info("Refreshing token", { integrationId: integration.id })
 
-            const newTokens = await refreshAccessToken(integration.refresh_token)
+            const newTokens = await refreshAccessToken(refreshToken)
             accessToken = newTokens.access_token
 
-            // Update stored token
+            // Re-encrypt and update stored tokens
+            const encrypted = encryptTokens({ access_token: accessToken, refresh_token: newTokens.refresh_token })
             await supabase
               .from('integrations')
               .update({
-                access_token: accessToken,
-                refresh_token: newTokens.refresh_token,
+                access_token: encrypted.access_token,
+                refresh_token: encrypted.refresh_token,
                 token_expires_at: newTokens.expires_at?.toISOString()
               })
               .eq('id', integration.id)
@@ -68,7 +79,7 @@ export const syncTikTokAdsTask = schedules.task({
 
         // Sync data
         await syncTikTokAdsData(
-          accessToken!,
+          accessToken,
           integration.account_id!,
           integration.organization_id,
           integration.id,
@@ -144,24 +155,34 @@ export const manualSyncTikTokAdsTask = task({
     }
 
     try {
-      // Check if token needs refresh
-      let accessToken = integration.access_token
+      // Decrypt tokens from DB
+      let accessToken: string
+      let refreshToken: string | undefined
+      try {
+        const decrypted = decryptTokens({ access_token: integration.access_token!, refresh_token: integration.refresh_token })
+        accessToken = decrypted.access_token
+        refreshToken = decrypted.refresh_token
+      } catch {
+        accessToken = integration.access_token!
+        refreshToken = integration.refresh_token || undefined
+      }
 
-      if (integration.refresh_token && integration.token_expires_at) {
+      if (refreshToken && integration.token_expires_at) {
         const expiresAt = new Date(integration.token_expires_at)
         const now = new Date()
 
         if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
           logger.info("Refreshing token", { integrationId })
 
-          const newTokens = await refreshAccessToken(integration.refresh_token)
+          const newTokens = await refreshAccessToken(refreshToken)
           accessToken = newTokens.access_token
 
+          const encrypted = encryptTokens({ access_token: accessToken, refresh_token: newTokens.refresh_token })
           await supabase
             .from('integrations')
             .update({
-              access_token: accessToken,
-              refresh_token: newTokens.refresh_token,
+              access_token: encrypted.access_token,
+              refresh_token: encrypted.refresh_token,
               token_expires_at: newTokens.expires_at?.toISOString()
             })
             .eq('id', integrationId)
@@ -169,7 +190,7 @@ export const manualSyncTikTokAdsTask = task({
       }
 
       await syncTikTokAdsData(
-        accessToken!,
+        accessToken,
         integration.account_id!,
         integration.organization_id,
         integration.id,

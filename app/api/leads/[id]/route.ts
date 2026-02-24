@@ -18,6 +18,16 @@ const updateLeadSchema = z.object({
   lost_reason: z.string().optional(),
 })
 
+// Helper: get user's org
+async function getUserOrg(supabase: ReturnType<typeof createClient>, userId: string) {
+  const { data } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', userId)
+    .single()
+  return data
+}
+
 // GET /api/leads/[id] - Get single lead
 export async function GET(
   request: NextRequest,
@@ -32,12 +42,23 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get lead with assigned user info
-  const { data: lead, error } = await supabase
+  // Get user's org
+  const userData = await getUserOrg(supabase, user.id)
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Get lead with assigned user info — filtered by org
+  let query = supabase
     .from('leads')
     .select('*, assigned_user:users!assigned_to(id, full_name, avatar_url, email)')
     .eq('id', id)
-    .single()
+
+  if (!userData.is_agency_user) {
+    query = query.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: lead, error } = await query.single()
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -97,13 +118,23 @@ export async function PATCH(
     updates.lost_at = new Date().toISOString()
   }
 
-  // Update lead
-  const { data: lead, error } = await supabase
+  // Get user's org
+  const userData = await getUserOrg(supabase, user.id)
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Update lead — filtered by org
+  let updateQuery = supabase
     .from('leads')
     .update(updates)
     .eq('id', id)
-    .select()
-    .single()
+
+  if (!userData.is_agency_user) {
+    updateQuery = updateQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: lead, error } = await updateQuery.select().single()
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -140,11 +171,23 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Delete lead (RLS will handle permissions)
-  const { error } = await supabase
+  // Get user's org
+  const userData = await getUserOrg(supabase, user.id)
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  // Delete lead — filtered by org
+  let deleteQuery = supabase
     .from('leads')
     .delete()
     .eq('id', id)
+
+  if (!userData.is_agency_user) {
+    deleteQuery = deleteQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { error } = await deleteQuery
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

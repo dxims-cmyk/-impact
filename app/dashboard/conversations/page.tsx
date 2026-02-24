@@ -26,16 +26,19 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react'
-import { useConversations, useMessages, useSendMessage, useGenerateAIReply, useMarkAsRead } from '@/lib/hooks'
+import { useConversations, useMessages, useSendMessage, useGenerateAIReply, useMarkAsRead, useRealtime, useRealtimeMessages } from '@/lib/hooks'
+import type { ConversationFilters } from '@/lib/hooks/use-conversations'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Conversation, Message } from '@/types/database'
 
 const channels = [
-  { value: 'all', label: 'All Channels', icon: MessageSquare },
+  { value: 'all', label: 'All', icon: MessageSquare },
   { value: 'sms', label: 'SMS', icon: MessageSquare },
   { value: 'email', label: 'Email', icon: Mail },
   { value: 'whatsapp', label: 'WhatsApp', icon: Phone },
+  { value: 'instagram_dm', label: 'Instagram', icon: MessageSquare },
+  { value: 'messenger', label: 'Messenger', icon: MessageSquare },
 ]
 
 // Conversation list item skeleton
@@ -78,8 +81,8 @@ export default function ConversationsPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Fetch conversations
-  const { data: conversationsData, isLoading: conversationsLoading, refetch: refetchConversations } = useConversations({
-    channel: channelFilter !== 'all' ? channelFilter as 'email' | 'sms' | 'whatsapp' : undefined,
+  const { data: conversationsData, isLoading: conversationsLoading, isFetching: conversationsFetching, refetch: refetchConversations } = useConversations({
+    channel: channelFilter !== 'all' ? channelFilter as ConversationFilters['channel'] : undefined,
   })
   const conversations = conversationsData?.conversations || []
 
@@ -93,6 +96,9 @@ export default function ConversationsPage() {
   const sendMessage = useSendMessage()
   const generateAIReply = useGenerateAIReply()
   const markAsRead = useMarkAsRead()
+
+  // Realtime: auto-refresh when new messages arrive
+  useRealtimeMessages(selectedConversationId)
 
   // Filter conversations by search
   const filteredConversations = conversations.filter(conv => {
@@ -125,6 +131,8 @@ export default function ConversationsPage() {
       case 'sms': return MessageSquare
       case 'email': return Mail
       case 'whatsapp': return Phone
+      case 'instagram_dm': return MessageSquare
+      case 'messenger': return MessageSquare
       default: return MessageSquare
     }
   }
@@ -134,6 +142,8 @@ export default function ConversationsPage() {
       case 'sms': return 'bg-studio/10 text-studio'
       case 'email': return 'bg-vision/10 text-vision'
       case 'whatsapp': return 'bg-green-100 text-green-700'
+      case 'instagram_dm': return 'bg-pink-100 text-pink-700'
+      case 'messenger': return 'bg-blue-100 text-blue-700'
       default: return 'bg-gray-100 text-gray-600'
     }
   }
@@ -192,7 +202,7 @@ export default function ConversationsPage() {
               onClick={() => refetchConversations()}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <RefreshCw className={`w-4 h-4 text-navy/60 ${conversationsLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 text-navy/60 ${conversationsFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
@@ -209,20 +219,25 @@ export default function ConversationsPage() {
           </div>
 
           {/* Channel Filter */}
-          <div className="flex gap-2">
-            {channels.map((channel) => (
-              <button
-                key={channel.value}
-                onClick={() => setChannelFilter(channel.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  channelFilter === channel.value
-                    ? 'bg-impact text-ivory'
-                    : 'bg-gray-100 text-navy/60 hover:bg-gray-200'
-                }`}
-              >
-                {channel.label}
-              </button>
-            ))}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1 scroll-smooth">
+            {channels.map((ch) => {
+              const isActive = channelFilter === ch.value
+              const Icon = ch.icon
+              return (
+                <button
+                  key={ch.value}
+                  onClick={() => setChannelFilter(ch.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+                    isActive
+                      ? 'bg-impact text-ivory shadow-md scale-105'
+                      : 'bg-gray-100 text-navy/40 hover:bg-gray-200 hover:text-navy/60'
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  {ch.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -235,9 +250,12 @@ export default function ConversationsPage() {
               <ConversationSkeleton />
             </>
           ) : filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-navy/40">
-              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No conversations found</p>
+            <div className="p-6 text-center text-navy/40">
+              <div className="w-14 h-14 rounded-2xl bg-navy/5 flex items-center justify-center mx-auto mb-3">
+                <MessageSquare className="w-7 h-7 text-navy/30" />
+              </div>
+              <p className="font-medium text-navy/60 mb-1">No conversations yet</p>
+              <p className="text-xs text-navy/40">Conversations start when leads are contacted via WhatsApp, SMS, or email.</p>
             </div>
           ) : (
             filteredConversations.map((conv) => {

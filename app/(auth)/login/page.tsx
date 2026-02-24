@@ -167,12 +167,11 @@ function LoginForm() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-ivory/50 mt-6">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-camel hover:text-camel/80 font-medium transition-colors">
-            Create one
+        <div className="text-center mt-6 space-y-2">
+          <Link href="/forgot-password" className="text-sm text-ivory/50 hover:text-ivory/70 transition-colors">
+            Forgot your password?
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   )

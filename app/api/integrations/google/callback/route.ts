@@ -6,6 +6,7 @@ import {
   getAccessibleCustomers,
   getCustomerDetails,
 } from '@/lib/integrations/google-ads'
+import { encryptTokens } from '@/lib/encryption'
 
 // GET /api/integrations/google/callback
 export async function GET(request: NextRequest) {
@@ -28,6 +29,14 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Verify user is authenticated before processing callback
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.redirect(
+      new URL('/login?error=session_expired', request.url)
+    )
+  }
+
   // Decode state
   let stateData: { orgId: string; timestamp: number }
   try {
@@ -42,6 +51,19 @@ export async function GET(request: NextRequest) {
   if (Date.now() - stateData.timestamp > 15 * 60 * 1000) {
     return NextResponse.redirect(
       new URL('/dashboard/integrations?error=state_expired', request.url)
+    )
+  }
+
+  // Verify user belongs to the org in state (prevents CSRF org hijacking)
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData || userData.organization_id !== stateData.orgId) {
+    return NextResponse.redirect(
+      new URL('/dashboard/integrations?error=org_mismatch', request.url)
     )
   }
 
@@ -75,13 +97,19 @@ export async function GET(request: NextRequest) {
       .eq('provider', 'google_ads')
       .single()
 
+    // Encrypt tokens before storing
+    const encrypted = encryptTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    })
+
     if (existing) {
       await supabase
         .from('integrations')
         .update({
           status: 'connected',
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          access_token: encrypted.access_token,
+          refresh_token: encrypted.refresh_token,
           token_expires_at: tokens.expires_at?.toISOString(),
           account_id: primaryCustomer.id,
           account_name: primaryCustomer.descriptiveName,
@@ -101,8 +129,8 @@ export async function GET(request: NextRequest) {
           organization_id: stateData.orgId,
           provider: 'google_ads',
           status: 'connected',
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          access_token: encrypted.access_token,
+          refresh_token: encrypted.refresh_token,
           token_expires_at: tokens.expires_at?.toISOString(),
           account_id: primaryCustomer.id,
           account_name: primaryCustomer.descriptiveName,

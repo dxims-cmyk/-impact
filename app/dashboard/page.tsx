@@ -15,6 +15,9 @@ import {
   Mail,
   Clock,
   RefreshCw,
+  Code2,
+  Send,
+  Flame,
 } from 'lucide-react'
 import { useDashboardMetrics, useLeads } from '@/lib/hooks'
 import { useRealtime } from '@/lib/hooks/use-realtime'
@@ -319,6 +322,33 @@ export default function DashboardPage() {
           icon={Target}
           loading={metricsLoading}
         />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {metrics?.recentLeads && metrics.recentLeads.length > 0 && (
+          <Link
+            href={`/dashboard/leads/${metrics.recentLeads[0].id}`}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-navy hover:border-impact/30 hover:shadow-sm transition-all"
+          >
+            <Users className="w-4 h-4 text-impact" />
+            View Latest Lead
+          </Link>
+        )}
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-navy hover:border-impact/30 hover:shadow-sm transition-all"
+        >
+          <Code2 className="w-4 h-4 text-impact" />
+          Get Form Code
+        </Link>
+        <Link
+          href="/dashboard/leads?temperature=hot"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-navy hover:border-impact/30 hover:shadow-sm transition-all"
+        >
+          <Flame className="w-4 h-4 text-impact" />
+          Hot Leads ({metrics?.pipeline?.find(s => s.stage === 'new')?.count || 0})
+        </Link>
       </div>
 
       {/* Pipeline */}

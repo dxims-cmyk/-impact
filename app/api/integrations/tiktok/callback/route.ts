@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getAdvertiserInfo } from '@/lib/integrations/tiktok-ads'
+import { encryptTokens } from '@/lib/encryption'
 
 // GET /api/integrations/tiktok/callback
 export async function GET(request: NextRequest) {
@@ -31,6 +32,25 @@ export async function GET(request: NextRequest) {
   if (Date.now() - stateData.timestamp > 15 * 60 * 1000) {
     return NextResponse.redirect(
       new URL('/dashboard/integrations?error=state_expired', request.url)
+    )
+  }
+
+  // Verify user is authenticated
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Verify user belongs to the org in state
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id || userData.organization_id !== stateData.orgId) {
+    return NextResponse.redirect(
+      new URL('/dashboard/integrations?error=org_mismatch', request.url)
     )
   }
 
@@ -64,13 +84,18 @@ export async function GET(request: NextRequest) {
       .eq('provider', 'tiktok_ads')
       .single()
 
+    const encrypted = encryptTokens({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    })
+
     if (existing) {
       await supabase
         .from('integrations')
         .update({
           status: 'connected',
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          access_token: encrypted.access_token,
+          refresh_token: encrypted.refresh_token,
           token_expires_at: tokens.expires_at?.toISOString(),
           account_id: primaryAdvertiser.advertiser_id,
           account_name: primaryAdvertiser.advertiser_name,
@@ -90,8 +115,8 @@ export async function GET(request: NextRequest) {
           organization_id: stateData.orgId,
           provider: 'tiktok_ads',
           status: 'connected',
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
+          access_token: encrypted.access_token,
+          refresh_token: encrypted.refresh_token,
           token_expires_at: tokens.expires_at?.toISOString(),
           account_id: primaryAdvertiser.advertiser_id,
           account_name: primaryAdvertiser.advertiser_name,

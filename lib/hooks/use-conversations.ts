@@ -22,11 +22,11 @@ interface ConversationsResponse {
   }
 }
 
-interface ConversationFilters {
+export interface ConversationFilters {
   page?: number
   limit?: number
   status?: 'open' | 'closed' | 'snoozed'
-  channel?: 'email' | 'sms' | 'whatsapp'
+  channel?: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger'
   search?: string
 }
 

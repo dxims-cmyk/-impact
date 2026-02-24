@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sanitizeFilterValue } from '@/lib/utils'
 
 const createConversationSchema = z.object({
   leadId: z.string().uuid(),
@@ -56,7 +57,8 @@ export async function GET(request: NextRequest) {
   if (channel) query = query.eq('channel', channel)
   if (search) {
     // Search in lead name/email
-    query = query.or(`lead.first_name.ilike.%${search}%,lead.last_name.ilike.%${search}%,lead.email.ilike.%${search}%`)
+    const s = sanitizeFilterValue(search)
+    query = query.or(`lead.first_name.ilike.%${s}%,lead.last_name.ilike.%${s}%,lead.email.ilike.%${s}%`)
   }
 
   // Order by last message

@@ -65,9 +65,16 @@ create table if not exists leads (
   objections text[],
   recommended_action text,
   
+  -- Payments (Stripe)
+  payment_status text default 'none' check (payment_status in ('none', 'pending', 'paid', 'failed', 'refunded')),
+  amount_paid numeric,
+  payment_link text,
+  invoice_id text,
+  invoice_status text default 'none' check (invoice_status in ('none', 'draft', 'sent', 'viewed', 'paid')),
+
   -- Ownership
   assigned_to uuid references users(id) on delete set null,
-  
+
   -- Timestamps
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -106,6 +113,8 @@ create table if not exists conversations (
   organization_id uuid references organizations(id) on delete cascade not null,
   channel text not null check (channel in ('email', 'sms', 'whatsapp')),
   status text default 'open' check (status in ('open', 'closed', 'snoozed')),
+  ai_handling text default 'off' check (ai_handling in ('off', 'active', 'paused', 'handed_off')),
+  ai_message_count integer default 0,
   last_message_at timestamptz,
   unread_count integer default 0,
   created_at timestamptz default now()
@@ -157,6 +166,30 @@ create table if not exists appointments (
   cancel_reason text
 );
 
+-- AI Receptionist Calls (Vapi)
+create table if not exists calls (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid references organizations(id) on delete cascade not null,
+  lead_id uuid references leads(id) on delete set null,
+
+  vapi_call_id text unique,
+  phone_number text,
+  caller_name text,
+  direction text default 'inbound' check (direction in ('inbound', 'outbound')),
+
+  duration_seconds integer,
+  status text default 'in_progress' check (status in ('in_progress', 'completed', 'failed', 'missed')),
+
+  transcript text,
+  recording_url text,
+  summary text,
+
+  metadata jsonb,
+
+  created_at timestamptz default now(),
+  ended_at timestamptz
+);
+
 -- ============================================
 -- INTEGRATIONS & ADS
 -- ============================================
@@ -166,7 +199,7 @@ create table if not exists integrations (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid references organizations(id) on delete cascade not null,
   
-  provider text not null check (provider in ('meta_ads', 'google_ads', 'tiktok_ads', 'manychat')),
+  provider text not null check (provider in ('meta_ads', 'google_ads', 'tiktok_ads', 'manychat', 'calcom', 'zapier', 'slack', 'google_calendar', 'whatsapp', 'resend', 'twilio', 'vapi', 'stripe', 'calendly', 'xero')),
   status text default 'pending' check (status in ('pending', 'connected', 'error', 'disconnected')),
   
   access_token text,
@@ -275,6 +308,9 @@ create index if not exists idx_messages_conversation on messages(conversation_id
 create index if not exists idx_ad_performance_org_date on ad_performance(organization_id, date desc);
 create index if not exists idx_appointments_org_time on appointments(organization_id, start_time);
 create index if not exists idx_conversations_lead on conversations(lead_id);
+create index if not exists idx_calls_org_created on calls(organization_id, created_at desc);
+create index if not exists idx_calls_lead on calls(lead_id);
+create index if not exists idx_calls_vapi_id on calls(vapi_call_id);
 
 -- ============================================
 -- ROW LEVEL SECURITY
@@ -291,6 +327,7 @@ alter table integrations enable row level security;
 alter table ad_campaigns enable row level security;
 alter table ad_performance enable row level security;
 alter table reports enable row level security;
+alter table calls enable row level security;
 
 -- Helper function to get user's org
 create or replace function get_user_org_id()
@@ -405,6 +442,15 @@ create policy "Users can view performance in their org"
 create policy "Users can view reports in their org"
   on reports for select
   using (organization_id = get_user_org_id() or is_agency_user());
+
+-- Calls policies
+create policy "Users can view calls in their org"
+  on calls for select
+  using (organization_id = get_user_org_id() or is_agency_user());
+
+create policy "Service role can manage calls"
+  on calls for all
+  using (is_agency_user());
 
 -- ============================================
 -- FUNCTIONS

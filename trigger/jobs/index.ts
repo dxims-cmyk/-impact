@@ -3,6 +3,7 @@
 export { qualifyLeadTask } from './qualify-lead'
 export { speedToLeadTask } from './speed-to-lead'
 export { aiConversationTask } from './ai-conversation'
+export { aiWhatsAppReplyTask } from './ai-whatsapp-reply'
 export { syncMetaAdsTask, manualSyncMetaAdsTask } from './sync-meta-ads'
 export { syncGoogleAdsTask, manualSyncGoogleAdsTask } from './sync-google-ads'
 export { syncTikTokAdsTask, manualSyncTikTokAdsTask } from './sync-tiktok-ads'

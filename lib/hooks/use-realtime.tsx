@@ -39,6 +39,49 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase])
 
+  // Auto-subscribe to core tables so all pages get live updates
+  useEffect(() => {
+    const coreChannel = supabase
+      .channel('core-changes')
+      .on<Lead>(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'leads' },
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ['leads'] })
+          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+          if (payload.eventType !== 'DELETE' && payload.new?.id) {
+            queryClient.invalidateQueries({ queryKey: ['lead', payload.new.id] })
+          }
+        }
+      )
+      .on<Appointment>(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['appointments'] })
+        }
+      )
+      .on<Notification>(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['notifications'] })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(coreChannel)
+    }
+  }, [supabase, queryClient])
+
   // Subscribe to new leads
   const subscribeToLeads = (callback: (lead: Lead) => void) => {
     const channel = supabase

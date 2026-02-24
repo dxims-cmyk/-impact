@@ -24,13 +24,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const rawBody = await request.text()
 
-  // Verify signature if META_APP_SECRET is set
-  if (process.env.META_APP_SECRET) {
-    const signature = request.headers.get('x-hub-signature-256') || ''
-    if (!verifyMetaSignature(rawBody, signature)) {
-      console.error('Meta webhook: invalid signature')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
-    }
+  // Verify Meta signature — mandatory when META_APP_SECRET is configured
+  const appSecret = process.env.META_APP_SECRET
+  if (!appSecret) {
+    console.error('Meta webhook: META_APP_SECRET not configured — rejecting request')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
+  const signature = request.headers.get('x-hub-signature-256') || ''
+  if (!verifyMetaSignature(rawBody, signature)) {
+    console.error('Meta webhook: invalid signature')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
   }
 
   let body: MetaWebhookPayload
@@ -92,10 +96,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           continue
         }
 
-        // Check for existing lead
+        // Check for existing lead — sanitize values to prevent filter injection
         const conditions: string[] = []
-        if (email) conditions.push(`email.eq.${email}`)
-        if (phone) conditions.push(`phone.eq.${phone}`)
+        if (email) conditions.push(`email.eq.${email.replace(/[,()]/g, '')}`)
+        if (phone) conditions.push(`phone.eq.${phone.replace(/[^\d+\- ]/g, '')}`)
 
         const { data: existing } = await supabase
           .from('leads')

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
 import { z } from 'zod'
+import { sanitizeFilterValue } from '@/lib/utils'
 
 // Validation schema for creating leads
 const createLeadSchema = z.object({
@@ -13,6 +14,7 @@ const createLeadSchema = z.object({
   last_name: z.string().optional(),
   company: z.string().optional(),
   source: z.string().optional(),
+  send_welcome: z.boolean().optional().default(false),
   utm_source: z.string().optional(),
   utm_medium: z.string().optional(),
   utm_campaign: z.string().optional(),
@@ -70,7 +72,8 @@ export async function GET(request: NextRequest) {
   if (temperature) query = query.eq('temperature', temperature)
   if (source) query = query.eq('source', source)
   if (search) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`)
+    const s = sanitizeFilterValue(search)
+    query = query.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,email.ilike.%${s}%,company.ilike.%${s}%`)
   }
 
   // Apply sorting
@@ -130,13 +133,23 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
-  // Check for duplicate
-  const { data: existing } = await supabase
-    .from('leads')
-    .select('id')
-    .eq('organization_id', userData.organization_id)
-    .or(`email.eq.${validation.data.email},phone.eq.${validation.data.phone}`)
-    .single()
+  // Check for duplicate — build conditions safely
+  const dupConditions: string[] = []
+  if (validation.data.email) {
+    dupConditions.push(`email.eq.${sanitizeFilterValue(validation.data.email)}`)
+  }
+  if (validation.data.phone) {
+    dupConditions.push(`phone.eq.${sanitizeFilterValue(validation.data.phone)}`)
+  }
+
+  const { data: existing } = dupConditions.length > 0
+    ? await supabase
+        .from('leads')
+        .select('id')
+        .eq('organization_id', userData.organization_id)
+        .or(dupConditions.join(','))
+        .single()
+    : { data: null }
 
   if (existing) {
     return NextResponse.json({ 
@@ -145,12 +158,15 @@ export async function POST(request: NextRequest) {
     }, { status: 409 })
   }
 
+  // Separate flags from lead data
+  const { send_welcome, ...leadFields } = validation.data
+
   // Create lead
   const { data: lead, error: createError } = await supabase
     .from('leads')
     .insert({
       organization_id: userData.organization_id,
-      ...validation.data,
+      ...leadFields,
       stage: 'new'
     })
     .select()
@@ -172,10 +188,16 @@ export async function POST(request: NextRequest) {
     })
 
   // Trigger background jobs — fire and forget, don't block the response
-  Promise.all([
+  const jobs: Promise<unknown>[] = [
     qualifyLeadTask.trigger({ leadId: lead.id }),
-    speedToLeadTask.trigger({ leadId: lead.id }),
-  ]).catch((error) => {
+  ]
+
+  // Only trigger speed-to-lead (client WhatsApp alert + lead outreach) if explicitly requested
+  if (send_welcome) {
+    jobs.push(speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: true }))
+  }
+
+  Promise.all(jobs).catch((error) => {
     console.error('Failed to trigger background jobs:', error)
   })
 

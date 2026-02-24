@@ -2,6 +2,7 @@
 import { task, schedules, logger } from "@trigger.dev/sdk/v3"
 import { createAdminClient } from "@/lib/supabase/server"
 import { syncMetaAdsData, getLongLivedToken } from "@/lib/integrations/meta-ads"
+import { decryptTokens, encryptTokens } from "@/lib/encryption"
 
 export const syncMetaAdsTask = schedules.task({
   id: "sync-meta-ads",
@@ -40,8 +41,15 @@ export const syncMetaAdsTask = schedules.task({
 
     for (const integration of integrations) {
       try {
-        // Check if token needs refresh
-        let accessToken = integration.access_token
+        // Decrypt token from DB
+        let accessToken: string
+        try {
+          const decrypted = decryptTokens({ access_token: integration.access_token! })
+          accessToken = decrypted.access_token
+        } catch {
+          // Fallback for pre-encryption plaintext tokens
+          accessToken = integration.access_token!
+        }
 
         if (integration.token_expires_at) {
           const expiresAt = new Date(integration.token_expires_at)
@@ -51,14 +59,15 @@ export const syncMetaAdsTask = schedules.task({
           if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
             logger.info("Refreshing token", { integrationId: integration.id })
 
-            const newTokens = await getLongLivedToken(accessToken!)
+            const newTokens = await getLongLivedToken(accessToken)
             accessToken = newTokens.access_token
 
-            // Update stored token
+            // Re-encrypt and update stored token
+            const encrypted = encryptTokens({ access_token: accessToken })
             await supabase
               .from('integrations')
               .update({
-                access_token: accessToken,
+                access_token: encrypted.access_token,
                 token_expires_at: newTokens.expires_at?.toISOString()
               })
               .eq('id', integration.id)
@@ -67,7 +76,7 @@ export const syncMetaAdsTask = schedules.task({
 
         // Sync data
         await syncMetaAdsData(
-          accessToken!,
+          accessToken,
           integration.account_id!,
           integration.organization_id,
           integration.id,
@@ -143,8 +152,14 @@ export const manualSyncMetaAdsTask = task({
     }
 
     try {
-      // Check if token needs refresh
-      let accessToken = integration.access_token
+      // Decrypt token from DB
+      let accessToken: string
+      try {
+        const decrypted = decryptTokens({ access_token: integration.access_token! })
+        accessToken = decrypted.access_token
+      } catch {
+        accessToken = integration.access_token!
+      }
 
       if (integration.token_expires_at) {
         const expiresAt = new Date(integration.token_expires_at)
@@ -153,13 +168,14 @@ export const manualSyncMetaAdsTask = task({
         if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
           logger.info("Refreshing token for manual sync", { integrationId })
 
-          const newTokens = await getLongLivedToken(accessToken!)
+          const newTokens = await getLongLivedToken(accessToken)
           accessToken = newTokens.access_token
 
+          const encrypted = encryptTokens({ access_token: accessToken })
           await supabase
             .from('integrations')
             .update({
-              access_token: accessToken,
+              access_token: encrypted.access_token,
               token_expires_at: newTokens.expires_at?.toISOString()
             })
             .eq('id', integrationId)
@@ -167,7 +183,7 @@ export const manualSyncMetaAdsTask = task({
       }
 
       await syncMetaAdsData(
-        accessToken!,
+        accessToken,
         integration.account_id!,
         integration.organization_id,
         integration.id,

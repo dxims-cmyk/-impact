@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -21,6 +21,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useLeads, useDeleteLead } from '@/lib/hooks'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { formatRelativeTime } from '@/lib/utils'
 import { NewLeadModal } from '@/components/dashboard/new-lead-modal'
 import { toast } from 'sonner'
@@ -77,6 +78,14 @@ function LeadRowSkeleton() {
 }
 
 export default function LeadsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-impact" /></div>}>
+      <LeadsPageContent />
+    </Suspense>
+  )
+}
+
+function LeadsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -399,10 +408,18 @@ export default function LeadsPage() {
               </>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-navy/50">
-                  {debouncedSearch || stageFilter !== 'all' || tempFilter !== 'all' || sourceFilter !== 'all'
-                    ? 'No leads match your filters'
-                    : 'No leads yet. Create your first lead!'}
+                <td colSpan={8} className="px-4 py-4">
+                  {debouncedSearch || stageFilter !== 'all' || tempFilter !== 'all' || sourceFilter !== 'all' ? (
+                    <div className="text-center text-navy/50 py-8">No leads match your filters</div>
+                  ) : (
+                    <EmptyState
+                      icon={Users}
+                      title="No leads yet"
+                      description="Leads will appear here when someone fills out your form, comes through an ad, or is added manually."
+                      actionLabel="+ New Lead"
+                      onAction={() => setShowNewLeadModal(true)}
+                    />
+                  )}
                 </td>
               </tr>
             ) : (

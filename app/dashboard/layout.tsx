@@ -19,17 +19,23 @@ import {
   ChevronDown,
   Search,
   Bell,
+  Phone,
+  Shield,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SearchModal } from '@/components/dashboard/search-modal'
 import { NewLeadModal } from '@/components/dashboard/new-lead-modal'
 import { NotificationsDropdown } from '@/components/dashboard/notifications-dropdown'
+import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
+import { HelpButton } from '@/components/help/HelpButton'
+import { ForcePasswordChange } from '@/components/auth/ForcePasswordChange'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads', href: '/dashboard/leads', icon: Users },
   { name: 'Conversations', href: '/dashboard/conversations', icon: MessageSquare },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
+  { name: 'Calls', href: '/dashboard/calls', icon: Phone },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: BarChart3 },
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },
   { name: 'Automations', href: '/dashboard/automations', icon: Zap },
@@ -48,6 +54,8 @@ export default function DashboardLayout({
   const [searchOpen, setSearchOpen] = useState(false)
   const [newLeadOpen, setNewLeadOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
   const supabase = createClient()
   
   // Get real user data
@@ -65,6 +73,24 @@ export default function DashboardLayout({
     grow: 'Grow Plan', 
     scale: 'Scale Plan'
   }
+
+  // Check if user must change password (first login)
+  useEffect(() => {
+    const checkPasswordFlag = async (): Promise<void> => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser?.user_metadata?.must_change_password) {
+        setMustChangePassword(true)
+      }
+    }
+    checkPasswordFlag()
+  }, [])
+
+  // Listen for onboarding reopen events (from HelpButton)
+  useEffect(() => {
+    const handler = () => setShowOnboarding(true)
+    window.addEventListener('onboarding-reopen', handler)
+    return () => window.removeEventListener('onboarding-reopen', handler)
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -146,6 +172,27 @@ export default function DashboardLayout({
               </Link>
             )
           })}
+
+          {/* Admin section - only visible to agency users */}
+          {user?.is_agency_user && (
+            <>
+              <div className="pt-3 pb-1 px-4">
+                <p className="text-[10px] uppercase tracking-widest text-ivory/30 font-semibold">Admin</p>
+              </div>
+              <Link
+                href="/dashboard/admin/users"
+                className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  pathname.startsWith('/dashboard/admin')
+                    ? "bg-impact text-ivory shadow-lg"
+                    : "text-ivory/70 hover:bg-ivory/5 hover:text-ivory"
+                )}
+              >
+                <Shield className="w-5 h-5" />
+                Clients
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* User Menu */}
@@ -212,6 +259,17 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* Onboarding Checklist (first visit or reopened) */}
+      <OnboardingChecklist forceOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+
+      {/* Help Button */}
+      <HelpButton />
+
+      {/* Force password change modal (first login) */}
+      {mustChangePassword && (
+        <ForcePasswordChange onComplete={() => setMustChangePassword(false)} />
+      )}
     </div>
   )
 }

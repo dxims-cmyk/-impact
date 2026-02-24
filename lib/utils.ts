@@ -165,22 +165,14 @@ export function getTrend(change: number): 'up' | 'down' | 'neutral' {
   return 'neutral'
 }
 
-// Encrypt sensitive data (simple XOR for demo - use proper encryption in production)
-export function encrypt(text: string): string {
-  const key = process.env.ENCRYPTION_KEY || 'default-key-change-this'
-  let result = ''
-  for (let i = 0; i < text.length; i++) {
-    result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length))
-  }
-  return Buffer.from(result).toString('base64')
+// Sanitize user input for Supabase PostgREST filter strings.
+// Strips characters that can manipulate .or() / .ilike() filter syntax.
+export function sanitizeFilterValue(value: string): string {
+  // Remove commas (PostgREST filter separator), parentheses, and dots followed by keywords
+  return value.replace(/[,()]/g, '').trim()
 }
 
-export function decrypt(encoded: string): string {
-  const key = process.env.ENCRYPTION_KEY || 'default-key-change-this'
-  const text = Buffer.from(encoded, 'base64').toString()
-  let result = ''
-  for (let i = 0; i < text.length; i++) {
-    result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length))
-  }
-  return result
+// Sanitize phone number for safe use in Supabase .or() filters
+export function sanitizePhone(phone: string): string {
+  return phone.replace(/[^\d+\- ]/g, '').trim()
 }

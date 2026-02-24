@@ -10,7 +10,6 @@ import {
   User,
   Video,
   Phone,
-  MapPin,
   MoreHorizontal,
   CheckCircle2,
   XCircle,
@@ -20,46 +19,61 @@ import {
   Mail,
   Loader2,
   RefreshCw,
+  Trash2,
+  X,
 } from 'lucide-react'
-import { useAppointments, useUpdateAppointment, useDeleteAppointment } from '@/lib/hooks'
+import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from '@/lib/hooks'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Appointment } from '@/types/database'
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const timeSlots = [
-  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
+  '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
 ]
 
-export default function CalendarPage() {
+export default function CalendarPage(): JSX.Element {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<'week' | 'day' | 'list'>('week')
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [showNewModal, setShowNewModal] = useState(false)
 
-  // Get week range for query
-  const weekStart = useMemo(() => {
-    const date = new Date(currentDate)
-    const day = date.getDay()
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1)
-    date.setDate(diff)
-    date.setHours(0, 0, 0, 0)
-    return date
-  }, [currentDate])
+  // New appointment form state
+  const [newTitle, setNewTitle] = useState('')
+  const [newDate, setNewDate] = useState('')
+  const [newStartTime, setNewStartTime] = useState('09:00')
+  const [newEndTime, setNewEndTime] = useState('09:30')
+  const [newDescription, setNewDescription] = useState('')
 
-  const weekEnd = useMemo(() => {
-    const date = new Date(weekStart)
-    date.setDate(date.getDate() + 7)
-    return date
-  }, [weekStart])
+  // Get date range for query based on view
+  const dateRange = useMemo(() => {
+    if (view === 'day') {
+      const start = new Date(currentDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 1)
+      return { start, end }
+    }
+    // week + list
+    const start = new Date(currentDate)
+    const day = start.getDay()
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1)
+    start.setDate(diff)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 7)
+    return { start, end }
+  }, [currentDate, view])
 
   // Fetch appointments
-  const { data: appointmentsData, isLoading, refetch } = useAppointments({
-    startDate: weekStart.toISOString(),
-    endDate: weekEnd.toISOString(),
+  const { data: appointmentsData, isLoading, isFetching, refetch } = useAppointments({
+    startDate: dateRange.start.toISOString(),
+    endDate: dateRange.end.toISOString(),
   })
   const appointments = appointmentsData?.appointments || []
 
   // Mutations
+  const createAppointment = useCreateAppointment()
   const updateAppointment = useUpdateAppointment()
   const deleteAppointment = useDeleteAppointment()
 
@@ -67,30 +81,25 @@ export default function CalendarPage() {
   const weekDates = useMemo(() => {
     const dates = []
     for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart)
-      date.setDate(weekStart.getDate() + i)
+      const date = new Date(dateRange.start)
+      date.setDate(dateRange.start.getDate() + i)
       dates.push(date)
     }
     return dates
-  }, [weekStart])
+  }, [dateRange.start])
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0]
   }
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string): string => {
     return new Date(dateString).toLocaleTimeString('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
     })
   }
 
-  const getAppointmentsForDate = (date: Date) => {
-    const dateStr = formatDate(date)
-    return appointments.filter(apt => apt.start_time.startsWith(dateStr))
-  }
-
-  const getAppointmentsForSlot = (date: Date, time: string) => {
+  const getAppointmentsForSlot = (date: Date, time: string): typeof appointments => {
     const dateStr = formatDate(date)
     return appointments.filter(apt => {
       const aptTime = formatTime(apt.start_time)
@@ -98,7 +107,7 @@ export default function CalendarPage() {
     })
   }
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: string): string => {
     switch (status) {
       case 'confirmed': return 'bg-studio/10 text-studio border-studio/20'
       case 'scheduled': return 'bg-camel/10 text-camel border-camel/20'
@@ -119,22 +128,23 @@ export default function CalendarPage() {
     }
   }
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
+  const navigate = (direction: 'prev' | 'next'): void => {
     const newDate = new Date(currentDate)
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
+    const offset = view === 'day' ? 1 : 7
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? offset : -offset))
     setCurrentDate(newDate)
   }
 
-  const goToToday = () => {
+  const goToToday = (): void => {
     setCurrentDate(new Date())
   }
 
-  const isToday = (date: Date) => {
+  const isToday = (date: Date): boolean => {
     const today = new Date()
     return formatDate(date) === formatDate(today)
   }
 
-  const handleStatusChange = async (id: string, status: string) => {
+  const handleStatusChange = async (id: string, status: string): Promise<void> => {
     try {
       await updateAppointment.mutateAsync({ id, data: { status: status as Appointment['status'] } })
       toast.success('Appointment updated')
@@ -142,20 +152,45 @@ export default function CalendarPage() {
       if (selectedAppointment?.id === id) {
         setSelectedAppointment({ ...selectedAppointment, status: status as Appointment['status'] })
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to update appointment')
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     if (!confirm('Are you sure you want to delete this appointment?')) return
     try {
       await deleteAppointment.mutateAsync(id)
       toast.success('Appointment deleted')
       setSelectedAppointment(null)
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete appointment')
+    }
+  }
+
+  const handleCreateAppointment = async (): Promise<void> => {
+    if (!newTitle.trim() || !newDate) {
+      toast.error('Title and date are required')
+      return
+    }
+    try {
+      await createAppointment.mutateAsync({
+        title: newTitle,
+        description: newDescription || undefined,
+        startTime: new Date(`${newDate}T${newStartTime}:00`).toISOString(),
+        endTime: new Date(`${newDate}T${newEndTime}:00`).toISOString(),
+      })
+      toast.success('Appointment created')
+      setShowNewModal(false)
+      setNewTitle('')
+      setNewDate('')
+      setNewStartTime('09:00')
+      setNewEndTime('09:30')
+      setNewDescription('')
+      refetch()
+    } catch {
+      toast.error('Failed to create appointment')
     }
   }
 
@@ -166,6 +201,22 @@ export default function CalendarPage() {
       .filter(apt => apt.start_time.startsWith(today))
       .sort((a, b) => a.start_time.localeCompare(b.start_time))
   }, [appointments])
+
+  // Header title
+  const headerTitle = useMemo(() => {
+    if (view === 'day') {
+      return currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    }
+    return weekDates[0]?.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) || ''
+  }, [view, currentDate, weekDates])
+
+  // Day view appointments
+  const dayAppointments = useMemo(() => {
+    const dateStr = formatDate(currentDate)
+    return appointments
+      .filter(apt => apt.start_time.startsWith(dateStr))
+      .sort((a, b) => a.start_time.localeCompare(b.start_time))
+  }, [appointments, currentDate])
 
   return (
     <div className="space-y-6">
@@ -181,9 +232,15 @@ export default function CalendarPage() {
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Refresh"
           >
-            <RefreshCw className={`w-4 h-4 text-navy/60 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-navy/60 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
-          <button className="btn-primary flex items-center gap-2 opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
+          <button
+            onClick={() => {
+              setNewDate(formatDate(currentDate))
+              setShowNewModal(true)
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
             <Plus className="w-4 h-4" />
             New Appointment
           </button>
@@ -197,21 +254,19 @@ export default function CalendarPage() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <button
-                onClick={() => navigateWeek('prev')}
+                onClick={() => navigate('prev')}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5 text-navy" />
               </button>
               <button
-                onClick={() => navigateWeek('next')}
+                onClick={() => navigate('next')}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <ChevronRight className="w-5 h-5 text-navy" />
               </button>
             </div>
-            <h2 className="text-lg font-semibold text-navy">
-              {weekDates[0]?.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
-            </h2>
+            <h2 className="text-lg font-semibold text-navy">{headerTitle}</h2>
             <button
               onClick={goToToday}
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors"
@@ -256,9 +311,10 @@ export default function CalendarPage() {
                 {weekDates.map((date, i) => (
                   <div
                     key={i}
-                    className={`p-3 text-center border-r border-gray-100 last:border-r-0 ${
+                    className={`p-3 text-center border-r border-gray-100 last:border-r-0 cursor-pointer hover:bg-gray-50 ${
                       isToday(date) ? 'bg-impact/5' : ''
                     }`}
+                    onClick={() => { setCurrentDate(date); setView('day') }}
                   >
                     <p className="text-xs font-medium text-navy/50">{weekDays[i]}</p>
                     <p className={`text-lg font-bold ${
@@ -290,16 +346,20 @@ export default function CalendarPage() {
                             <button
                               key={apt.id}
                               onClick={() => setSelectedAppointment(apt)}
-                              className="w-full p-2 rounded-lg bg-impact text-ivory text-left hover:bg-impact-light transition-colors"
+                              className={`w-full p-2 rounded-lg text-left transition-colors ${
+                                apt.status === 'cancelled'
+                                  ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                  : 'bg-impact text-ivory hover:bg-impact-light'
+                              }`}
                             >
                               <div className="flex items-center gap-1 mb-1">
                                 <Video className="w-3 h-3" />
                                 <span className="text-xs font-semibold truncate">{apt.title}</span>
                               </div>
-                              <p className="text-xs text-ivory/80 truncate">
+                              <p className={`text-xs truncate ${apt.status === 'cancelled' ? 'text-gray-500' : 'text-ivory/80'}`}>
                                 {apt.lead?.first_name} {apt.lead?.last_name}
                               </p>
-                              <p className="text-xs text-ivory/60">
+                              <p className={`text-xs ${apt.status === 'cancelled' ? 'text-gray-400' : 'text-ivory/60'}`}>
                                 {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
                               </p>
                             </button>
@@ -309,6 +369,63 @@ export default function CalendarPage() {
                     })}
                   </div>
                 ))}
+              </div>
+            </>
+          ) : view === 'day' ? (
+            <>
+              {/* Day Header */}
+              <div className="p-4 border-b border-gray-100 bg-impact/5">
+                <p className="text-lg font-bold text-navy">
+                  {currentDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {isToday(currentDate) && <span className="ml-2 text-sm font-medium text-impact">(Today)</span>}
+                </p>
+                <p className="text-sm text-navy/50">{dayAppointments.length} appointment{dayAppointments.length !== 1 ? 's' : ''}</p>
+              </div>
+
+              {/* Day Time Slots */}
+              <div className="max-h-[600px] overflow-y-auto">
+                {timeSlots.map((time) => {
+                  const slotAppointments = getAppointmentsForSlot(currentDate, time)
+                  return (
+                    <div key={time} className="flex border-b border-gray-50 min-h-[80px]">
+                      <div className="w-20 p-3 text-right border-r border-gray-100 text-sm text-navy/40 flex-shrink-0">
+                        {time}
+                      </div>
+                      <div className="flex-1 p-2 space-y-2">
+                        {slotAppointments.map((apt) => (
+                          <button
+                            key={apt.id}
+                            onClick={() => setSelectedAppointment(apt)}
+                            className={`w-full p-3 rounded-xl text-left transition-colors ${
+                              apt.status === 'cancelled'
+                                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                : 'bg-impact text-ivory hover:bg-impact-light'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <Video className="w-4 h-4" />
+                                <span className="font-semibold">{apt.title}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                                apt.status === 'cancelled' ? 'bg-gray-200 text-gray-500' : 'bg-ivory/20 text-ivory'
+                              }`}>
+                                {apt.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <p className={`text-sm ${apt.status === 'cancelled' ? 'text-gray-500' : 'text-ivory/80'}`}>
+                              {apt.lead?.first_name} {apt.lead?.last_name}
+                              {apt.lead?.company && ` • ${apt.lead.company}`}
+                            </p>
+                            <p className={`text-sm ${apt.status === 'cancelled' ? 'text-gray-400' : 'text-ivory/60'}`}>
+                              {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </>
           ) : view === 'list' ? (
@@ -361,12 +478,7 @@ export default function CalendarPage() {
                   })
               )}
             </div>
-          ) : (
-            <div className="p-6 text-center text-navy/40">
-              <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Day view coming soon</p>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Appointment Detail Sidebar */}
@@ -384,8 +496,11 @@ export default function CalendarPage() {
                     {selectedAppointment.status.replace('_', ' ')}
                   </span>
                 </div>
-                <button className="p-2 rounded-lg opacity-50 cursor-not-allowed" title="Coming Soon" disabled>
-                  <MoreHorizontal className="w-4 h-4 text-navy/60" />
+                <button
+                  onClick={() => setSelectedAppointment(null)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-navy/60" />
                 </button>
               </div>
 
@@ -424,9 +539,9 @@ export default function CalendarPage() {
                       {`${selectedAppointment.lead.first_name?.[0] || ''}${selectedAppointment.lead.last_name?.[0] || ''}`.toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-navy">
+                      <Link href={`/dashboard/leads/${selectedAppointment.lead_id}`} className="font-semibold text-navy hover:text-impact transition-colors">
                         {selectedAppointment.lead.first_name} {selectedAppointment.lead.last_name}
-                      </p>
+                      </Link>
                       {selectedAppointment.lead.company && (
                         <p className="text-sm text-navy/50">{selectedAppointment.lead.company}</p>
                       )}
@@ -459,24 +574,37 @@ export default function CalendarPage() {
 
               {/* Actions */}
               <div className="pt-4 border-t border-gray-100 space-y-2">
-                <button className="w-full py-2.5 rounded-xl bg-impact text-ivory font-semibold text-sm opacity-50 cursor-not-allowed flex items-center justify-center gap-2" title="Coming Soon" disabled>
-                  <Video className="w-4 h-4" />
-                  Join Call
-                </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => handleStatusChange(selectedAppointment.id, 'confirmed')}
-                    disabled={updateAppointment.isPending}
-                    className="py-2 rounded-xl border border-gray-200 text-navy font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    disabled={updateAppointment.isPending || selectedAppointment.status === 'confirmed'}
+                    className="py-2 rounded-xl border border-studio/30 text-studio font-medium text-sm hover:bg-studio/5 transition-colors disabled:opacity-50"
                   >
                     Confirm
                   </button>
                   <button
+                    onClick={() => handleStatusChange(selectedAppointment.id, 'completed')}
+                    disabled={updateAppointment.isPending || selectedAppointment.status === 'completed'}
+                    className="py-2 rounded-xl border border-navy/20 text-navy font-medium text-sm hover:bg-navy/5 transition-colors disabled:opacity-50"
+                  >
+                    Complete
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
                     onClick={() => handleStatusChange(selectedAppointment.id, 'cancelled')}
-                    disabled={updateAppointment.isPending}
-                    className="py-2 rounded-xl border border-gray-200 text-navy font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    disabled={updateAppointment.isPending || selectedAppointment.status === 'cancelled'}
+                    className="py-2 rounded-xl border border-gray-200 text-navy/60 font-medium text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(selectedAppointment.id)}
+                    disabled={deleteAppointment.isPending}
+                    className="py-2 rounded-xl border border-red-200 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -514,6 +642,94 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* New Appointment Modal */}
+      {showNewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-navy">New Appointment</h3>
+              <button onClick={() => setShowNewModal(false)} className="p-2 rounded-lg hover:bg-gray-100">
+                <X className="w-4 h-4 text-navy/60" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-navy/70 mb-1">Title</label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="e.g. Discovery Call"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-navy/70 mb-1">Date</label>
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-navy/70 mb-1">Start Time</label>
+                <input
+                  type="time"
+                  value={newStartTime}
+                  onChange={(e) => setNewStartTime(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy/70 mb-1">End Time</label>
+                <input
+                  type="time"
+                  value={newEndTime}
+                  onChange={(e) => setNewEndTime(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-navy/70 mb-1">Notes (optional)</label>
+              <textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                placeholder="Add any notes..."
+                rows={3}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-navy font-medium text-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateAppointment}
+                disabled={createAppointment.isPending || !newTitle.trim() || !newDate}
+                className="flex-1 py-2.5 rounded-xl bg-impact text-ivory font-semibold text-sm hover:bg-impact-light transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {createAppointment.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

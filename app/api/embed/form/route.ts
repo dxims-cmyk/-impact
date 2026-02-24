@@ -9,10 +9,12 @@ const FORM_SCRIPT = (baseUrl: string) => `
   var src = script.getAttribute('src') || '';
   var params = new URL(src, window.location.origin).searchParams;
   var orgSlug = params.get('org') || '';
-  var accent = params.get('accent') || '#E8642C';
-  var title = params.get('title') || 'Get in Touch';
-  var subtitle = params.get('subtitle') || 'Fill in your details and we\\'ll get back to you shortly.';
-  var btnText = params.get('btn') || 'Submit';
+  function escAttr(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  var accentRaw = params.get('accent') || '#E8642C';
+  var accent = /^#[0-9a-fA-F]{3,8}$/.test(accentRaw) ? accentRaw : '#E8642C';
+  var title = escAttr(params.get('title') || 'Get in Touch');
+  var subtitle = escAttr(params.get('subtitle') || 'Fill in your details and we\\'ll get back to you shortly.');
+  var btnText = escAttr(params.get('btn') || 'Submit');
   var source = params.get('source') || 'embed_form';
 
   if (!orgSlug) {
@@ -59,8 +61,8 @@ const FORM_SCRIPT = (baseUrl: string) => `
     '.impact-form-powered a:hover{color:#6b7280;}' +
   '</style>' +
   '<div class="impact-form-card">' +
-    '<h2 class="impact-form-title">' + title.replace(/</g,'&lt;') + '</h2>' +
-    '<p class="impact-form-subtitle">' + subtitle.replace(/</g,'&lt;') + '</p>' +
+    '<h2 class="impact-form-title">' + title + '</h2>' +
+    '<p class="impact-form-subtitle">' + subtitle + '</p>' +
     '<form id="impact-lead-form" novalidate>' +
       '<div class="impact-form-group">' +
         '<label class="impact-form-label" for="impact-name">Full Name *</label>' +
@@ -79,7 +81,7 @@ const FORM_SCRIPT = (baseUrl: string) => `
         '<input class="impact-form-input" id="impact-company" name="company" type="text" placeholder="Company name" />' +
       '</div>' +
       '<div class="impact-form-error" id="impact-form-error"></div>' +
-      '<button class="impact-form-btn" type="submit">' + btnText.replace(/</g,'&lt;') + '</button>' +
+      '<button class="impact-form-btn" type="submit">' + btnText + '</button>' +
     '</form>' +
     '<div class="impact-form-powered">Powered by <a href="https://impact-full.vercel.app" target="_blank" rel="noopener">Impact</a></div>' +
   '</div>';

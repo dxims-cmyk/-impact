@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getLongLivedToken, getAdAccounts } from '@/lib/integrations/meta-ads'
+import { encryptTokens } from '@/lib/encryption'
 
 // GET /api/integrations/meta/callback - Handle Meta OAuth callback
 export async function GET(request: NextRequest) {
@@ -27,6 +28,14 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Verify user is authenticated before processing callback
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.redirect(
+      new URL('/login?error=session_expired', request.url)
+    )
+  }
+
   // Decode state
   let stateData: { orgId: string; token: string; timestamp: number }
   try {
@@ -41,6 +50,19 @@ export async function GET(request: NextRequest) {
   if (Date.now() - stateData.timestamp > 15 * 60 * 1000) {
     return NextResponse.redirect(
       new URL('/dashboard/integrations?error=state_expired', request.url)
+    )
+  }
+
+  // Verify user belongs to the org in state (prevents CSRF org hijacking)
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData || userData.organization_id !== stateData.orgId) {
+    return NextResponse.redirect(
+      new URL('/dashboard/integrations?error=org_mismatch', request.url)
     )
   }
 
@@ -71,13 +93,16 @@ export async function GET(request: NextRequest) {
       .eq('provider', 'meta_ads')
       .single()
 
+    // Encrypt token before storing
+    const encrypted = encryptTokens({ access_token: longLivedTokens.access_token })
+
     if (existing) {
       // Update existing
       await supabase
         .from('integrations')
         .update({
           status: 'connected',
-          access_token: longLivedTokens.access_token,
+          access_token: encrypted.access_token,
           token_expires_at: longLivedTokens.expires_at?.toISOString(),
           account_id: primaryAccount.id,
           account_name: primaryAccount.name,
@@ -98,7 +123,7 @@ export async function GET(request: NextRequest) {
           organization_id: stateData.orgId,
           provider: 'meta_ads',
           status: 'connected',
-          access_token: longLivedTokens.access_token,
+          access_token: encrypted.access_token,
           token_expires_at: longLivedTokens.expires_at?.toISOString(),
           account_id: primaryAccount.id,
           account_name: primaryAccount.name,

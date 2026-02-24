@@ -130,7 +130,7 @@ export async function getCampaigns(
   })
 
   if (status) {
-    params.set('filtering', JSON.stringify([{ field: 'status', operator: 'EQUAL', value: status }]))
+    params.set('filtering', JSON.stringify([{ field: 'effective_status', operator: 'IN', value: [status] }]))
   }
 
   const response = await fetch(

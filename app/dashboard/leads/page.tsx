@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Trash2,
   Download,
+  Users,
 } from 'lucide-react'
 import { useLeads, useDeleteLead } from '@/lib/hooks'
 import { EmptyState } from '@/components/ui/EmptyState'

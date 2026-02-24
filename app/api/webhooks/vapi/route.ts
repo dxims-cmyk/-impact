@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
+import crypto from 'crypto'
 
 // Vapi sends payloads in two possible formats:
 // 1. { message: { type: "...", call: {...}, ... } }
@@ -116,8 +117,14 @@ export async function POST(request: NextRequest) {
     console.error('Vapi webhook: VAPI_WEBHOOK_SECRET not configured')
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
   }
-  const authHeader = request.headers.get('authorization') || request.headers.get('x-vapi-secret')
-  if (authHeader !== webhookSecret && authHeader !== `Bearer ${webhookSecret}`) {
+  const authHeader = request.headers.get('authorization') || request.headers.get('x-vapi-secret') || ''
+  const secret = authHeader.replace('Bearer ', '')
+  // Timing-safe comparison to prevent timing attacks
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(webhookSecret))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

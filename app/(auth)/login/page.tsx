@@ -167,10 +167,15 @@ function LoginForm() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
-          <Link href="/forgot-password" className="text-sm text-ivory/50 hover:text-ivory/70 transition-colors">
+        <div className="text-center mt-6 space-y-3">
+          <Link href="/forgot-password" className="text-sm text-ivory/50 hover:text-ivory/70 transition-colors block">
             Forgot your password?
           </Link>
+          <div className="flex items-center justify-center gap-4 text-xs text-ivory/30">
+            <Link href="/terms" className="hover:text-ivory/50 transition-colors">Terms of Service</Link>
+            <span>&middot;</span>
+            <Link href="/privacy" className="hover:text-ivory/50 transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>

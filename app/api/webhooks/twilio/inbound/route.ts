@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { parseInboundSMS } from '@/lib/integrations/twilio'
+import twilio from 'twilio'
 
 // Strip leading '+' and country code variants for phone matching.
 // Only digits and '+' allowed to prevent PostgREST filter injection.
@@ -24,6 +25,19 @@ function normalizePhoneForLookup(phone: string): string[] {
 
 // POST /api/webhooks/twilio/inbound — Receives inbound SMS from Twilio
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Verify Twilio request signature
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  if (!authToken) {
+    console.error('Twilio webhook: TWILIO_AUTH_TOKEN not configured')
+    return new NextResponse('<Response></Response>', {
+      status: 500,
+      headers: { 'Content-Type': 'text/xml' },
+    })
+  }
+
+  const twilioSignature = request.headers.get('x-twilio-signature') || ''
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/inbound`
+
   let formData: FormData
 
   try {
@@ -31,6 +45,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch {
     return new NextResponse('<Response></Response>', {
       status: 200,
+      headers: { 'Content-Type': 'text/xml' },
+    })
+  }
+
+  // Build params object for signature validation
+  const params: Record<string, string> = {}
+  formData.forEach((value, key) => {
+    params[key] = value.toString()
+  })
+
+  const isValid = twilio.validateRequest(authToken, twilioSignature, webhookUrl, params)
+  if (!isValid) {
+    console.error('Twilio webhook: invalid signature')
+    return new NextResponse('<Response></Response>', {
+      status: 403,
       headers: { 'Content-Type': 'text/xml' },
     })
   }

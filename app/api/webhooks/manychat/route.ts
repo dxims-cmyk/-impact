@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
+import crypto from 'crypto'
 
 // Resolve org from query params
 async function resolveOrgId(
@@ -37,7 +38,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const authHeader = request.headers.get('authorization') || ''
   const token = authHeader.replace('Bearer ', '')
-  if (token !== webhookSecret) {
+  // Timing-safe comparison to prevent timing attacks
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(token), Buffer.from(webhookSecret))) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

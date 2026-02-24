@@ -394,7 +394,7 @@ function CalcomModal({
 
   if (!isOpen) return null
 
-  const webhookUrl = `https://impact-full.vercel.app/api/webhooks/calcom?org_slug=${orgSlug}`
+  const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/calcom?org_slug=${orgSlug}`
   const isVerifying = verifyCalcom.isPending || registerIntegration.isPending
 
   const copyUrl = (): void => {
@@ -528,7 +528,7 @@ function ManychatModal({
 
   if (!isOpen) return null
 
-  const webhookUrl = `https://impact-full.vercel.app/api/webhooks/manychat?org_slug=${orgSlug}`
+  const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/manychat?org_slug=${orgSlug}`
 
   const copyUrl = (): void => {
     navigator.clipboard.writeText(webhookUrl)

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/integrations/resend'
 import { z } from 'zod'
+import crypto from 'crypto'
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -102,8 +103,14 @@ export async function POST(request: NextRequest) {
     .eq('id', userData.organization_id)
     .single()
 
-  // Generate invite link (in production, you'd create an invite token)
-  const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite?org=${userData.organization_id}&email=${encodeURIComponent(validation.data.email)}&role=${validation.data.role}`
+  // Generate signed invite link to prevent role tampering
+  const invitePayload = `${userData.organization_id}:${validation.data.email}:${validation.data.role}`
+  const inviteSignature = crypto
+    .createHmac('sha256', process.env.SUPABASE_SERVICE_ROLE_KEY || 'invite-secret')
+    .update(invitePayload)
+    .digest('hex')
+    .slice(0, 16)
+  const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite?org=${userData.organization_id}&email=${encodeURIComponent(validation.data.email)}&role=${validation.data.role}&sig=${inviteSignature}`
 
   // Send invite email
   try {

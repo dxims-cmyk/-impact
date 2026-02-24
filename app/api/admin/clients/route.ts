@@ -172,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 4. Send welcome email (optional)
     if (sendWelcomeEmail && process.env.RESEND_API_KEY) {
       try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://impact-full.vercel.app'
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {

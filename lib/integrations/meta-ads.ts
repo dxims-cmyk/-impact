@@ -60,7 +60,10 @@ export async function exchangeCodeForTokens(code: string): Promise<MetaTokens> {
     code
   })
 
-  const response = await fetch(`${META_BASE_URL}/oauth/access_token?${params}`)
+  const response = await fetch(`${META_BASE_URL}/oauth/access_token`, {
+    method: 'POST',
+    body: params,
+  })
   
   if (!response.ok) {
     const error = await response.json()
@@ -86,7 +89,10 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<MetaTo
     fb_exchange_token: shortLivedToken
   })
 
-  const response = await fetch(`${META_BASE_URL}/oauth/access_token?${params}`)
+  const response = await fetch(`${META_BASE_URL}/oauth/access_token`, {
+    method: 'POST',
+    body: params,
+  })
   
   if (!response.ok) {
     const error = await response.json()

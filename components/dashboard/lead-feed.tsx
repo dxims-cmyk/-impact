@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { formatRelativeTime } from '@/lib/utils'
 import { Mail, Phone, Building2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { useLeads } from '@/lib/hooks'
 
 interface Lead {
   id: string
@@ -19,52 +20,6 @@ interface Lead {
   ai_summary: string | null
   created_at: string
 }
-
-// Demo data - replace with real data fetch
-const demoLeads: Lead[] = [
-  {
-    id: '1',
-    first_name: 'Sarah',
-    last_name: 'Johnson',
-    email: 'sarah@techcorp.com',
-    phone: '+44 7700 900123',
-    company: 'TechCorp Ltd',
-    stage: 'qualified',
-    temperature: 'hot',
-    score: 9,
-    source: 'meta_ads',
-    ai_summary: 'High-intent lead. Mentioned scaling issues and budget approval.',
-    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 min ago
-  },
-  {
-    id: '2',
-    first_name: 'James',
-    last_name: 'Wilson',
-    email: 'james@startup.io',
-    phone: '+44 7700 900456',
-    company: 'Startup.io',
-    stage: 'new',
-    temperature: 'warm',
-    score: 7,
-    source: 'google_ads',
-    ai_summary: 'Looking for lead gen help. Timeline unclear.',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-  },
-  {
-    id: '3',
-    first_name: 'Emma',
-    last_name: 'Davis',
-    email: 'emma@agency.co',
-    phone: null,
-    company: 'Creative Agency',
-    stage: 'new',
-    temperature: 'cold',
-    score: 4,
-    source: 'organic',
-    ai_summary: 'Early research phase. No immediate need identified.',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-  },
-]
 
 function TemperatureBadge({ temperature }: { temperature: Lead['temperature'] }) {
   if (!temperature) return null
@@ -145,8 +100,25 @@ function LeadCard({ lead }: { lead: Lead }) {
 }
 
 export function LeadFeed() {
-  const leads = demoLeads // Replace with real data fetch
-  
+  const { data, isLoading } = useLeads({ limit: 5, sort: 'created_at', order: 'desc' })
+  const leads = (data?.leads || []) as Lead[]
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-start gap-4 p-4">
+            <div className="w-10 h-10 rounded-full bg-gray-200" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+              <div className="h-3 w-48 bg-gray-200 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   if (leads.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">

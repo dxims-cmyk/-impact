@@ -421,7 +421,8 @@ export async function ensureValidToken(
     accessToken = decrypted.access_token
     refreshToken = decrypted.refresh_token
   } catch {
-    // Fallback for pre-encryption plaintext tokens
+    // Fallback for pre-encryption plaintext tokens — log warning
+    console.error('Xero: using plaintext tokens — re-authentication recommended for org:', orgId)
     accessToken = integration.access_token
     refreshToken = integration.refresh_token || undefined
   }

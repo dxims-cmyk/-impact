@@ -27,14 +27,30 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: appointment, error } = await supabase
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
+  let query = supabase
     .from('appointments')
     .select(`
       *,
       lead:leads(id, first_name, last_name, email, phone, company)
     `)
     .eq('id', id)
-    .single()
+
+  if (!userData.is_agency_user) {
+    query = query.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: appointment, error } = await query.single()
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -71,6 +87,17 @@ export async function PATCH(
     }, { status: 400 })
   }
 
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
   // Build update object
   const updates = { ...validation.data } as Record<string, unknown>
 
@@ -79,10 +106,16 @@ export async function PATCH(
     updates.cancelled_at = new Date().toISOString()
   }
 
-  const { data: appointment, error } = await (supabase
+  let updateQuery = (supabase
     .from('appointments') as any)
     .update(updates)
     .eq('id', id)
+
+  if (!userData.is_agency_user) {
+    updateQuery = updateQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: appointment, error } = await updateQuery
     .select(`
       *,
       lead:leads(id, first_name, last_name, email, phone)
@@ -152,15 +185,31 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Get user's org
+  const { data: userData } = await supabase
+    .from('users')
+    .select('organization_id, is_agency_user')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.organization_id && !userData?.is_agency_user) {
+    return NextResponse.json({ error: 'No organization' }, { status: 403 })
+  }
+
   // Fetch appointment with lead data before deleting (for email notification)
-  const { data: appointment } = await (supabase
+  let fetchQuery = (supabase
     .from('appointments') as any)
     .select(`
       *,
       lead:leads(id, first_name, last_name, email)
     `)
     .eq('id', id)
-    .single()
+
+  if (!userData.is_agency_user) {
+    fetchQuery = fetchQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { data: appointment } = await fetchQuery.single()
 
   // Send deletion email to prospect if lead has email
   if (appointment?.lead?.email) {
@@ -184,10 +233,16 @@ export async function DELETE(
     }).catch((err: unknown) => console.error('Failed to send appointment deletion email:', err))
   }
 
-  const { error } = await supabase
+  let deleteQuery = supabase
     .from('appointments')
     .delete()
     .eq('id', id)
+
+  if (!userData.is_agency_user) {
+    deleteQuery = deleteQuery.eq('organization_id', userData.organization_id)
+  }
+
+  const { error } = await deleteQuery
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

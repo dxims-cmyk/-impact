@@ -141,6 +141,9 @@ export function useSendMessage() {
       queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
+    onError: (error: Error) => {
+      console.error('Failed to send message:', error.message)
+    },
   })
 }
 

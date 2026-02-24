@@ -74,7 +74,7 @@ function InsightSkeleton() {
 }
 
 export function AIInsights() {
-  const { data, isLoading, isFetching, refetch } = useQuery<InsightsResponse>({
+  const { data, isLoading, isFetching, error, refetch } = useQuery<InsightsResponse>({
     queryKey: ['dashboard-insights'],
     queryFn: async () => {
       const res = await fetch('/api/dashboard/insights')
@@ -109,6 +109,10 @@ export function AIInsights() {
             <InsightSkeleton />
             <InsightSkeleton />
           </>
+        ) : error ? (
+          <div className="p-4 rounded-lg bg-red-50 text-center">
+            <p className="text-sm text-red-600">Failed to load insights. Try refreshing.</p>
+          </div>
         ) : data?.insights && data.insights.length > 0 ? (
           data.insights.map((insight, index) => (
             <InsightCard key={index} insight={insight} />

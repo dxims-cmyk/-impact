@@ -22,6 +22,15 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [{
+      source: '/:path*',
+      headers: [{
+        key: 'Document-Policy',
+        value: 'js-profiling',
+      }],
+    }]
+  },
 }
 
 module.exports = withSentryConfig(nextConfig, {

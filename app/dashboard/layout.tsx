@@ -24,6 +24,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  Images,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SearchModal } from '@/components/dashboard/search-modal'
@@ -32,6 +33,7 @@ import { NotificationsDropdown } from '@/components/dashboard/notifications-drop
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
 import { HelpButton } from '@/components/help/HelpButton'
 import { ForcePasswordChange } from '@/components/auth/ForcePasswordChange'
+import { PlanBadge } from '@/components/dashboard/PlanBadge'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -41,6 +43,7 @@ const navigation = [
   { name: 'Calls', href: '/dashboard/calls', icon: Phone },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: BarChart3 },
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },
+  { name: 'Gallery', href: '/dashboard/gallery', icon: Images },
   { name: 'Automations', href: '/dashboard/automations', icon: Zap },
   { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
   { name: 'Forms', href: '/dashboard/settings/forms', icon: FormInput },
@@ -72,12 +75,8 @@ export default function DashboardLayout({
   const userInitials = userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
   const orgName = user?.organization?.name || 'No Organization'
   const orgInitials = orgName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
-  const subscriptionTier = user?.organization?.subscription_tier || 'launch'
-  const tierLabels: Record<string, string> = {
-    launch: 'Launch Plan',
-    grow: 'Grow Plan', 
-    scale: 'Scale Plan'
-  }
+  const orgPlan = (user?.organization as Record<string, unknown>)?.plan as string || 'core'
+  const planLabel = orgPlan === 'pro' ? ':Impact Pro' : ':Impact Core'
 
   // Check if user must change password (first login)
   useEffect(() => {
@@ -155,7 +154,7 @@ export default function DashboardLayout({
             </div>
             <div>
               <p className="text-sm font-semibold text-ivory">{userLoading ? 'Loading...' : orgName}</p>
-              <p className="text-xs text-ivory/50">{tierLabels[subscriptionTier]}</p>
+              <p className="text-xs text-ivory/50">{planLabel}</p>
             </div>
           </div>
         </div>
@@ -253,6 +252,7 @@ export default function DashboardLayout({
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            <PlanBadge />
             <NotificationsDropdown
               isOpen={notificationsOpen}
               onClose={() => setNotificationsOpen(false)}

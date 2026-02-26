@@ -80,6 +80,10 @@ export default function LeadDetailPage() {
   const [activeTab, setActiveTab] = useState('activity')
   const [note, setNote] = useState('')
   const [isAddingNote, setIsAddingNote] = useState(false)
+  const [showWonModal, setShowWonModal] = useState(false)
+  const [showLostModal, setShowLostModal] = useState(false)
+  const [dealValue, setDealValue] = useState('')
+  const [lostReason, setLostReason] = useState('')
 
   const { data: lead, isLoading: leadLoading, refetch: refetchLead } = useLead(leadId)
   const { data: timeline, isLoading: timelineLoading, refetch: refetchTimeline } = useLeadTimeline(leadId)
@@ -140,6 +144,48 @@ export default function LeadDetailPage() {
       toast.error('Failed to add note')
     } finally {
       setIsAddingNote(false)
+    }
+  }
+
+  const handleMarkAsWon = async (): Promise<void> => {
+    try {
+      await updateLead.mutateAsync({
+        id: leadId,
+        data: {
+          stage: 'won',
+          deal_status: 'won',
+          deal_value: dealValue ? parseFloat(dealValue) : undefined,
+          deal_closed_at: new Date().toISOString(),
+        },
+      })
+      toast.success('Lead marked as Won!')
+      setShowWonModal(false)
+      setDealValue('')
+      refetchLead()
+      refetchTimeline()
+    } catch {
+      toast.error('Failed to mark as won')
+    }
+  }
+
+  const handleMarkAsLost = async (): Promise<void> => {
+    try {
+      await updateLead.mutateAsync({
+        id: leadId,
+        data: {
+          stage: 'lost',
+          deal_status: 'lost',
+          lost_reason: lostReason || undefined,
+          deal_closed_at: new Date().toISOString(),
+        },
+      })
+      toast.success('Lead marked as Lost')
+      setShowLostModal(false)
+      setLostReason('')
+      refetchLead()
+      refetchTimeline()
+    } catch {
+      toast.error('Failed to mark as lost')
     }
   }
 
@@ -538,9 +584,10 @@ export default function LeadDetailPage() {
                   className={`w-full px-3 py-2 rounded-lg text-sm font-semibold capitalize border cursor-pointer ${getStageStyle(lead.stage)}`}
                 >
                   <option value="new">New</option>
-                  <option value="qualified">Qualified</option>
                   <option value="contacted">Contacted</option>
-                  <option value="booked">Booked</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="appointment">Appointment</option>
+                  <option value="proposal">Proposal</option>
                   <option value="won">Won</option>
                   <option value="lost">Lost</option>
                 </select>
@@ -559,6 +606,35 @@ export default function LeadDetailPage() {
                 <div>
                   <p className="text-xs text-navy/40 mb-1">Assigned To</p>
                   <p className="text-sm text-navy">{lead.assigned_to}</p>
+                </div>
+              )}
+              {lead.deal_value && (
+                <div>
+                  <p className="text-xs text-navy/40 mb-1">Deal Value</p>
+                  <p className="text-sm font-semibold text-studio">&pound;{Number(lead.deal_value).toLocaleString()}</p>
+                </div>
+              )}
+              {lead.deal_status === 'lost' && lead.lost_reason && (
+                <div>
+                  <p className="text-xs text-navy/40 mb-1">Lost Reason</p>
+                  <p className="text-sm text-navy/70">{lead.lost_reason}</p>
+                </div>
+              )}
+              {/* Won/Lost Actions */}
+              {lead.stage !== 'won' && lead.stage !== 'lost' && (
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setShowWonModal(true)}
+                    className="flex-1 py-2 text-xs font-semibold rounded-lg bg-studio/10 text-studio hover:bg-studio/20 transition-colors"
+                  >
+                    Mark Won
+                  </button>
+                  <button
+                    onClick={() => setShowLostModal(true)}
+                    className="flex-1 py-2 text-xs font-semibold rounded-lg bg-gray-100 text-navy/60 hover:bg-gray-200 transition-colors"
+                  >
+                    Mark Lost
+                  </button>
                 </div>
               )}
             </div>
@@ -598,6 +674,81 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Mark as Won Modal */}
+      {showWonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <h3 className="text-lg font-bold text-navy mb-1">Mark as Won</h3>
+            <p className="text-sm text-navy/60 mb-4">Enter the deal value for this lead.</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-navy/80 mb-1.5">Deal Value</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-navy/40">&pound;</span>
+                <input
+                  type="number"
+                  value={dealValue}
+                  onChange={(e) => setDealValue(e.target.value)}
+                  className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 text-navy focus:outline-none focus:ring-2 focus:ring-studio/30 focus:border-studio"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowWonModal(false); setDealValue('') }}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-navy/60 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkAsWon}
+                disabled={updateLead.isPending}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-studio text-white text-sm font-semibold hover:bg-studio/90 disabled:opacity-50"
+              >
+                {updateLead.isPending ? 'Saving...' : 'Confirm Won'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mark as Lost Modal */}
+      {showLostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <h3 className="text-lg font-bold text-navy mb-1">Mark as Lost</h3>
+            <p className="text-sm text-navy/60 mb-4">Why was this lead lost?</p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-navy/80 mb-1.5">Reason</label>
+              <textarea
+                value={lostReason}
+                onChange={(e) => setLostReason(e.target.value)}
+                className="w-full p-3 rounded-lg border border-gray-200 text-sm text-navy resize-none focus:outline-none focus:ring-2 focus:ring-impact/30 focus:border-impact"
+                rows={3}
+                placeholder="e.g. Budget too high, chose competitor, not ready..."
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowLostModal(false); setLostReason('') }}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-navy/60 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkAsLost}
+                disabled={updateLead.isPending}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-gray-800 text-white text-sm font-semibold hover:bg-gray-700 disabled:opacity-50"
+              >
+                {updateLead.isPending ? 'Saving...' : 'Confirm Lost'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

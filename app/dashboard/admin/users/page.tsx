@@ -27,6 +27,8 @@ interface ClientOrg {
   slug: string
   subscription_tier: string
   subscription_status: string
+  plan?: string
+  plan_changed_at?: string
   created_at: string
   settings: Record<string, unknown>
   users: {
@@ -61,6 +63,7 @@ export default function AdminUsersPage(): JSX.Element {
   const [autoPassword, setAutoPassword] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true)
+  const [changingPlanFor, setChangingPlanFor] = useState<string | null>(null)
 
   // Admin guard
   useEffect(() => {
@@ -145,6 +148,35 @@ export default function AdminUsersPage(): JSX.Element {
   const copyToClipboard = (text: string, label: string): void => {
     navigator.clipboard.writeText(text)
     toast.success(`${label} copied!`)
+  }
+
+  const handlePlanChange = async (orgId: string, currentPlan: string): Promise<void> => {
+    const newPlan = currentPlan === 'core' ? 'pro' : 'core'
+    const action = newPlan === 'pro' ? 'upgrade to Pro' : 'downgrade to Core'
+
+    if (!confirm(`Are you sure you want to ${action} for this client?`)) {
+      return
+    }
+
+    setChangingPlanFor(orgId)
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}/plan`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: newPlan }),
+      })
+
+      if (res.ok) {
+        fetchClients()
+        toast.success(`Client ${newPlan === 'pro' ? 'upgraded to Pro' : 'downgraded to Core'}`)
+      } else {
+        toast.error('Failed to change plan')
+      }
+    } catch {
+      toast.error('Error changing plan')
+    } finally {
+      setChangingPlanFor(null)
+    }
   }
 
   if (userLoading || (!currentUser?.is_agency_user && !userLoading)) {
@@ -445,12 +477,12 @@ export default function AdminUsersPage(): JSX.Element {
                       {org.slug} &middot; Created {new Date(org.created_at).toLocaleDateString()}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        org.subscription_tier === 'scale' ? 'bg-studio/10 text-studio' :
-                        org.subscription_tier === 'grow' ? 'bg-camel/10 text-camel' :
-                        'bg-navy/5 text-navy/60'
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        org.plan === 'pro'
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                          : 'bg-navy/5 text-navy/60'
                       }`}>
-                        {org.subscription_tier || 'launch'}
+                        {org.plan === 'pro' ? '⚡ Pro' : 'Core'}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         org.subscription_status === 'active' ? 'bg-green-50 text-green-700' :
@@ -458,6 +490,15 @@ export default function AdminUsersPage(): JSX.Element {
                       }`}>
                         {org.subscription_status || 'active'}
                       </span>
+                      <button
+                        onClick={() => handlePlanChange(org.id, org.plan || 'core')}
+                        disabled={changingPlanFor === org.id}
+                        className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        {changingPlanFor === org.id ? 'Changing...' : (
+                          (org.plan || 'core') === 'core' ? 'Upgrade to Pro' : 'Downgrade to Core'
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>

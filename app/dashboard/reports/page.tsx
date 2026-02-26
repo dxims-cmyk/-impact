@@ -31,6 +31,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useReports, useLatestReport, useGenerateReport } from '@/lib/hooks'
+import { FeatureGate } from '@/components/ui/FeatureGate'
 import { toast } from 'sonner'
 import { formatRelativeTime } from '@/lib/utils'
 import { Report } from '@/types/database'
@@ -667,7 +668,8 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* AI Insights */}
+      {/* AI Insights (Pro) */}
+      <FeatureGate feature="reports_advanced">
       {(isLoading || aiInsights.length > 0) && (
         <div className="bg-gradient-to-br from-impact/5 to-camel/5 rounded-2xl p-6 border border-impact/10">
           <div className="flex items-center gap-2 mb-6">
@@ -702,6 +704,7 @@ export default function ReportsPage() {
           )}
         </div>
       )}
+      </FeatureGate>
 
       {/* Recent Reports */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">

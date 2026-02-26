@@ -33,7 +33,7 @@ import { NotificationsDropdown } from '@/components/dashboard/notifications-drop
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
 import { HelpButton } from '@/components/help/HelpButton'
 import { ForcePasswordChange } from '@/components/auth/ForcePasswordChange'
-import { PlanBadge } from '@/components/dashboard/PlanBadge'
+import { usePlan } from '@/lib/hooks/use-plan'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -75,8 +75,7 @@ export default function DashboardLayout({
   const userInitials = userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
   const orgName = user?.organization?.name || 'No Organization'
   const orgInitials = orgName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
-  const orgPlan = user?.organization?.plan || 'core'
-  const planLabel = orgPlan === 'pro' ? ':Impact Pro' : ':Impact Core'
+  const { isPro } = usePlan()
 
   // Check if user must change password (first login)
   useEffect(() => {
@@ -136,7 +135,12 @@ export default function DashboardLayout({
         <div className="h-16 flex items-center justify-between px-6 border-b border-ivory/10">
           <Link href="/dashboard" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
             <img src="/ampm-logo.png" alt="AM:PM" className="w-9 h-9 rounded-lg object-cover" />
-            <span className="font-bold text-lg tracking-tight">: Impact</span>
+            <span className="font-bold text-lg tracking-tight">
+              : Impact{' '}
+              <span className={isPro ? 'bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent' : 'text-ivory/50'}>
+                {isPro ? 'Pro' : 'Core'}
+              </span>
+            </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -154,7 +158,6 @@ export default function DashboardLayout({
             </div>
             <div>
               <p className="text-sm font-semibold text-ivory">{userLoading ? 'Loading...' : orgName}</p>
-              <p className="text-xs text-ivory/50">{planLabel}</p>
             </div>
           </div>
         </div>
@@ -252,7 +255,6 @@ export default function DashboardLayout({
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <PlanBadge />
             <NotificationsDropdown
               isOpen={notificationsOpen}
               onClose={() => setNotificationsOpen(false)}

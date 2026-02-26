@@ -76,8 +76,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Return the form_config or default config
-  const formConfig = (org as any)?.form_config || getDefaultFormConfig()
+  // Return the form_config or default config (check for empty object too)
+  const rawConfig = (org as any)?.form_config
+  const hasConfig = rawConfig && typeof rawConfig === 'object' && Object.keys(rawConfig).length > 0 && rawConfig.fields
+  const formConfig = hasConfig ? rawConfig : getDefaultFormConfig()
 
   return NextResponse.json(formConfig)
 }

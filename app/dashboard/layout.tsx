@@ -27,6 +27,7 @@ import {
   Images,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { SearchModal } from '@/components/dashboard/search-modal'
 import { NewLeadModal } from '@/components/dashboard/new-lead-modal'
 import { NotificationsDropdown } from '@/components/dashboard/notifications-dropdown'
@@ -65,7 +66,8 @@ export default function DashboardLayout({
   const [mustChangePassword, setMustChangePassword] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const supabase = createClient()
-  
+  const queryClient = useQueryClient()
+
   // Get real user data
   const { data: user, isLoading: userLoading } = useUser()
   
@@ -115,6 +117,7 @@ export default function DashboardLayout({
   }, [])
 
   const handleSignOut = async () => {
+    queryClient.clear()
     await supabase.auth.signOut()
     router.push('/login')
   }

@@ -247,7 +247,8 @@ export default function FormsSettingsPage() {
   // ---------- Embed code ----------
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''
-  const embedCode = `<script src="${baseUrl}/api/embed/form?org=${encodeURIComponent(orgSlug)}&accent=${encodeURIComponent(config.appearance.accentColor)}&title=${encodeURIComponent(config.appearance.title)}&subtitle=${encodeURIComponent(config.appearance.subtitle)}&btn=${encodeURIComponent(config.appearance.submitButtonText)}"></script>`
+  const appearance = config.appearance || DEFAULT_CONFIG.appearance
+  const embedCode = `<script src="${baseUrl}/api/embed/form?org=${encodeURIComponent(orgSlug)}&accent=${encodeURIComponent(appearance.accentColor)}&title=${encodeURIComponent(appearance.title)}&subtitle=${encodeURIComponent(appearance.subtitle)}&btn=${encodeURIComponent(appearance.submitButtonText)}"></script>`
 
   const handleCopyEmbed = async () => {
     try {

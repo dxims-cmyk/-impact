@@ -22,6 +22,8 @@ export interface Database {
           settings: Json
           subscription_tier: 'launch' | 'grow' | 'scale'
           subscription_status: 'active' | 'past_due' | 'cancelled'
+          plan: 'core' | 'pro'
+          plan_changed_at: string | null
           stripe_customer_id: string | null
           created_at: string
           updated_at: string
@@ -34,6 +36,8 @@ export interface Database {
           settings?: Json
           subscription_tier?: 'launch' | 'grow' | 'scale'
           subscription_status?: 'active' | 'past_due' | 'cancelled'
+          plan?: 'core' | 'pro'
+          plan_changed_at?: string | null
           stripe_customer_id?: string | null
           created_at?: string
           updated_at?: string
@@ -46,6 +50,8 @@ export interface Database {
           settings?: Json
           subscription_tier?: 'launch' | 'grow' | 'scale'
           subscription_status?: 'active' | 'past_due' | 'cancelled'
+          plan?: 'core' | 'pro'
+          plan_changed_at?: string | null
           stripe_customer_id?: string | null
           created_at?: string
           updated_at?: string

@@ -10,6 +10,7 @@ export function useUser() {
       name: string
       slug: string
       subscription_tier: string
+      plan: 'core' | 'pro'
     }
   }>({
     queryKey: ['user'],

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const admin = createAdminClient()
   const { data: orgs, error } = await (admin
     .from('organizations') as any)
-    .select('id, name, slug, subscription_tier, subscription_status, created_at, settings')
+    .select('id, name, slug, subscription_tier, subscription_status, plan, plan_changed_at, created_at, settings')
     .order('created_at', { ascending: false })
 
   if (error) {

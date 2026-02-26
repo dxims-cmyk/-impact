@@ -19,7 +19,7 @@ export function usePlan(): {
 } {
   const { data: organization } = useOrganization()
 
-  const plan = (organization as Record<string, unknown>)?.plan as string || 'core'
+  const plan = organization?.plan || 'core'
   const isPro = plan === 'pro'
   const isCore = plan === 'core'
 

@@ -75,7 +75,7 @@ export default function DashboardLayout({
   const userInitials = userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
   const orgName = user?.organization?.name || 'No Organization'
   const orgInitials = orgName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
-  const orgPlan = (user?.organization as Record<string, unknown>)?.plan as string || 'core'
+  const orgPlan = user?.organization?.plan || 'core'
   const planLabel = orgPlan === 'pro' ? ':Impact Pro' : ':Impact Core'
 
   // Check if user must change password (first login)

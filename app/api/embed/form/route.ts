@@ -83,7 +83,7 @@ const FORM_SCRIPT = (baseUrl: string) => `
       '<div class="impact-form-error" id="impact-form-error"></div>' +
       '<button class="impact-form-btn" type="submit">' + btnText + '</button>' +
     '</form>' +
-    '<div class="impact-form-powered">Powered by <a href="https://impact-full.vercel.app" target="_blank" rel="noopener">Impact</a></div>' +
+    '<div class="impact-form-powered">Powered by <a href="https://driveimpact.io" target="_blank" rel="noopener">Impact</a></div>' +
   '</div>';
 
   // Handle submit
@@ -142,7 +142,7 @@ const FORM_SCRIPT = (baseUrl: string) => `
           '<h3>Thank you!</h3>' +
           '<p>Your details have been submitted successfully. We\\'ll be in touch soon.</p>' +
         '</div>' +
-        '<div class="impact-form-powered">Powered by <a href="https://impact-full.vercel.app" target="_blank" rel="noopener">Impact</a></div>';
+        '<div class="impact-form-powered">Powered by <a href="https://driveimpact.io" target="_blank" rel="noopener">Impact</a></div>';
     })
     .catch(function(err) {
       showError(err.message || 'Something went wrong. Please try again.');
@@ -159,7 +159,7 @@ const FORM_SCRIPT = (baseUrl: string) => `
 `
 
 export async function GET(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://impact-full.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://driveimpact.io'
 
   return new NextResponse(FORM_SCRIPT(baseUrl), {
     headers: {

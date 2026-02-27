@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     transferNumber: transferNumber || undefined,
   })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://impact-full.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://driveimpact.io'
   const serverUrl = `${appUrl}/api/webhooks/vapi?org_id=${org.id}`
 
   const assistantConfig = {

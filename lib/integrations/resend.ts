@@ -335,7 +335,7 @@ function generateAppointmentStatusEmail(options: AppointmentStatusEmailOptions):
       <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
         <!-- Header -->
         <div style="background: #0C1220; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center;">
-          <img src="https://impact-full.vercel.app/ampm-header-logo.png" alt="AM:PM Media" style="height: 40px;" />
+          <img src="https://driveimpact.io/ampm-header-logo.png" alt="AM:PM Media" style="height: 40px;" />
         </div>
 
         <!-- Status Badge -->

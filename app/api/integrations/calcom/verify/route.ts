@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .eq('id', userData.organization_id)
     .single()
 
-  const expectedUrl = `https://impact-full.vercel.app/api/webhooks/calcom?org_slug=${org?.slug || ''}`
+  const expectedUrl = `https://driveimpact.io/api/webhooks/calcom?org_slug=${org?.slug || ''}`
 
   const calApiKey = process.env.CAL_API_KEY
   if (!calApiKey) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const data2 = await res2.json()
       const webhooks2 = data2.data || data2.webhooks || []
       const found2 = webhooks2.some((wh: { subscriberUrl?: string; url?: string }) =>
-        (wh.subscriberUrl || wh.url || '').includes('impact-full.vercel.app/api/webhooks/calcom')
+        (wh.subscriberUrl || wh.url || '').includes('driveimpact.io/api/webhooks/calcom')
       )
 
       return NextResponse.json({ verified: found2, webhooks: webhooks2.length })
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Check if any webhook URL contains our calcom endpoint
     const found = Array.isArray(webhooks) && webhooks.some((wh: { subscriberUrl?: string; url?: string }) =>
-      (wh.subscriberUrl || wh.url || '').includes('impact-full.vercel.app/api/webhooks/calcom')
+      (wh.subscriberUrl || wh.url || '').includes('driveimpact.io/api/webhooks/calcom')
     )
 
     return NextResponse.json({ verified: found, webhooks: Array.isArray(webhooks) ? webhooks.length : 0 })

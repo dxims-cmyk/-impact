@@ -150,7 +150,7 @@ export const speedToLeadTask = task({
   <div style="max-width:600px;margin:0 auto;padding:20px;">
     <div style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
       <div style="text-align:center;">
-        <img src="https://impact-full.vercel.app/ampm-header-logo.png" alt="${orgName}" style="width:100%;max-width:600px;height:auto;display:block;" />
+        <img src="https://driveimpact.io/ampm-header-logo.png" alt="${orgName}" style="width:100%;max-width:600px;height:auto;display:block;" />
       </div>
       <div style="padding:32px 24px;">
         <p style="margin:0 0 16px;">Hi ${firstName},</p>

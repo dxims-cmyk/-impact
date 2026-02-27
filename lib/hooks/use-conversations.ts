@@ -11,6 +11,8 @@ interface ConversationsResponse {
       email: string | null
       phone: string | null
       company: string | null
+      temperature: string | null
+      score: number | null
     }
     messages: Message[]
   })[]
@@ -26,7 +28,7 @@ export interface ConversationFilters {
   page?: number
   limit?: number
   status?: 'open' | 'closed' | 'snoozed'
-  channel?: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger'
+  channel?: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger' | string
   search?: string
 }
 
@@ -124,11 +126,11 @@ export function useSendMessage() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ conversationId, content }: { conversationId: string; content: string }) => {
+    mutationFn: async ({ conversationId, content, channel }: { conversationId: string; content: string; channel?: string }) => {
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, ...(channel ? { channel } : {}) }),
       })
       if (!res.ok) {
         const error = await res.json()

@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { tasks } from '@trigger.dev/sdk/v3'
+import type { sendReviewRequestTask } from '@/trigger/jobs/send-review-request'
 
 // Validation schema for updating leads
 const updateLeadSchema = z.object({
@@ -16,6 +18,7 @@ const updateLeadSchema = z.object({
   source: z.string().optional(),
   assigned_to: z.string().uuid().nullable().optional(),
   lost_reason: z.string().optional(),
+  deal_value: z.number().min(0).optional(),
 })
 
 // Helper: get user's org
@@ -152,6 +155,83 @@ export async function PATCH(
       content: `Stage changed to ${validation.data.stage}`,
       performed_by: user.id,
     })
+
+    // Trigger review request when lead is marked as won
+    if (validation.data.stage === 'won') {
+      try {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('plan, reputation_settings')
+          .eq('id', lead.organization_id)
+          .single()
+
+        if (org?.plan === 'pro' && (org.reputation_settings as { enabled?: boolean })?.enabled) {
+          const delayHours = (org.reputation_settings as { delay_hours?: number })?.delay_hours ?? 48
+
+          await tasks.trigger<typeof sendReviewRequestTask>(
+            'send-review-request',
+            { lead_id: id, organization_id: lead.organization_id },
+            delayHours > 0 ? { delay: `${delayHours}h` } : undefined
+          )
+        }
+      } catch (err) {
+        console.error('Failed to schedule review request:', err)
+      }
+
+      // Track revenue for ROI — update ad_performance if lead came from a campaign
+      const dealValue = validation.data.deal_value || body.deal_value
+      if (dealValue && dealValue > 0 && lead.utm_campaign) {
+        try {
+          // Find the ad campaign by name or external ID
+          const { data: adCampaign } = await supabase
+            .from('ad_campaigns')
+            .select('id')
+            .eq('organization_id', lead.organization_id)
+            .or(`name.eq.${lead.utm_campaign},external_id.eq.${lead.utm_campaign}`)
+            .limit(1)
+            .maybeSingle()
+
+          if (adCampaign) {
+            // Get today's date for the performance record
+            const today = new Date().toISOString().split('T')[0]
+
+            // Try to update existing record, otherwise insert
+            const { data: existing } = await supabase
+              .from('ad_performance')
+              .select('id, revenue, conversions')
+              .eq('campaign_id', adCampaign.id)
+              .eq('date', today)
+              .maybeSingle()
+
+            if (existing) {
+              await supabase
+                .from('ad_performance')
+                .update({
+                  revenue: (existing.revenue || 0) + dealValue,
+                  conversions: (existing.conversions || 0) + 1,
+                })
+                .eq('id', existing.id)
+            } else {
+              await supabase
+                .from('ad_performance')
+                .insert({
+                  organization_id: lead.organization_id,
+                  campaign_id: adCampaign.id,
+                  date: today,
+                  revenue: dealValue,
+                  conversions: 1,
+                  impressions: 0,
+                  clicks: 0,
+                  spend: 0,
+                  leads: 0,
+                })
+            }
+          }
+        } catch (err) {
+          console.error('Failed to track ROI revenue:', err)
+        }
+      }
+    }
   }
 
   return NextResponse.json(lead)

@@ -124,7 +124,7 @@ export function NotificationsDropdown({ isOpen, onClose, onToggle }: Notificatio
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[384px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <h3 className="font-semibold text-navy">Notifications</h3>

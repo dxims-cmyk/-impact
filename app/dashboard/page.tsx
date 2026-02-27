@@ -357,7 +357,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-navy">Pipeline</h2>
           <span className="text-sm text-navy/50">{totalLeads} total leads</span>
         </div>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
           {['new', 'qualified', 'contacted', 'booked', 'won', 'lost'].map((stage) => (
             <Link key={stage} href={`/dashboard/leads?stage=${stage}`}>
               <PipelineStage

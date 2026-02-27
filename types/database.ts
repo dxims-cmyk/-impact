@@ -197,7 +197,7 @@ export interface Database {
           organization_id: string
           type: string
           direction: 'inbound' | 'outbound' | null
-          channel: 'email' | 'sms' | 'whatsapp' | 'call' | 'manychat' | null
+          channel: 'email' | 'sms' | 'whatsapp' | 'call' | 'manychat' | 'instagram_dm' | 'messenger' | null
           subject: string | null
           content: string | null
           metadata: Json | null
@@ -239,7 +239,7 @@ export interface Database {
           id: string
           lead_id: string
           organization_id: string
-          channel: 'email' | 'sms' | 'whatsapp'
+          channel: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger'
           status: 'open' | 'closed' | 'snoozed'
           last_message_at: string | null
           unread_count: number
@@ -251,7 +251,7 @@ export interface Database {
           id?: string
           lead_id: string
           organization_id: string
-          channel: 'email' | 'sms' | 'whatsapp'
+          channel: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger'
           status?: 'open' | 'closed' | 'snoozed'
           last_message_at?: string | null
           unread_count?: number
@@ -263,7 +263,7 @@ export interface Database {
           id?: string
           lead_id?: string
           organization_id?: string
-          channel?: 'email' | 'sms' | 'whatsapp'
+          channel?: 'email' | 'sms' | 'whatsapp' | 'instagram_dm' | 'messenger'
           status?: 'open' | 'closed' | 'snoozed'
           last_message_at?: string | null
           unread_count?: number

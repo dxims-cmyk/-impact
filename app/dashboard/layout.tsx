@@ -25,6 +25,7 @@ import {
   Menu,
   X,
   Images,
+  Star,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -47,6 +48,7 @@ const navigation = [
   { name: 'Gallery', href: '/dashboard/gallery', icon: Images },
   { name: 'Automations', href: '/dashboard/automations', icon: Zap },
   { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
+  { name: 'Reputation', href: '/dashboard/settings/reputation', icon: Star },
   { name: 'Forms', href: '/dashboard/settings/forms', icon: FormInput },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   { name: 'Help', href: '/dashboard/help', icon: HelpCircle },

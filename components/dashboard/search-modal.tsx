@@ -140,7 +140,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps): JSX.Element 
       <div className="absolute inset-0 bg-navy/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-2xl">
+      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 sm:px-0">
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
           {/* Search Input */}
           <div className="flex items-center gap-3 p-4 border-b border-gray-100">

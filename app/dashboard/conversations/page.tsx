@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search,
-  Filter,
   Phone,
   Mail,
   MessageSquare,
@@ -19,8 +18,10 @@ import {
   Trash2,
   Loader2,
   RefreshCw,
+  AlertCircle,
+  XCircle,
 } from 'lucide-react'
-import { useConversations, useMessages, useSendMessage, useGenerateAIReply, useMarkAsRead, useRealtime, useRealtimeMessages } from '@/lib/hooks'
+import { useConversations, useMessages, useSendMessage, useGenerateAIReply, useMarkAsRead, useRealtimeMessages } from '@/lib/hooks'
 import type { ConversationFilters } from '@/lib/hooks/use-conversations'
 import { formatRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -65,11 +66,30 @@ function MessageSkeleton({ outbound }: { outbound: boolean }) {
   )
 }
 
+// Status icon for outbound messages
+function MessageStatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case 'read':
+      return <CheckCheck className="w-3 h-3 text-ivory/90" />
+    case 'delivered':
+      return <CheckCheck className="w-3 h-3" />
+    case 'sent':
+      return <Check className="w-3 h-3" />
+    case 'pending':
+      return <Clock className="w-3 h-3" />
+    case 'failed':
+      return <AlertCircle className="w-3 h-3 text-red-300" />
+    default:
+      return <Check className="w-3 h-3" />
+  }
+}
+
 export default function ConversationsPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [channelFilter, setChannelFilter] = useState('all')
   const [messageInput, setMessageInput] = useState('')
+  const [replyChannel, setReplyChannel] = useState<string | null>(null)
   const [showAiSuggestion, setShowAiSuggestion] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -98,12 +118,15 @@ export default function ConversationsPage() {
   const filteredConversations = conversations.filter(conv => {
     const leadName = `${conv.lead?.first_name || ''} ${conv.lead?.last_name || ''}`.toLowerCase()
     const company = (conv.lead?.company || '').toLowerCase()
-    return leadName.includes(searchQuery.toLowerCase()) || company.includes(searchQuery.toLowerCase())
+    const phone = (conv.lead?.phone || '').toLowerCase()
+    const email = (conv.lead?.email || '').toLowerCase()
+    const q = searchQuery.toLowerCase()
+    return leadName.includes(q) || company.includes(q) || phone.includes(q) || email.includes(q)
   })
 
-  // Auto-select first conversation
+  // Auto-select first conversation on desktop
   useEffect(() => {
-    if (!selectedConversationId && filteredConversations.length > 0) {
+    if (!selectedConversationId && filteredConversations.length > 0 && window.innerWidth >= 1024) {
       setSelectedConversationId(filteredConversations[0].id)
     }
   }, [filteredConversations, selectedConversationId])
@@ -120,6 +143,14 @@ export default function ConversationsPage() {
     }
   }, [selectedConversationId])
 
+  // Reset reply channel when selecting a new conversation
+  useEffect(() => {
+    setReplyChannel(null)
+    setShowAiSuggestion(false)
+    setAiSuggestion('')
+    setMessageInput('')
+  }, [selectedConversationId])
+
   const getChannelIcon = (channel: string) => {
     switch (channel) {
       case 'sms': return MessageSquare
@@ -128,6 +159,17 @@ export default function ConversationsPage() {
       case 'instagram_dm': return MessageSquare
       case 'messenger': return MessageSquare
       default: return MessageSquare
+    }
+  }
+
+  const getChannelLabel = (channel: string) => {
+    switch (channel) {
+      case 'sms': return 'SMS'
+      case 'email': return 'Email'
+      case 'whatsapp': return 'WhatsApp'
+      case 'instagram_dm': return 'Instagram'
+      case 'messenger': return 'Messenger'
+      default: return channel
     }
   }
 
@@ -151,13 +193,42 @@ export default function ConversationsPage() {
     }
   }
 
+  // Get last message preview from the messages array returned by API
+  const getLastMessagePreview = (conv: typeof conversations[0]): string => {
+    if (conv.messages && conv.messages.length > 0) {
+      const lastMsg = conv.messages[conv.messages.length - 1]
+      const prefix = lastMsg.direction === 'outbound' ? 'You: ' : ''
+      return prefix + (lastMsg.content?.substring(0, 80) || '')
+    }
+    return 'No messages yet'
+  }
+
+  // Determine which channel to send on
+  const getActiveChannel = (): string => {
+    if (replyChannel) return replyChannel
+    return selectedConversation?.channel || 'whatsapp'
+  }
+
+  // Check if lead has the contact info for a channel
+  const canUseChannel = (channel: string): boolean => {
+    if (!selectedConversation?.lead) return false
+    if (channel === 'email') return !!selectedConversation.lead.email
+    if (channel === 'instagram_dm' || channel === 'messenger') {
+      // These channels are available when the conversation was opened on that channel
+      return selectedConversation.channel === channel
+    }
+    return !!selectedConversation.lead.phone
+  }
+
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversationId) return
 
+    const activeChannel = getActiveChannel()
     try {
       await sendMessage.mutateAsync({
         conversationId: selectedConversationId,
         content: messageInput,
+        channel: replyChannel || undefined,
       })
       setMessageInput('')
       setShowAiSuggestion(false)
@@ -185,9 +256,9 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-7rem)] flex gap-6">
+    <div className="h-[calc(100vh-7rem)] flex gap-0 lg:gap-6">
       {/* Conversations List */}
-      <div className="w-96 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+      <div className={`w-full lg:w-96 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
@@ -257,6 +328,7 @@ export default function ConversationsPage() {
               const isSelected = selectedConversationId === conv.id
               const leadName = `${conv.lead?.first_name || ''} ${conv.lead?.last_name || ''}`.trim() || 'Unknown'
               const initials = leadName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+              const lastPreview = getLastMessagePreview(conv)
 
               return (
                 <button
@@ -285,12 +357,12 @@ export default function ConversationsPage() {
                           </span>
                         </div>
                         <span className="text-xs text-navy/40 flex-shrink-0">
-                          {formatRelativeTime(conv.last_message_at || conv.updated_at)}
+                          {formatRelativeTime(conv.last_message_at || conv.created_at)}
                         </span>
                       </div>
                       <p className="text-xs text-navy/50 mb-1">{conv.lead?.company || 'No company'}</p>
                       <p className="text-sm text-navy/70 truncate">
-                        {conv.last_message || 'No messages yet'}
+                        {lastPreview}
                       </p>
                     </div>
 
@@ -309,12 +381,19 @@ export default function ConversationsPage() {
       </div>
 
       {/* Conversation Detail */}
-      <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+      <div className={`flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm flex-col overflow-hidden ${selectedConversationId ? 'flex' : 'hidden lg:flex'}`}>
         {selectedConversation ? (
           <>
             {/* Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
+                {/* Mobile back button */}
+                <button
+                  onClick={() => setSelectedConversationId(null)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
+                >
+                  <ChevronDown className="w-5 h-5 text-navy rotate-90" />
+                </button>
                 <div className="w-10 h-10 rounded-xl bg-navy/5 flex items-center justify-center text-sm font-semibold text-navy">
                   {`${selectedConversation.lead?.first_name || ''}${selectedConversation.lead?.last_name || ''}`.slice(0, 2).toUpperCase() || '?'}
                 </div>
@@ -324,10 +403,20 @@ export default function ConversationsPage() {
                       {`${selectedConversation.lead?.first_name || ''} ${selectedConversation.lead?.last_name || ''}`.trim() || 'Unknown'}
                     </h3>
                     <span className={`w-2 h-2 rounded-full ${getTempColor(selectedConversation.lead?.temperature || null)}`} />
+                    {selectedConversation.ai_handling === 'active' && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-impact/10 text-impact text-xs font-medium">
+                        <Sparkles className="w-3 h-3" />
+                        AI Active
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-navy/50 flex items-center gap-1">
                     <Building2 className="w-3 h-3" />
                     {selectedConversation.lead?.company || 'No company'}
+                    <span className="text-navy/30 mx-1">|</span>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${getChannelColor(selectedConversation.channel)}`}>
+                      {getChannelLabel(selectedConversation.channel)}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -360,29 +449,33 @@ export default function ConversationsPage() {
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                         msg.direction === 'outbound'
-                          ? 'bg-impact text-ivory rounded-br-md'
+                          ? msg.status === 'failed'
+                            ? 'bg-red-500 text-white rounded-br-md'
+                            : 'bg-impact text-ivory rounded-br-md'
                           : 'bg-gray-100 text-navy rounded-bl-md'
                       }`}
                     >
-                      {msg.ai_generated && msg.direction === 'outbound' && (
+                      {msg.is_ai_generated && msg.direction === 'outbound' && (
                         <div className="flex items-center gap-1 text-xs text-ivory/70 mb-1">
                           <Sparkles className="w-3 h-3" />
                           AI Generated
                         </div>
                       )}
-                      <p className="text-sm">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
                         msg.direction === 'outbound' ? 'text-ivory/60' : 'text-navy/40'
                       }`}>
                         <span>{formatRelativeTime(msg.created_at)}</span>
                         {msg.direction === 'outbound' && (
-                          msg.status === 'delivered' ? (
-                            <CheckCheck className="w-3 h-3" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )
+                          <MessageStatusIcon status={msg.status} />
                         )}
                       </div>
+                      {msg.status === 'failed' && msg.error_message && (
+                        <div className="flex items-center gap-1 mt-1.5 text-xs text-red-200">
+                          <XCircle className="w-3 h-3" />
+                          {msg.error_message}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -405,11 +498,11 @@ export default function ConversationsPage() {
                   <div className="w-8 h-8 rounded-lg bg-impact flex items-center justify-center flex-shrink-0">
                     <Sparkles className="w-4 h-4 text-ivory" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-impact mb-1">AI Suggested Reply</p>
-                    <p className="text-sm text-navy/80">{aiSuggestion}</p>
+                    <p className="text-sm text-navy/80 whitespace-pre-wrap">{aiSuggestion}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={handleUseAiSuggestion}
                       className="px-3 py-1.5 rounded-lg bg-impact text-ivory text-xs font-medium hover:bg-impact-light transition-colors"
@@ -429,12 +522,40 @@ export default function ConversationsPage() {
 
             {/* Input */}
             <div className="p-4 border-t border-gray-100">
+              {/* Channel Switcher */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-navy/40">Reply via:</span>
+                {(['whatsapp', 'sms', 'email', ...(selectedConversation?.channel === 'instagram_dm' ? ['instagram_dm'] : []), ...(selectedConversation?.channel === 'messenger' ? ['messenger'] : [])] as string[]).map((ch) => {
+                  const Icon = getChannelIcon(ch)
+                  const active = getActiveChannel() === ch
+                  const available = canUseChannel(ch)
+                  return (
+                    <button
+                      key={ch}
+                      onClick={() => setReplyChannel(ch)}
+                      disabled={!available}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                        active
+                          ? 'bg-impact text-ivory'
+                          : available
+                            ? 'bg-gray-100 text-navy/60 hover:bg-gray-200'
+                            : 'bg-gray-50 text-navy/20 cursor-not-allowed'
+                      }`}
+                      title={!available ? `Lead has no ${ch === 'email' ? 'email' : 'phone number'}` : `Reply via ${getChannelLabel(ch)}`}
+                    >
+                      <Icon className="w-3 h-3" />
+                      {getChannelLabel(ch)}
+                    </button>
+                  )
+                })}
+              </div>
+
               <div className="flex items-end gap-3">
                 <div className="flex-1 relative">
                   <textarea
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Type a message..."
+                    placeholder={`Message via ${getChannelLabel(getActiveChannel())}...`}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
                     rows={2}
                     onKeyDown={(e) => {
@@ -470,6 +591,7 @@ export default function ConversationsPage() {
                   )}
                   Generate AI Reply
                 </button>
+                <span className="text-xs text-navy/30">Shift+Enter for new line</span>
               </div>
             </div>
           </>

@@ -227,7 +227,7 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-navy">Campaigns</h1>
           <p className="text-navy/60">Monitor and manage your advertising campaigns</p>
@@ -239,14 +239,14 @@ export default function CampaignsPage() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${syncCampaigns.isPending ? 'animate-spin' : ''}`} />
-            Sync All
+            <span className="hidden sm:inline">Sync All</span>
           </button>
           <button
             onClick={() => setShowNewCampaignModal(true)}
             className="btn-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            New Campaign
+            <span className="hidden sm:inline">New Campaign</span>
           </button>
         </div>
       </div>
@@ -333,7 +333,7 @@ export default function CampaignsPage() {
       <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-[250px]">
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
@@ -396,8 +396,8 @@ export default function CampaignsPage() {
       </div>
 
       {/* Campaigns Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
               <th className="w-12 px-4 py-3">
@@ -517,7 +517,7 @@ export default function CampaignsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleDelete(campaign.id, campaign.name)}
                           disabled={deleteCampaigns.isPending}
@@ -536,7 +536,7 @@ export default function CampaignsPage() {
         </table>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+        <div className="px-4 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50">
           <p className="text-sm text-navy/50">
             {isLoading ? (
               'Loading...'

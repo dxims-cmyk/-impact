@@ -299,7 +299,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-navy">Reports</h1>
           <p className="text-navy/60">Performance analytics and insights</p>
@@ -760,7 +760,7 @@ export default function ReportsPage() {
                       e.stopPropagation()
                       handleSendReport(report.id)
                     }}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:opacity-0 lg:group-hover:opacity-100"
                     title="Send via email"
                   >
                     <Mail className="w-4 h-4 text-navy/60" />

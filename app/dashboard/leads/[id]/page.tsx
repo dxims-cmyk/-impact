@@ -57,8 +57,8 @@ function DetailSkeleton() {
           <div className="w-32 h-4 bg-gray-200 rounded" />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl p-4 border border-gray-100 h-16" />
           <div className="bg-gray-100 rounded-2xl p-6 h-48" />
           <div className="bg-white rounded-2xl p-6 border border-gray-100 h-64" />
@@ -299,12 +299,12 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Quick Actions */}
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 sm:flex items-center gap-3">
               <a
                 href={lead.phone ? `tel:${lead.phone}` : undefined}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors ${
@@ -356,7 +356,7 @@ export default function LeadDetailPage() {
               <p className="text-navy/80 mb-4">{lead.ai_summary}</p>
 
               {(buyingSignals.length > 0 || objections.length > 0) && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {buyingSignals.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-navy/50 uppercase mb-2">Buying Signals</p>
@@ -391,12 +391,12 @@ export default function LeadDetailPage() {
           {/* Tabs */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="border-b border-gray-100">
-              <div className="flex">
+              <div className="flex overflow-x-auto scrollbar-hide">
                 {['activity', 'notes', 'emails', 'tasks'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-3 text-sm font-medium capitalize transition-colors ${
+                    className={`px-6 py-3 text-sm font-medium capitalize transition-colors whitespace-nowrap ${
                       activeTab === tab
                         ? 'text-impact border-b-2 border-impact'
                         : 'text-navy/50 hover:text-navy'

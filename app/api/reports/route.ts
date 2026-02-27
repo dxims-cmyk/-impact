@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     // Get ad performance
     const { data: adPerf } = await supabase
       .from('ad_performance')
-      .select('spend, leads, revenue, campaign:ad_campaigns(name)')
+      .select('spend, leads, revenue, conversions, campaign:ad_campaigns(name, platform)')
       .eq('organization_id', userData.organization_id)
       .gte('date', period_start)
       .lte('date', period_end)
@@ -152,20 +152,28 @@ export async function POST(request: NextRequest) {
     const wonCount = leads?.filter(l => l.stage === 'won').length || 0
 
     // Group by campaign
-    const campaignMap = new Map<string, { name: string; leads: number; spend: number }>()
+    const campaignMap = new Map<string, { name: string; platform: string; leads: number; spend: number; revenue: number }>()
     for (const p of adPerf || []) {
       const name = p.campaign?.name || 'Unknown'
-      const existing = campaignMap.get(name) || { name, leads: 0, spend: 0 }
+      const platform = (p.campaign as { platform?: string })?.platform || 'unknown'
+      const existing = campaignMap.get(name) || { name, platform, leads: 0, spend: 0, revenue: 0 }
       campaignMap.set(name, {
         name,
+        platform,
         leads: existing.leads + (p.leads || 0),
         spend: existing.spend + (p.spend || 0),
+        revenue: existing.revenue + (p.revenue || 0),
       })
     }
 
     const topCampaigns = Array.from(campaignMap.values())
       .sort((a, b) => b.leads - a.leads)
-      .slice(0, 5)
+      .slice(0, 10)
+      .map(c => ({
+        ...c,
+        cpl: c.leads > 0 ? Math.round((c.spend / c.leads) * 100) / 100 : 0,
+        roas: c.spend > 0 ? Math.round((c.revenue / c.spend) * 10) / 10 : 0,
+      }))
 
     // Aggregate lead sources
     const sourceColors: Record<string, string> = {
@@ -205,6 +213,7 @@ export async function POST(request: NextRequest) {
       revenue: totalRevenue,
       roas,
       top_campaigns: topCampaigns,
+      campaignPerformance: topCampaigns,
       sourceBreakdown,
     }
 

@@ -7,6 +7,7 @@ const PRO_FEATURES = [
   'reports_advanced',
   'strategy_calls',
   'priority_support',
+  'reputation_management',
 ]
 
 export function usePlan(): {

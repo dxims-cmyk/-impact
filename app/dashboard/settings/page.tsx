@@ -256,17 +256,17 @@ export default function SettingsPage() {
         <p className="text-navy/60">Manage your account and preferences</p>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <div className="w-64 flex-shrink-0">
-          <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar — horizontal scrollable tabs on mobile, vertical on desktop */}
+        <div className="w-full lg:w-64 flex-shrink-0">
+          <nav className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2 flex lg:flex-col gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2 lg:gap-3 px-4 py-2.5 lg:py-3 rounded-xl text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 lg:w-full ${
                     activeTab === tab.id
                       ? 'bg-impact text-ivory'
                       : 'text-navy/70 hover:bg-gray-50 hover:text-navy'
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Form */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-navy mb-1.5">First Name</label>
                       <input
@@ -338,7 +338,7 @@ export default function SettingsPage() {
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-navy mb-1.5">Job Title</label>
                       <input
                         type="text"
@@ -379,8 +379,8 @@ export default function SettingsPage() {
                 <FormSkeleton />
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-navy mb-1.5">Organization Name</label>
                       <input
                         type="text"
@@ -589,8 +589,8 @@ export default function SettingsPage() {
                 <FormSkeleton />
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-4 gap-4 pb-3 border-b border-gray-100">
-                    <div className="col-span-1"></div>
+                  <div className="grid grid-cols-4 gap-2 sm:gap-4 pb-3 border-b border-gray-100">
+                    <div></div>
                     <div className="text-center">
                       <Mail className="w-5 h-5 text-navy/40 mx-auto mb-1" />
                       <span className="text-xs font-medium text-navy/50">Email</span>
@@ -608,7 +608,7 @@ export default function SettingsPage() {
                   {defaultNotificationSettings.map((notification) => {
                     const prefs = notificationPrefs?.[notification.id as keyof typeof notificationPrefs] || { email: false, push: false, sms: false }
                     return (
-                      <div key={notification.id} className="grid grid-cols-4 gap-4 py-3 border-b border-gray-50">
+                      <div key={notification.id} className="grid grid-cols-4 gap-2 sm:gap-4 py-3 border-b border-gray-50">
                         <div>
                           <p className="font-medium text-navy text-sm">{notification.label}</p>
                           <p className="text-xs text-navy/50">{notification.description}</p>

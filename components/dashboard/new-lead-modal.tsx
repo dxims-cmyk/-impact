@@ -124,7 +124,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
       <div className="absolute inset-0 bg-navy/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-full max-w-2xl max-h-[90vh] overflow-auto">
+      <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-full max-w-2xl max-h-[90vh] overflow-auto mx-auto px-4 sm:px-0">
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-200">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -143,7 +143,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Name */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
                   First Name <span className="text-impact">*</span>
@@ -178,7 +178,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
             </div>
 
             {/* Contact */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
                   Email <span className="text-impact">*</span>
@@ -215,7 +215,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
             </div>
 
             {/* Company */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
                   Company
@@ -248,7 +248,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
             </div>
 
             {/* Source & Stage */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
                   Source

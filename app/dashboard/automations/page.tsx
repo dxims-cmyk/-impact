@@ -183,7 +183,7 @@ export default function AutomationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-navy">Automations</h1>
           <p className="text-navy/60">Automate your lead nurturing and follow-up workflows</p>
@@ -193,7 +193,7 @@ export default function AutomationsPage() {
             setEditAutomationId(null)
             setBuilderOpen(true)
           }}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           New Automation

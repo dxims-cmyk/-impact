@@ -4,10 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { sendSMS } from '@/lib/integrations/twilio'
 import { sendEmail } from '@/lib/integrations/resend'
 import { sendWhatsAppText } from '@/lib/integrations/whatsapp'
+import { sendInstagramMessage, sendMessengerMessage } from '@/lib/integrations/meta-messaging'
 import { z } from 'zod'
 
 const sendMessageSchema = z.object({
-  content: z.string().min(1).max(1600),
+  content: z.string().min(1).max(5000),
+  channel: z.enum(['sms', 'email', 'whatsapp', 'instagram_dm', 'messenger']).optional(),
 })
 
 // GET /api/conversations/[id]/messages - Get all messages
@@ -100,7 +102,7 @@ export async function POST(
     .from('conversations')
     .select(`
       *,
-      lead:leads(id, email, phone, first_name)
+      lead:leads(id, email, phone, first_name, source_detail)
     `)
     .eq('id', id)
 
@@ -132,29 +134,42 @@ export async function POST(
     return NextResponse.json({ error: msgError.message }, { status: 500 })
   }
 
-  // Send based on channel
+  // Send based on channel (allow override from request)
+  const sendChannel = validation.data.channel || conversation.channel
   try {
     let externalId: string | undefined
 
-    if (conversation.channel === 'sms' && conversation.lead?.phone) {
+    if (sendChannel === 'sms' && conversation.lead?.phone) {
       const result = await sendSMS({
         to: conversation.lead.phone,
         body: validation.data.content,
       })
       externalId = result.sid
-    } else if (conversation.channel === 'email' && conversation.lead?.email) {
+    } else if (sendChannel === 'email' && conversation.lead?.email) {
       const result = await sendEmail({
         to: conversation.lead.email,
         subject: `Message from : Impact`,
         text: validation.data.content,
       })
       externalId = result?.id
-    } else if (conversation.channel === 'whatsapp' && conversation.lead?.phone) {
+    } else if (sendChannel === 'whatsapp' && conversation.lead?.phone) {
       const result = await sendWhatsAppText({
         to: conversation.lead.phone,
         body: validation.data.content,
       })
       externalId = result.messageId
+    } else if (sendChannel === 'instagram_dm') {
+      const sourceDetail = conversation.lead?.source_detail as Record<string, string> | null
+      const recipientId = sourceDetail?.instagram_id
+      if (!recipientId) throw new Error('No Instagram ID for this lead')
+      const result = await sendInstagramMessage(recipientId, validation.data.content)
+      externalId = result.message_id
+    } else if (sendChannel === 'messenger') {
+      const sourceDetail = conversation.lead?.source_detail as Record<string, string> | null
+      const recipientId = sourceDetail?.messenger_id
+      if (!recipientId) throw new Error('No Messenger ID for this lead')
+      const result = await sendMessengerMessage(recipientId, validation.data.content)
+      externalId = result.message_id
     }
 
     // Update message status
@@ -180,9 +195,9 @@ export async function POST(
     await supabase.from('lead_activities').insert({
       lead_id: conversation.lead_id,
       organization_id: conversation.organization_id,
-      type: `${conversation.channel}_sent`,
+      type: `${sendChannel}_sent`,
       direction: 'outbound',
-      channel: conversation.channel,
+      channel: sendChannel,
       content: validation.data.content,
       metadata: { message_id: message.id },
       performed_by: user.id,

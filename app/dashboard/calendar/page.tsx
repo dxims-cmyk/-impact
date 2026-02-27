@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ChevronLeft,
@@ -35,6 +35,13 @@ const timeSlots = [
 export default function CalendarPage(): JSX.Element {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<'week' | 'day' | 'list'>('week')
+
+  // Default to day view on mobile after mount
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setView('day')
+    }
+  }, [])
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [showNewModal, setShowNewModal] = useState(false)
 
@@ -228,7 +235,7 @@ export default function CalendarPage(): JSX.Element {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-navy">Calendar</h1>
           <p className="text-navy/60">Manage your appointments and calls</p>
@@ -249,16 +256,17 @@ export default function CalendarPage(): JSX.Element {
             className="btn-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            New Appointment
+            <span className="hidden sm:inline">New Appointment</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
       </div>
 
       {/* Calendar Controls */}
       <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           {/* Navigation */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => navigate('prev')}
@@ -273,22 +281,22 @@ export default function CalendarPage(): JSX.Element {
                 <ChevronRight className="w-5 h-5 text-navy" />
               </button>
             </div>
-            <h2 className="text-lg font-semibold text-navy">{headerTitle}</h2>
+            <h2 className="text-sm sm:text-lg font-semibold text-navy truncate">{headerTitle}</h2>
             <button
               onClick={goToToday}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors flex-shrink-0"
             >
               Today
             </button>
           </div>
 
           {/* View Toggle */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
             {(['week', 'day', 'list'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
+                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
                   view === v
                     ? 'bg-white text-navy shadow-sm'
                     : 'text-navy/60 hover:text-navy'
@@ -301,7 +309,7 @@ export default function CalendarPage(): JSX.Element {
         </div>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Calendar Grid */}
         <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {isLoading ? (
@@ -311,7 +319,7 @@ export default function CalendarPage(): JSX.Element {
           ) : view === 'week' ? (
             <>
               {/* Week Header */}
-              <div className="grid grid-cols-8 border-b border-gray-100">
+              <div className="grid grid-cols-8 border-b border-gray-100 min-w-[700px]">
                 <div className="p-3 text-center border-r border-gray-100">
                   <span className="text-xs font-medium text-navy/40">{Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop()?.replace('_', ' ') || 'Local'}</span>
                 </div>
@@ -334,9 +342,9 @@ export default function CalendarPage(): JSX.Element {
               </div>
 
               {/* Time Slots */}
-              <div className="max-h-[600px] overflow-y-auto">
+              <div className="max-h-[600px] overflow-auto">
                 {timeSlots.map((time) => (
-                  <div key={time} className="grid grid-cols-8 border-b border-gray-50 min-h-[80px]">
+                  <div key={time} className="grid grid-cols-8 border-b border-gray-50 min-h-[80px] min-w-[700px]">
                     <div className="p-2 text-right border-r border-gray-100 text-xs text-navy/40">
                       {time}
                     </div>
@@ -489,7 +497,7 @@ export default function CalendarPage(): JSX.Element {
         </div>
 
         {/* Appointment Detail Sidebar */}
-        <div className="w-80">
+        <div className="w-full lg:w-80">
           {selectedAppointment ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
               <div className="flex items-start justify-between">
@@ -652,8 +660,8 @@ export default function CalendarPage(): JSX.Element {
 
       {/* New Appointment Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-navy">New Appointment</h3>
               <button onClick={() => setShowNewModal(false)} className="p-2 rounded-lg hover:bg-gray-100">

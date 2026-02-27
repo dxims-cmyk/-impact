@@ -301,7 +301,7 @@ function LeadsPageContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-navy">Leads</h1>
           <p className="text-navy/60">
@@ -318,11 +318,11 @@ function LeadsPageContent() {
           </button>
           <button onClick={handleExport} disabled={isExporting} className="btn-secondary flex items-center gap-2">
             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export
+            <span className="hidden sm:inline">Export</span>
           </button>
           <button onClick={() => setShowNewLeadModal(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Add Lead
+            <span className="hidden sm:inline">Add Lead</span>
           </button>
         </div>
       </div>
@@ -331,7 +331,7 @@ function LeadsPageContent() {
       <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-[250px]">
+          <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
@@ -432,8 +432,8 @@ function LeadsPageContent() {
       </div>
 
       {/* Leads Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
               <th className="w-12 px-4 py-3">
@@ -581,7 +581,7 @@ function LeadsPageContent() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         {lead.phone ? (
                           <button
                             onClick={(e) => handleCopyPhone(lead.phone!, e)}
@@ -638,7 +638,7 @@ function LeadsPageContent() {
         </table>
 
         {/* Pagination */}
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-navy/50">
             {isLoading ? (
               'Loading...'

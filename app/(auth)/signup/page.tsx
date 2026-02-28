@@ -1,6 +1,6 @@
 'use client'
 
-import { Zap, Mail, ShieldCheck } from 'lucide-react'
+import { Mail, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SignupPage() {

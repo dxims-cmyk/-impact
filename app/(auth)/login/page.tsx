@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Zap, Mail, Lock, ArrowRight } from 'lucide-react'
+import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 function LoginForm() {
@@ -23,6 +23,24 @@ function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    // 2FA check - send OTP before completing login
+    try {
+      const otpRes = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const otpData = await otpRes.json()
+
+      if (otpData.twoFactorRequired) {
+        sessionStorage.setItem('pendingLoginPassword', password)
+        router.push(`/verify?email=${encodeURIComponent(email)}`)
+        return
+      }
+    } catch {
+      // If OTP check fails, proceed with normal login
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -88,9 +106,7 @@ function LoginForm() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-impact rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Zap className="w-8 h-8 text-ivory" />
-          </div>
+          <img src="/ampm-logo.png" alt="AM:PM Media" className="w-14 h-14 rounded-xl mx-auto mb-4 shadow-lg object-cover" />
           <h1 className="text-2xl font-bold text-ivory">Sign in to <span className="text-impact">: Impact</span></h1>
           <p className="text-ivory/60 mt-2">Your growth marketing command center</p>
         </div>
@@ -186,9 +202,7 @@ function LoginLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy px-4">
       <div className="max-w-md w-full text-center">
-        <div className="w-14 h-14 bg-impact rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg animate-pulse">
-          <Zap className="w-8 h-8 text-ivory" />
-        </div>
+        <img src="/ampm-logo.png" alt="AM:PM Media" className="w-14 h-14 rounded-xl mx-auto mb-4 shadow-lg object-cover animate-pulse" />
         <p className="text-ivory/60">Loading...</p>
       </div>
     </div>

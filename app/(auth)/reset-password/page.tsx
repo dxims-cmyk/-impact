@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Zap, Lock, ArrowRight, CheckCircle } from 'lucide-react'
+import { Lock, ArrowRight, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ResetPasswordPage() {
@@ -82,9 +82,7 @@ export default function ResetPasswordPage() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-impact rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Zap className="w-8 h-8 text-ivory" />
-          </div>
+          <img src="/ampm-logo.png" alt="AM:PM Media" className="w-14 h-14 rounded-xl mx-auto mb-4 shadow-lg object-cover" />
           <h1 className="text-2xl font-bold text-ivory">Set new password</h1>
           <p className="text-ivory/60 mt-2">Enter your new password below</p>
         </div>

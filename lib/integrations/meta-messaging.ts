@@ -8,15 +8,15 @@ interface SendMessageResult {
 
 /**
  * Send a text message via Instagram DM
- * Requires META_PAGE_ACCESS_TOKEN with instagram_manage_messages permission
+ * Requires INSTAGRAM_ACCESS_TOKEN with instagram_business_manage_messages permission
  */
 export async function sendInstagramMessage(
   recipientId: string,
   text: string,
 ): Promise<SendMessageResult> {
-  const accessToken = process.env.META_PAGE_ACCESS_TOKEN
+  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN
   if (!accessToken) {
-    throw new Error('META_PAGE_ACCESS_TOKEN not configured')
+    throw new Error('INSTAGRAM_ACCESS_TOKEN not configured')
   }
 
   const response = await fetch(

@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Mail, Lock, ArrowRight } from 'lucide-react'
+import { Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 function LoginForm() {
@@ -104,6 +104,15 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy px-4">
       <div className="max-w-md w-full">
+        {/* Back to landing */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-ivory/40 hover:text-ivory/70 transition-colors mb-8"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to home
+        </Link>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/ampm-logo.png" alt="AM:PM Media" className="w-14 h-14 rounded-xl mx-auto mb-4 shadow-lg object-cover" />

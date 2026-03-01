@@ -318,10 +318,10 @@ export default function LandingPage() {
                 Real results
               </div>
               <div className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[#0B1220] mb-3">
-                548<span className="text-[#E8642C]">%</span>
+                5<span className="text-[#E8642C]">s</span>
               </div>
               <p className="text-lg sm:text-xl text-gray-600 max-w-lg mx-auto">
-                increase in engagement for Namak Mandi using :Impact lead management
+                average speed to lead — from enquiry to WhatsApp alert on your phone
               </p>
             </div>
           </Reveal>

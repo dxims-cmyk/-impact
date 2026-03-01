@@ -1,9 +1,72 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+const siteUrl = 'https://driveimpact.io'
+
 export const metadata: Metadata = {
-  title: ': Impact | Stop Losing Leads',
-  description: 'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything. The growth platform that pays for itself.',
+  title: {
+    default: ':Impact | Stop Losing Leads You Paid For',
+    template: '%s | :Impact by AM:PM Media',
+  },
+  description:
+    'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for WhatsApp, SMS, email, Instagram & Messenger. The lead management platform that turns your ad spend into booked appointments.',
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: '/',
+  },
+  keywords: [
+    'lead management',
+    'speed to lead',
+    'WhatsApp lead alerts',
+    'AI lead scoring',
+    'lead management software',
+    'CRM for small business',
+    'unified inbox',
+    'lead response time',
+    'Meta ads lead management',
+    'Google Ads leads',
+    'appointment booking',
+    'lead qualification',
+    'AM:PM Media',
+  ],
+  authors: [{ name: 'AM:PM Media', url: 'https://www.mediampm.com' }],
+  creator: 'AM:PM Media',
+  publisher: 'AM:PM Media',
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: siteUrl,
+    siteName: ':Impact by AM:PM Media',
+    title: ':Impact | Stop Losing the Leads You Paid For',
+    description:
+      'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything. Turn your ad spend into booked appointments.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: ':Impact — Lead management platform by AM:PM Media',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: ':Impact | Stop Losing the Leads You Paid For',
+    description:
+      'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything. The growth platform that pays for itself.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export default function MarketingLayout({
@@ -11,8 +74,64 @@ export default function MarketingLayout({
 }: {
   children: React.ReactNode
 }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://driveimpact.io/#organization',
+        name: 'AM:PM Media',
+        url: 'https://www.mediampm.com',
+        logo: 'https://driveimpact.io/ampm-logo.png',
+        sameAs: [
+          'https://www.instagram.com/mediampm',
+          'https://www.tiktok.com/@mediampm',
+        ],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://driveimpact.io/#website',
+        url: 'https://driveimpact.io',
+        name: ':Impact',
+        publisher: { '@id': 'https://driveimpact.io/#organization' },
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: ':Impact',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        description:
+          'AI-powered lead management platform with WhatsApp alerts, lead scoring, and unified inbox for businesses running paid ads.',
+        offers: {
+          '@type': 'Offer',
+          price: '1500',
+          priceCurrency: 'GBP',
+          priceValidUntil: '2026-12-31',
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.9',
+          ratingCount: '12',
+        },
+        featureList: [
+          '5-second WhatsApp lead alerts',
+          'AI lead scoring and qualification',
+          'Unified inbox (WhatsApp, SMS, email, Instagram, Messenger)',
+          'Calendar sync and booking',
+          'Follow-up automations',
+          'ROI tracking and reports',
+          'Meta & Google Ads integration',
+        ],
+      },
+    ],
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

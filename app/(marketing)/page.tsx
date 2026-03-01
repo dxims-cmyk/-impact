@@ -1,6 +1,3 @@
-'use client'
-
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Zap,
@@ -13,7 +10,6 @@ import {
   Clock,
   Trophy,
   AlertTriangle,
-  ChevronDown,
   Star,
   Check,
   Smartphone,
@@ -21,84 +17,15 @@ import {
   Target,
   Sparkles,
 } from 'lucide-react'
-
-/* ------------------------------------------------------------------ */
-/*  Intersection Observer hook for scroll-triggered animations         */
-/* ------------------------------------------------------------------ */
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.classList.add('revealed')
-          observer.unobserve(el)
-        }
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  return ref
-}
-
-function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const ref = useReveal()
-  return (
-    <div
-      ref={ref}
-      className={`reveal-element ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  FAQ Accordion Item                                                 */
-/* ------------------------------------------------------------------ */
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  const ref = useRef<HTMLDetailsElement>(null)
-
-  return (
-    <details ref={ref} className="group border-b border-gray-100 last:border-0">
-      <summary className="flex items-center justify-between py-5 cursor-pointer list-none text-left">
-        <span className="text-base sm:text-lg font-medium text-[#0B1220] pr-4">{question}</span>
-        <ChevronDown className="w-5 h-5 text-gray-400 shrink-0 transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="pb-5 text-gray-600 text-sm sm:text-base leading-relaxed">{answer}</div>
-    </details>
-  )
-}
+import { Reveal } from '@/components/marketing/reveal'
+import { FaqItem } from '@/components/marketing/faq-item'
 
 /* ================================================================== */
-/*  LANDING PAGE                                                       */
+/*  LANDING PAGE (Server Component for SEO)                            */
 /* ================================================================== */
 export default function LandingPage() {
   return (
     <>
-      {/* Inline styles for reveal animation */}
-      <style jsx global>{`
-        .reveal-element {
-          opacity: 0;
-          transform: translateY(28px);
-          transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .reveal-element.revealed {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
-
       {/* ============================================================ */}
       {/*  HERO                                                        */}
       {/* ============================================================ */}

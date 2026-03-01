@@ -65,6 +65,35 @@ export async function middleware(request: NextRequest) {
     )
   }
 
+  // Marketing / public routes that never need auth or Supabase
+  const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify', '/offline', '/book', '/form', '/auth/callback', '/auth/confirm', '/terms', '/privacy', '/demo']
+  const isPublicRoute = publicRoutes.some(route =>
+    request.nextUrl.pathname.startsWith(route)
+  )
+  const isMarketingHome = request.nextUrl.pathname === '/'
+
+  // API routes that don't require auth
+  const publicApiRoutes = ['/api/webhooks', '/api/auth', '/api/embed', '/api/health']
+  const isPublicApi = publicApiRoutes.some(route =>
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Allow marketing pages and public routes without touching Supabase
+  if (isMarketingHome || isPublicRoute || isPublicApi) {
+    const res = NextResponse.next({ request: { headers: request.headers } })
+    res.headers.set('X-Content-Type-Options', 'nosniff')
+    res.headers.set('X-Frame-Options', 'DENY')
+    res.headers.set('X-XSS-Protection', '1; mode=block')
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    return res
+  }
+
+  // Everything below requires Supabase — bail gracefully if env vars are missing
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const redirectUrl = new URL('/login', request.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -72,8 +101,8 @@ export async function middleware(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         get(name: string) {
@@ -119,23 +148,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Public routes that don't require auth
-  const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify', '/offline', '/book', '/form', '/auth/callback', '/auth/confirm', '/terms', '/privacy']
-  const isPublicRoute = publicRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  // API routes that don't require auth
-  const publicApiRoutes = ['/api/webhooks', '/api/auth', '/api/embed', '/api/health']
-  const isPublicApi = publicApiRoutes.some(route =>
-    request.nextUrl.pathname.startsWith(route)
-  )
-
-  // Allow public routes and API webhooks
-  if (isPublicRoute || isPublicApi) {
-    return response
-  }
-
   // Redirect to login if not authenticated
   if (!session) {
     // For API routes, return 401 instead of redirect
@@ -149,11 +161,6 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = new URL('/login', request.url)
     redirectUrl.searchParams.set('redirect', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
-  }
-
-  // Redirect to dashboard if authenticated and on root
-  if (request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Add security headers

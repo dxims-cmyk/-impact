@@ -17,7 +17,15 @@ interface RealtimeContextType {
 
 const RealtimeContext = createContext<RealtimeContextType | null>(null)
 
-export function RealtimeProvider({ children }: { children: ReactNode }) {
+const noop = () => () => {}
+
+const HAS_SUPABASE = !!(
+  typeof window !== 'undefined'
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    : process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+
+function RealtimeProviderInner({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false)
   const queryClient = useQueryClient()
   const supabase = createClient()
@@ -211,6 +219,26 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       {children}
     </RealtimeContext.Provider>
   )
+}
+
+export function RealtimeProvider({ children }: { children: ReactNode }) {
+  if (!HAS_SUPABASE) {
+    return (
+      <RealtimeContext.Provider
+        value={{
+          isConnected: false,
+          subscribeToLeads: noop,
+          subscribeToMessages: () => noop(),
+          subscribeToAppointments: noop,
+          subscribeToNotifications: noop,
+        }}
+      >
+        {children}
+      </RealtimeContext.Provider>
+    )
+  }
+
+  return <RealtimeProviderInner>{children}</RealtimeProviderInner>
 }
 
 export function useRealtime() {

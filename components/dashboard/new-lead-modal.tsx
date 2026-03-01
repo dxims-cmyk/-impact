@@ -163,14 +163,13 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
-                  Last Name <span className="text-impact">*</span>
+                  Last Name
                 </label>
                 <input
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
                   placeholder="Smith"
                 />
@@ -181,7 +180,7 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-navy mb-1.5">
-                  Email <span className="text-impact">*</span>
+                  Email
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -190,7 +189,6 @@ export function NewLeadModal({ isOpen, onClose }: NewLeadModalProps) {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    required
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
                     placeholder="john@company.com"
                   />

@@ -43,7 +43,7 @@ export function getMetaAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: process.env.META_APP_ID!,
     redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/meta/callback`,
-    scope: 'ads_read,ads_management,business_management,pages_read_engagement',
+    scope: 'ads_read,ads_management,business_management,pages_read_engagement,leads_retrieval,pages_manage_ads',
     response_type: 'code',
     state
   })

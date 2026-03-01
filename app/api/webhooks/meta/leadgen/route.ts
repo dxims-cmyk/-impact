@@ -2,8 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { fetchLeadgenData, parseLeadgenFields, verifyMetaSignature } from '@/lib/integrations/meta-ads'
+import { decryptTokens } from '@/lib/encryption'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
+import { triggerAutomations } from '@/trigger/jobs/run-automation'
 
 // GET /api/webhooks/meta/leadgen - Meta webhook verification
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -91,14 +93,53 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }
         }
 
-        if (!integration) {
-          console.error('Meta webhook: no connected Meta integration found')
+        // Resolve access token and organization ID
+        let accessToken: string | null = null
+        let organizationId: string | null = null
+
+        if (integration) {
+          organizationId = integration.organization_id as string
+
+          // Decrypt the stored OAuth token
+          try {
+            const decrypted = decryptTokens({ access_token: integration.access_token! })
+            accessToken = decrypted.access_token
+          } catch {
+            // Token might not be encrypted
+            accessToken = integration.access_token as string
+          }
+        } else if (process.env.META_PAGE_ACCESS_TOKEN) {
+          // Fallback: use env var token and find org by meta_page_id or use first org
+          accessToken = process.env.META_PAGE_ACCESS_TOKEN
+
+          const targetPageId = page_id || pageId
+          const { data: orgByPage } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('meta_page_id', targetPageId)
+            .single()
+
+          if (orgByPage) {
+            organizationId = orgByPage.id
+          } else {
+            // Last resort: use the first (and likely only) organization
+            const { data: firstOrg } = await supabase
+              .from('organizations')
+              .select('id')
+              .limit(1)
+              .single()
+            organizationId = firstOrg?.id || null
+          }
+        }
+
+        if (!accessToken || !organizationId) {
+          console.error('Meta webhook: no access token or organization found', { page_id: page_id || pageId })
           continue
         }
 
         // Fetch full lead data from Meta Graph API
         const leadgenData = await fetchLeadgenData(
-          integration.access_token!,
+          accessToken,
           leadgen_id
         )
 
@@ -126,7 +167,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const { data: existing } = await supabase
           .from('leads')
           .select('id')
-          .eq('organization_id', integration.organization_id)
+          .eq('organization_id', organizationId)
           .or(conditions.join(','))
           .single()
 
@@ -144,7 +185,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             .from('lead_activities')
             .insert({
               lead_id: existing.id,
-              organization_id: integration.organization_id,
+              organization_id: organizationId,
               type: 'form_resubmit',
               content: 'Resubmitted via Meta Lead Ad',
               metadata: {
@@ -165,7 +206,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const { data: lead, error: createError } = await supabase
           .from('leads')
           .insert({
-            organization_id: integration.organization_id,
+            organization_id: organizationId,
             email,
             phone,
             first_name: firstName,
@@ -199,7 +240,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .from('lead_activities')
           .insert({
             lead_id: lead.id,
-            organization_id: integration.organization_id,
+            organization_id: organizationId,
             type: 'created',
             content: 'Lead captured from Meta Lead Ad',
             metadata: {
@@ -214,10 +255,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // Trigger background jobs
         Promise.all([
           qualifyLeadTask.trigger({ leadId: lead.id }),
-          speedToLeadTask.trigger({ leadId: lead.id }),
+          speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: true }),
         ]).catch((error) => {
           console.error('Meta webhook: failed to trigger background jobs', error)
         })
+
+        // Trigger 'lead_created' automations
+        triggerAutomations({
+          organizationId,
+          leadId: lead.id,
+          triggerType: 'lead_created',
+        }).catch(() => {})
       } catch (error) {
         console.error('Meta webhook: error processing leadgen', { leadgen_id, error })
       }

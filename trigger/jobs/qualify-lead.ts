@@ -37,8 +37,21 @@ export const qualifyLeadTask = task({
       return { success: true, skipped: true }
     }
 
-    // Call Claude for qualification
-    logger.info("Calling Claude for qualification")
+    // Fetch any notes from activities (manual leads store notes here)
+    const { data: activities } = await supabase
+      .from('lead_activities')
+      .select('content')
+      .eq('lead_id', leadId)
+      .eq('type', 'created')
+      .limit(1)
+      .single()
+
+    const notes = activities?.content && activities.content !== 'Lead created'
+      ? activities.content
+      : null
+
+    // Call Claude for qualification — pass all context including notes
+    logger.info("Calling Claude for qualification", { hasNotes: !!notes })
 
     const qualification = await qualifyLead({
       first_name: lead.first_name,
@@ -47,9 +60,10 @@ export const qualifyLeadTask = task({
       phone: lead.phone,
       company: lead.company,
       source: lead.source,
+      source_detail: lead.source_detail,
       utm_campaign: lead.utm_campaign,
       utm_source: lead.utm_source,
-    })
+    }, notes)
 
     logger.info("Qualification result", qualification)
 

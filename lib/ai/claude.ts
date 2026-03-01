@@ -31,14 +31,31 @@ export interface ReportSummary {
 }
 
 // Lead Qualification
-export async function qualifyLead(lead: Partial<Lead>): Promise<LeadQualification> {
+export async function qualifyLead(lead: Partial<Lead>, notes?: string | null): Promise<LeadQualification> {
+  const leadContext: Record<string, unknown> = { ...lead }
+
+  // Include notes prominently if available (manual leads, form messages)
+  if (notes) {
+    leadContext.agent_notes = notes
+  }
+
+  // Extract useful info from source_detail
+  if (lead.source_detail && typeof lead.source_detail === 'object') {
+    const sd = lead.source_detail as Record<string, unknown>
+    if (sd.notes) leadContext.agent_notes = sd.notes
+    if (sd.job_title) leadContext.job_title = sd.job_title
+    if (sd.message) leadContext.form_message = sd.message
+  }
+
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1024,
     messages: [
       {
         role: 'user',
-        content: `You are a lead qualification assistant for a growth marketing agency.
+        content: `You are a lead qualification assistant for AM:PM Media, a growth marketing agency based in Glasgow.
+
+We serve businesses across hospitality, healthcare, property, beauty, and professional services with content, ads, and our :Impact lead management platform.
 
 Analyze this lead and return ONLY valid JSON (no markdown, no explanation):
 {
@@ -50,15 +67,22 @@ Analyze this lead and return ONLY valid JSON (no markdown, no explanation):
   "summary": "<one sentence summary>"
 }
 
-Scoring guide:
-- 9-10: Ready to buy, high urgency, good budget indicators
-- 7-8: Strong interest, some buying signals
-- 5-6: Interested but early stage or unclear fit
-- 3-4: Low engagement or poor fit signals
-- 1-2: Not qualified or spam
+IMPORTANT scoring guide:
+- 9-10: Ready to buy NOW, high urgency, clear budget, mentioned specific needs/services, or agent notes indicate a hot prospect
+- 7-8: Strong interest, mentioned specific business problems, has budget indicators, or agent described them as a solid prospect
+- 5-6: Interested but early stage, gathering info, or unclear fit
+- 3-4: Low engagement, poor fit, or just browsing
+- 1-2: Spam, irrelevant, or clearly not a prospect
+
+Pay special attention to:
+- "agent_notes" — these are notes written by the sales team who spoke to the lead directly. Trust these heavily.
+- "form_message" — this is what the lead wrote about their business needs
+- "job_title" — indicates decision-making authority
+- "company" — indicates business size and type
+- "source" — manual entry often means the sales team met them in person or had a conversation
 
 Lead data:
-${JSON.stringify(lead, null, 2)}`
+${JSON.stringify(leadContext, null, 2)}`
       }
     ]
   })

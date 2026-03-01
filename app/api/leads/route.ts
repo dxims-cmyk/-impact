@@ -14,7 +14,10 @@ const createLeadSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   company: z.string().optional(),
+  job_title: z.string().optional(),
+  notes: z.string().optional(),
   source: z.string().optional(),
+  stage: z.string().optional(),
   send_welcome: z.boolean().optional().default(false),
   utm_source: z.string().optional(),
   utm_medium: z.string().optional(),
@@ -159,8 +162,13 @@ export async function POST(request: NextRequest) {
     }, { status: 409 })
   }
 
-  // Separate flags from lead data
-  const { send_welcome, ...leadFields } = validation.data
+  // Separate flags and extra fields from lead data
+  const { send_welcome, notes, job_title, stage, ...leadFields } = validation.data
+
+  // Store notes and job_title in source_detail JSONB
+  const sourceDetail: Record<string, unknown> = {}
+  if (notes) sourceDetail.notes = notes
+  if (job_title) sourceDetail.job_title = job_title
 
   // Create lead
   const { data: lead, error: createError } = await supabase
@@ -168,7 +176,8 @@ export async function POST(request: NextRequest) {
     .insert({
       organization_id: userData.organization_id,
       ...leadFields,
-      stage: 'new'
+      source_detail: Object.keys(sourceDetail).length > 0 ? sourceDetail : null,
+      stage: stage || 'new'
     })
     .select()
     .single()
@@ -184,19 +193,17 @@ export async function POST(request: NextRequest) {
       lead_id: lead.id,
       organization_id: userData.organization_id,
       type: 'created',
-      content: 'Lead created',
+      content: notes || 'Lead created',
       performed_by: user.id
     })
 
   // Trigger background jobs — fire and forget, don't block the response
+  // Always trigger speed-to-lead for the WhatsApp alert to the client
+  // Only send welcome email to the lead if explicitly requested
   const jobs: Promise<unknown>[] = [
     qualifyLeadTask.trigger({ leadId: lead.id }),
+    speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: !!send_welcome }),
   ]
-
-  // Only trigger speed-to-lead (client WhatsApp alert + lead outreach) if explicitly requested
-  if (send_welcome) {
-    jobs.push(speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: true }))
-  }
 
   Promise.all(jobs).catch((error) => {
     console.error('Failed to trigger background jobs:', error)

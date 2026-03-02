@@ -18,6 +18,7 @@ import { CtaSection } from '@/components/marketing/cta-section'
 import { PainPointStats } from '@/components/marketing/pain-point-stats'
 import { SocialProofStat } from '@/components/marketing/social-proof-stat'
 import { SpotlightCard } from '@/components/marketing/spotlight-card'
+import { VideoAdsSection } from '@/components/marketing/video-ads-section'
 
 /* ================================================================== */
 /*  LANDING PAGE (Server Component for SEO)                            */
@@ -167,6 +168,11 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ============================================================ */}
+      {/*  VIDEO ADS — Talking head AI ads                            */}
+      {/* ============================================================ */}
+      <VideoAdsSection />
 
       {/* ============================================================ */}
       {/*  PRICING — LampEffect + MovingBorder card                   */}

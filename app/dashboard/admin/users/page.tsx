@@ -10,6 +10,7 @@ import {
   Mail,
   Phone,
   Lock,
+  LockOpen,
   Eye,
   EyeOff,
   Loader2,
@@ -18,6 +19,7 @@ import {
   RefreshCw,
   Copy,
   Shield,
+  AlertTriangle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -29,6 +31,9 @@ interface ClientOrg {
   subscription_status: string
   plan?: string
   plan_changed_at?: string
+  account_status?: 'active' | 'locked' | 'suspended'
+  account_locked_at?: string
+  account_lock_reason?: string
   created_at: string
   settings: Record<string, unknown>
   users: {
@@ -64,6 +69,9 @@ export default function AdminUsersPage(): JSX.Element {
   const [showPassword, setShowPassword] = useState(false)
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true)
   const [changingPlanFor, setChangingPlanFor] = useState<string | null>(null)
+  const [lockModal, setLockModal] = useState<{ orgId: string; orgName: string } | null>(null)
+  const [lockReason, setLockReason] = useState('')
+  const [lockingOrgId, setLockingOrgId] = useState<string | null>(null)
 
   // Admin guard
   useEffect(() => {
@@ -176,6 +184,50 @@ export default function AdminUsersPage(): JSX.Element {
       toast.error('Error changing plan')
     } finally {
       setChangingPlanFor(null)
+    }
+  }
+
+  const handleLockAccount = async (orgId: string, reason: string): Promise<void> => {
+    setLockingOrgId(orgId)
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'locked', reason: reason || undefined }),
+      })
+      if (res.ok) {
+        toast.success('Account locked')
+        fetchClients()
+      } else {
+        toast.error('Failed to lock account')
+      }
+    } catch {
+      toast.error('Error locking account')
+    } finally {
+      setLockingOrgId(null)
+      setLockModal(null)
+      setLockReason('')
+    }
+  }
+
+  const handleUnlockAccount = async (orgId: string): Promise<void> => {
+    setLockingOrgId(orgId)
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'active' }),
+      })
+      if (res.ok) {
+        toast.success('Account unlocked')
+        fetchClients()
+      } else {
+        toast.error('Failed to unlock account')
+      }
+    } catch {
+      toast.error('Error unlocking account')
+    } finally {
+      setLockingOrgId(null)
     }
   }
 
@@ -440,6 +492,76 @@ export default function AdminUsersPage(): JSX.Element {
         </div>
       )}
 
+      {/* Lock account confirmation modal */}
+      {lockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Lock Account
+                </h2>
+                <button
+                  onClick={() => { setLockModal(null); setLockReason('') }}
+                  className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-white/70 text-sm mt-1">
+                This will prevent all users in <strong>{lockModal.orgName}</strong> from accessing the dashboard.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-navy/80 mb-1.5">
+                  Reason (optional)
+                </label>
+                <textarea
+                  value={lockReason}
+                  onChange={(e) => setLockReason(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-navy focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500 resize-none"
+                  placeholder="e.g., Non-payment, trial expired..."
+                  rows={3}
+                />
+                <p className="text-xs text-navy/40 mt-1">
+                  This message will be shown to the client on the lockout screen.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setLockModal(null); setLockReason('') }}
+                  className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-navy/60 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleLockAccount(lockModal.orgId, lockReason)}
+                  disabled={lockingOrgId === lockModal.orgId}
+                  className="px-6 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {lockingOrgId === lockModal.orgId ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Locking...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      Lock Account
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Client list */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
@@ -499,7 +621,49 @@ export default function AdminUsersPage(): JSX.Element {
                           (org.plan || 'core') === 'core' ? 'Upgrade to Pro' : 'Downgrade to Core'
                         )}
                       </button>
+                      {/* Account status badge */}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        (!org.account_status || org.account_status === 'active')
+                          ? 'bg-green-50 text-green-700'
+                          : org.account_status === 'locked'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {(!org.account_status || org.account_status === 'active') ? 'Active' :
+                         org.account_status === 'locked' ? 'Locked' : 'Suspended'}
+                      </span>
+                      {/* Lock/Unlock button */}
+                      {(!org.account_status || org.account_status === 'active') ? (
+                        <button
+                          onClick={() => setLockModal({ orgId: org.id, orgName: org.name })}
+                          disabled={lockingOrgId === org.id}
+                          className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <Lock className="w-3 h-3" />
+                          Lock
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUnlockAccount(org.id)}
+                          disabled={lockingOrgId === org.id}
+                          className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-green-200 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {lockingOrgId === org.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <LockOpen className="w-3 h-3" />
+                          )}
+                          Unlock
+                        </button>
+                      )}
                     </div>
+                    {/* Lock reason display */}
+                    {org.account_status && org.account_status !== 'active' && org.account_lock_reason && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {org.account_lock_reason}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

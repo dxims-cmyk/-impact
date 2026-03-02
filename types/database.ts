@@ -25,6 +25,10 @@ export interface Database {
           plan: 'core' | 'pro'
           plan_changed_at: string | null
           stripe_customer_id: string | null
+          account_status: 'active' | 'locked' | 'suspended'
+          account_locked_at: string | null
+          account_lock_reason: string | null
+          account_locked_by: string | null
           created_at: string
           updated_at: string
         }
@@ -39,6 +43,10 @@ export interface Database {
           plan?: 'core' | 'pro'
           plan_changed_at?: string | null
           stripe_customer_id?: string | null
+          account_status?: 'active' | 'locked' | 'suspended'
+          account_locked_at?: string | null
+          account_lock_reason?: string | null
+          account_locked_by?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -53,6 +61,10 @@ export interface Database {
           plan?: 'core' | 'pro'
           plan_changed_at?: string | null
           stripe_customer_id?: string | null
+          account_status?: 'active' | 'locked' | 'suspended'
+          account_locked_at?: string | null
+          account_lock_reason?: string | null
+          account_locked_by?: string | null
           created_at?: string
           updated_at?: string
         }

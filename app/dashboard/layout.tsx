@@ -9,7 +9,9 @@ import { NotificationsDropdown } from '@/components/dashboard/notifications-drop
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
 import { HelpButton } from '@/components/help/HelpButton'
 import { ForcePasswordChange } from '@/components/auth/ForcePasswordChange'
+import { AccountLockoutScreen } from '@/components/dashboard/account-lockout-screen'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
+import { useUser } from '@/lib/hooks/use-user'
 import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardLayout({
@@ -23,6 +25,7 @@ export default function DashboardLayout({
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [mustChangePassword, setMustChangePassword] = useState(false)
+  const { data: currentUser } = useUser()
   const supabase = createClient()
 
   // Check if user must change password (first login)
@@ -117,6 +120,11 @@ export default function DashboardLayout({
       {/* Force password change modal */}
       {mustChangePassword && (
         <ForcePasswordChange onComplete={() => setMustChangePassword(false)} />
+      )}
+
+      {/* Account lockout screen - blocks non-agency users when org is locked/suspended */}
+      {currentUser?.organization?.account_status && currentUser.organization.account_status !== 'active' && !currentUser.is_agency_user && (
+        <AccountLockoutScreen reason={currentUser.organization.account_lock_reason} />
       )}
     </div>
   )

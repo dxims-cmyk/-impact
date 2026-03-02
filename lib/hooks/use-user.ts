@@ -11,6 +11,9 @@ export function useUser() {
       slug: string
       subscription_tier: string
       plan: 'core' | 'pro'
+      account_status: 'active' | 'locked' | 'suspended'
+      account_locked_at: string | null
+      account_lock_reason: string | null
     }
   }>({
     queryKey: ['user'],

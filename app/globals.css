@@ -210,3 +210,15 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* 3D scroll animation perspective */
+.perspective-1060 {
+  perspective: 1060px;
+}
+
+/* Disable spotlight on touch devices */
+@media (pointer: coarse) {
+  .coarse-pointer\:hidden {
+    display: none !important;
+  }
+}

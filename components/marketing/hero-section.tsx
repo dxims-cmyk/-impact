@@ -96,38 +96,126 @@ export function HeroSection(): React.JSX.Element {
           className="mt-16 sm:mt-20 max-w-5xl mx-auto"
         >
           <ContainerScrollAnimation>
-            <div className="relative rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50 to-white shadow-2xl shadow-gray-200/60 overflow-hidden">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px]" />
-              <div className="relative p-6 sm:p-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <div className="ml-4 h-5 w-48 rounded bg-gray-200" />
+            <div className="relative rounded-2xl border border-gray-200 bg-white shadow-2xl shadow-gray-200/60 overflow-hidden">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                <div className="ml-3 h-5 w-52 rounded-md bg-gray-100 flex items-center px-2.5">
+                  <span className="text-[9px] text-gray-400 font-medium">driveimpact.io/dashboard</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  {['New Leads', 'Contacted', 'Booked', 'Won'].map((label) => (
-                    <div key={label} className="rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
-                      <div className="text-xs text-gray-400 mb-1">{label}</div>
-                      <div className="text-2xl font-bold text-[#0B1220]">
-                        {label === 'New Leads' ? '24' : label === 'Contacted' ? '18' : label === 'Booked' ? '12' : '8'}
-                      </div>
+              </div>
+
+              {/* Dashboard */}
+              <div className="flex">
+                {/* Navy sidebar strip */}
+                <div className="hidden sm:flex flex-col items-center w-12 bg-[#0B1220] py-4 gap-3 shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-[#E8642C] flex items-center justify-center mb-1">
+                    <span className="text-[8px] font-extrabold text-white tracking-tight">IE</span>
+                  </div>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className={`w-7 h-7 rounded-lg flex items-center justify-center ${i === 0 ? 'bg-white/10' : ''}`}>
+                      <div className={`w-3.5 h-3.5 rounded ${i === 0 ? 'bg-white/70' : 'bg-white/20'}`} />
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-[#E8642C]/10" />
-                        <div className="h-3 w-24 rounded bg-gray-100" />
+
+                {/* Main content */}
+                <div className="flex-1 p-4 sm:p-5 bg-[#F8F9FB]">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <div className="text-xs font-bold text-[#0B1220]">Dashboard</div>
+                      <div className="text-[9px] text-gray-400">Welcome back, Alex</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-white border border-gray-100 flex items-center justify-center">
+                        <div className="w-3 h-3 rounded bg-gray-200" />
                       </div>
-                      <div className="space-y-2">
-                        <div className="h-2 w-full rounded bg-gray-100" />
-                        <div className="h-2 w-3/4 rounded bg-gray-100" />
+                      <div className="w-6 h-6 rounded-full bg-[#E8642C]/10 flex items-center justify-center">
+                        <span className="text-[7px] font-bold text-[#E8642C]">A</span>
                       </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* KPI Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                    {[
+                      { label: 'Total Leads', value: '247', change: '+12%' },
+                      { label: 'Cost / Lead', value: '£18.40', change: '-8%' },
+                      { label: 'Booked Calls', value: '34', change: '+23%' },
+                      { label: 'ROAS', value: '4.2x', change: '+15%' },
+                    ].map((kpi) => (
+                      <div key={kpi.label} className="rounded-xl bg-white border border-gray-100 p-3 shadow-sm">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[9px] text-gray-400 font-medium">{kpi.label}</div>
+                          <div className="w-5 h-5 rounded-md bg-[#E8642C]/10 flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-[#E8642C]/40" />
+                          </div>
+                        </div>
+                        <div className="text-lg font-bold text-[#0B1220] leading-none">{kpi.value}</div>
+                        <div className="text-[9px] font-medium text-green-500 mt-1">{kpi.change} this month</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pipeline + Recent Leads */}
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                    {/* Pipeline */}
+                    <div className="sm:col-span-2 rounded-xl bg-white border border-gray-100 p-3 shadow-sm">
+                      <div className="text-[10px] font-semibold text-[#0B1220] mb-2.5">Pipeline</div>
+                      <div className="space-y-1.5">
+                        {[
+                          { stage: 'New', count: 24, width: '80%', color: '#6E0F1A' },
+                          { stage: 'Qualified', count: 18, width: '60%', color: '#8B1422' },
+                          { stage: 'Contacted', count: 15, width: '50%', color: '#D4A574' },
+                          { stage: 'Booked', count: 12, width: '40%', color: '#2D4A3E' },
+                          { stage: 'Won', count: 8, width: '27%', color: '#2D4A3E' },
+                          { stage: 'Lost', count: 3, width: '10%', color: '#4A3728' },
+                        ].map((s) => (
+                          <div key={s.stage} className="flex items-center gap-1.5">
+                            <div className="text-[8px] text-gray-400 w-12 shrink-0">{s.stage}</div>
+                            <div className="flex-1 h-3 bg-gray-50 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: s.width, backgroundColor: s.color }} />
+                            </div>
+                            <div className="text-[8px] font-semibold text-[#0B1220] w-4 text-right">{s.count}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recent Leads */}
+                    <div className="sm:col-span-3 rounded-xl bg-white border border-gray-100 p-3 shadow-sm">
+                      <div className="text-[10px] font-semibold text-[#0B1220] mb-2.5">Recent Leads</div>
+                      <div className="space-y-1.5">
+                        {[
+                          { initials: 'SM', name: 'Sarah Mitchell', temp: 'Hot', score: 92, summary: 'Interested in premium plan, requested callback' },
+                          { initials: 'JC', name: 'James Cooper', temp: 'Warm', score: 74, summary: 'Compared pricing, downloaded brochure' },
+                          { initials: 'EC', name: 'Emily Chen', temp: 'Hot', score: 88, summary: 'Booked demo for Friday, high engagement' },
+                          { initials: 'MW', name: 'Marcus Williams', temp: 'Cold', score: 31, summary: 'Initial enquiry via Facebook ad' },
+                        ].map((lead) => (
+                          <div key={lead.name} className="flex items-center gap-2 py-0.5">
+                            <div className="w-5 h-5 rounded-full bg-[#E8642C]/10 flex items-center justify-center shrink-0">
+                              <span className="text-[7px] font-bold text-[#E8642C]">{lead.initials}</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-semibold text-[#0B1220] truncate">{lead.name}</span>
+                                <span className={`text-[7px] px-1 py-px rounded-full font-medium shrink-0 ${
+                                  lead.temp === 'Hot' ? 'bg-red-50 text-red-600' :
+                                  lead.temp === 'Warm' ? 'bg-amber-50 text-amber-600' :
+                                  'bg-blue-50 text-blue-600'
+                                }`}>{lead.temp}</span>
+                                <span className="text-[7px] text-gray-300 shrink-0">AI: {lead.score}%</span>
+                              </div>
+                              <div className="text-[8px] text-gray-400 truncate">{lead.summary}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

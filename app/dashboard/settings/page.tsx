@@ -16,6 +16,8 @@ import {
   Loader2,
   X,
   Trash2,
+  CreditCard,
+  ExternalLink,
 } from 'lucide-react'
 import {
   useUser,
@@ -32,13 +34,15 @@ import {
 } from '@/lib/hooks'
 import { toast } from 'sonner'
 
-const tabs = [
+const baseTabs = [
   { id: 'profile', name: 'Profile', icon: User },
   { id: 'organization', name: 'Organization', icon: Building2 },
   { id: 'team', name: 'Team', icon: Users },
   { id: 'notifications', name: 'Notifications', icon: Bell },
   { id: 'security', name: 'Security', icon: Lock },
 ]
+
+const billingTab = { id: 'billing', name: 'Billing', icon: CreditCard }
 
 const defaultNotificationSettings = [
   { id: 'new_lead', label: 'New lead captured', description: 'Get notified when a new lead is added' },
@@ -104,9 +108,16 @@ export default function SettingsPage() {
   const [website, setWebsite] = useState('')
   const [currency, setCurrency] = useState('')
 
+  // Billing state
+  const [billingLoading, setBillingLoading] = useState(false)
+
   // Hooks
   const { data: user, isLoading: userLoading } = useUser()
   const { data: organization, isLoading: orgLoading } = useOrganization()
+
+  // Show billing tab for non-agency (client) users only
+  const isAgencyUser = (user as any)?.is_agency_user === true
+  const tabs = isAgencyUser ? baseTabs : [...baseTabs, billingTab]
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers()
   const { data: notificationPrefs, isLoading: notifLoading } = useNotificationPreferences()
 
@@ -236,6 +247,23 @@ export default function SettingsPage() {
       toast.success('Team member removed')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to remove member')
+    }
+  }
+
+  const handleManageBilling = async () => {
+    setBillingLoading(true)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to open billing portal')
+        return
+      }
+      window.location.href = data.url
+    } catch {
+      toast.error('Failed to open billing portal')
+    } finally {
+      setBillingLoading(false)
     }
   }
 
@@ -704,6 +732,83 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {activeTab === 'billing' && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-navy mb-1">Billing & Subscription</h2>
+                <p className="text-sm text-navy/50">Manage your subscription and payment method</p>
+              </div>
+
+              {orgLoading ? (
+                <FormSkeleton />
+              ) : (
+                <>
+                  {/* Current plan */}
+                  <div className="p-4 rounded-xl border border-gray-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-navy/50">Current Plan</p>
+                        <p className="text-lg font-bold text-navy">
+                          {(organization as any)?.plan === 'pro' ? ': Impact Pro' : ': Impact Core'}
+                        </p>
+                      </div>
+                      <span className={`text-sm px-3 py-1 rounded-full font-semibold ${
+                        (organization as any)?.plan === 'pro'
+                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                          : 'bg-navy/5 text-navy/60'
+                      }`}>
+                        {(organization as any)?.plan === 'pro' ? 'Pro' : 'Core'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-50">
+                      <div>
+                        <p className="text-xs text-navy/40">Monthly Price</p>
+                        <p className="text-sm font-semibold text-navy">
+                          {(organization as any)?.plan === 'pro' ? '£2,500' : '£1,500'}/mo
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-navy/40">Status</p>
+                        <p className={`text-sm font-semibold ${
+                          (organization as any)?.subscription_status === 'active' ? 'text-green-600' :
+                          (organization as any)?.subscription_status === 'past_due' ? 'text-amber-600' :
+                          (organization as any)?.subscription_status === 'cancelled' ? 'text-red-600' :
+                          'text-navy/60'
+                        }`}>
+                          {(organization as any)?.subscription_status === 'active' ? 'Active' :
+                           (organization as any)?.subscription_status === 'past_due' ? 'Past Due' :
+                           (organization as any)?.subscription_status === 'cancelled' ? 'Cancelled' :
+                           (organization as any)?.subscription_status === 'cancelling' ? 'Cancelling' :
+                           (organization as any)?.subscription_status || 'Active'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Manage billing button */}
+                  <div className="pt-2">
+                    <button
+                      onClick={handleManageBilling}
+                      disabled={billingLoading}
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      {billingLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4" />
+                      )}
+                      Manage Billing
+                    </button>
+                    <p className="text-xs text-navy/40 mt-2">
+                      Update payment method, view invoices, and manage your subscription via Stripe.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

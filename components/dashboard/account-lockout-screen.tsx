@@ -1,8 +1,10 @@
 'use client'
 
-import { Lock, LogOut, CreditCard, MessageCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Lock, LogOut, CreditCard, MessageCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface AccountLockoutScreenProps {
   reason?: string | null
@@ -11,11 +13,33 @@ interface AccountLockoutScreenProps {
 export function AccountLockoutScreen({ reason }: AccountLockoutScreenProps): JSX.Element {
   const supabase = createClient()
   const router = useRouter()
+  const [billingLoading, setBillingLoading] = useState(false)
 
   const handleSignOut = async (): Promise<void> => {
     await supabase.auth.signOut()
     router.push('/login')
   }
+
+  const handleUpdatePayment = async (): Promise<void> => {
+    setBillingLoading(true)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'Unable to open billing portal. Please contact support.')
+        return
+      }
+      window.location.href = data.url
+    } catch {
+      toast.error('Unable to open billing portal. Please contact support.')
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  // Check if this is a payment-related lockout
+  const isPaymentRelated = reason?.toLowerCase().includes('payment') ||
+    reason?.toLowerCase().includes('subscription')
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/95 backdrop-blur-sm">
@@ -42,6 +66,21 @@ export function AccountLockoutScreen({ reason }: AccountLockoutScreenProps): JSX
 
           {/* Action buttons */}
           <div className="space-y-3">
+            {isPaymentRelated && (
+              <button
+                onClick={handleUpdatePayment}
+                disabled={billingLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-impact text-ivory font-semibold hover:bg-impact/90 transition-colors disabled:opacity-50"
+              >
+                {billingLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                Update Payment Method
+              </button>
+            )}
+
             <a
               href="https://wa.me/64212345678?text=Hi%2C%20my%20Impact%20account%20has%20been%20suspended.%20Can%20you%20help%3F"
               target="_blank"
@@ -52,13 +91,20 @@ export function AccountLockoutScreen({ reason }: AccountLockoutScreenProps): JSX
               Contact Impact Team
             </a>
 
-            <a
-              href="mailto:support@mediampm.com?subject=Account%20Suspended%20-%20Payment%20Inquiry"
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-impact text-impact font-semibold hover:bg-impact/5 transition-colors"
-            >
-              <CreditCard className="w-4 h-4" />
-              Make a Payment
-            </a>
+            {!isPaymentRelated && (
+              <button
+                onClick={handleUpdatePayment}
+                disabled={billingLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-impact text-impact font-semibold hover:bg-impact/5 transition-colors disabled:opacity-50"
+              >
+                {billingLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
+                Manage Billing
+              </button>
+            )}
           </div>
 
           {/* Sign out */}

@@ -20,6 +20,7 @@ import {
   Copy,
   Shield,
   AlertTriangle,
+  CreditCard,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -34,6 +35,8 @@ interface ClientOrg {
   account_status?: 'active' | 'locked' | 'suspended'
   account_locked_at?: string
   account_lock_reason?: string
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
   created_at: string
   settings: Record<string, unknown>
   users: {
@@ -72,6 +75,7 @@ export default function AdminUsersPage(): JSX.Element {
   const [lockModal, setLockModal] = useState<{ orgId: string; orgName: string } | null>(null)
   const [lockReason, setLockReason] = useState('')
   const [lockingOrgId, setLockingOrgId] = useState<string | null>(null)
+  const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null)
 
   // Admin guard
   useEffect(() => {
@@ -162,13 +166,14 @@ export default function AdminUsersPage(): JSX.Element {
     const newPlan = currentPlan === 'core' ? 'pro' : 'core'
     const action = newPlan === 'pro' ? 'upgrade to Pro' : 'downgrade to Core'
 
-    if (!confirm(`Are you sure you want to ${action} for this client?`)) {
+    if (!confirm(`Are you sure you want to ${action} for this client? This will also update their Stripe subscription.`)) {
       return
     }
 
     setChangingPlanFor(orgId)
     try {
-      const res = await fetch(`/api/admin/organizations/${orgId}/plan`, {
+      // Use the subscription API which updates both Stripe and DB
+      const res = await fetch(`/api/admin/organizations/${orgId}/subscription`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: newPlan }),
@@ -178,12 +183,40 @@ export default function AdminUsersPage(): JSX.Element {
         fetchClients()
         toast.success(`Client ${newPlan === 'pro' ? 'upgraded to Pro' : 'downgraded to Core'}`)
       } else {
-        toast.error('Failed to change plan')
+        const data = await res.json()
+        toast.error(data.error || 'Failed to change plan')
       }
     } catch {
       toast.error('Error changing plan')
     } finally {
       setChangingPlanFor(null)
+    }
+  }
+
+  const handleCreateSubscription = async (orgId: string): Promise<void> => {
+    if (!confirm('Create a Core subscription for this client? This will set up Stripe billing.')) {
+      return
+    }
+
+    setCreatingSubFor(orgId)
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}/subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'core' }),
+      })
+
+      if (res.ok) {
+        fetchClients()
+        toast.success('Subscription created')
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to create subscription')
+      }
+    } catch {
+      toast.error('Error creating subscription')
+    } finally {
+      setCreatingSubFor(null)
     }
   }
 
@@ -606,21 +639,45 @@ export default function AdminUsersPage(): JSX.Element {
                       }`}>
                         {org.plan === 'pro' ? '⚡ Pro' : 'Core'}
                       </span>
+                      {/* Subscription status */}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         org.subscription_status === 'active' ? 'bg-green-50 text-green-700' :
+                        org.subscription_status === 'past_due' ? 'bg-amber-50 text-amber-700' :
+                        org.subscription_status === 'cancelled' ? 'bg-red-50 text-red-700' :
+                        org.subscription_status === 'cancelling' ? 'bg-amber-50 text-amber-700' :
+                        !org.stripe_subscription_id ? 'bg-gray-100 text-gray-500' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {org.subscription_status || 'active'}
+                        {!org.stripe_subscription_id ? 'No billing' :
+                         org.subscription_status === 'past_due' ? 'Past due' :
+                         org.subscription_status === 'cancelling' ? 'Cancelling' :
+                         org.subscription_status || 'active'}
                       </span>
-                      <button
-                        onClick={() => handlePlanChange(org.id, org.plan || 'core')}
-                        disabled={changingPlanFor === org.id}
-                        className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                      >
-                        {changingPlanFor === org.id ? 'Changing...' : (
-                          (org.plan || 'core') === 'core' ? 'Upgrade to Pro' : 'Downgrade to Core'
-                        )}
-                      </button>
+                      {/* Plan change or create subscription */}
+                      {org.stripe_subscription_id ? (
+                        <button
+                          onClick={() => handlePlanChange(org.id, org.plan || 'core')}
+                          disabled={changingPlanFor === org.id}
+                          className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          {changingPlanFor === org.id ? 'Changing...' : (
+                            (org.plan || 'core') === 'core' ? 'Upgrade to Pro' : 'Downgrade to Core'
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleCreateSubscription(org.id)}
+                          disabled={creatingSubFor === org.id}
+                          className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-impact/30 text-impact hover:bg-impact/5 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {creatingSubFor === org.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <CreditCard className="w-3 h-3" />
+                          )}
+                          Create Subscription
+                        </button>
+                      )}
                       {/* Account status badge */}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         (!org.account_status || org.account_status === 'active')

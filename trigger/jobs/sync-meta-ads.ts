@@ -18,12 +18,12 @@ export const syncMetaAdsTask = schedules.task({
 
     const supabase = createAdminClient()
 
-    // Get all active Meta integrations
+    // Get all Meta integrations (connected + error status for auto-recovery)
     const { data: integrations, error: intError } = await supabase
       .from('integrations')
       .select('*')
       .eq('provider', 'meta_ads')
-      .eq('status', 'connected')
+      .in('status', ['connected', 'error'])
 
     if (intError) {
       logger.error("Failed to fetch integrations", { error: intError })
@@ -55,8 +55,8 @@ export const syncMetaAdsTask = schedules.task({
           const expiresAt = new Date(integration.token_expires_at)
           const now = new Date()
 
-          // Refresh if expiring in less than 1 day
-          if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+          // Refresh if expiring in less than 7 days
+          if (expiresAt.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000) {
             logger.info("Refreshing token", { integrationId: integration.id })
 
             const newTokens = await getLongLivedToken(accessToken)
@@ -165,7 +165,7 @@ export const manualSyncMetaAdsTask = task({
         const expiresAt = new Date(integration.token_expires_at)
         const now = new Date()
 
-        if (expiresAt.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+        if (expiresAt.getTime() - now.getTime() < 7 * 24 * 60 * 60 * 1000) {
           logger.info("Refreshing token for manual sync", { integrationId })
 
           const newTokens = await getLongLivedToken(accessToken)

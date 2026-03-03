@@ -1,10 +1,10 @@
 // app/api/integrations/[id]/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { syncMetaAdsData } from '@/lib/integrations/meta-ads'
+import { syncMetaAdsData, getLongLivedToken } from '@/lib/integrations/meta-ads'
 import { syncGoogleAdsData } from '@/lib/integrations/google-ads'
 import { syncTikTokAdsData } from '@/lib/integrations/tiktok-ads'
-import { decryptTokens } from '@/lib/encryption'
+import { decryptTokens, encryptTokens } from '@/lib/encryption'
 
 // POST /api/integrations/[id]/sync - Manual sync
 export async function POST(
@@ -43,7 +43,7 @@ export async function POST(
     return NextResponse.json({ error: 'Integration not found' }, { status: 404 })
   }
 
-  if (integration.status !== 'connected') {
+  if (integration.status === 'disconnected') {
     return NextResponse.json({ error: 'Integration not connected' }, { status: 400 })
   }
 
@@ -56,6 +56,29 @@ export async function POST(
     } catch {
       // Fallback for pre-encryption plaintext tokens
       accessToken = integration.access_token!
+    }
+
+    // Refresh Meta token if expiring within 7 days
+    if (integration.provider === 'meta_ads' && integration.token_expires_at) {
+      const expiresAt = new Date(integration.token_expires_at)
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      if (expiresAt.getTime() - Date.now() < sevenDays) {
+        try {
+          const newTokens = await getLongLivedToken(accessToken)
+          accessToken = newTokens.access_token
+          const encrypted = encryptTokens({ access_token: accessToken })
+          await supabase
+            .from('integrations')
+            .update({
+              access_token: encrypted.access_token,
+              token_expires_at: newTokens.expires_at?.toISOString()
+            })
+            .eq('id', id)
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError)
+          // Continue with existing token — it may still work
+        }
+      }
     }
 
     // Sync based on provider

@@ -328,8 +328,8 @@ export async function syncMetaAdsData(
     until: today.toISOString().split('T')[0]
   }
 
-  // Get campaigns
-  const campaigns = await getCampaigns(accessToken, adAccountId, 'ACTIVE')
+  // Get all campaigns (active, paused, etc.) so newly created ones appear immediately
+  const campaigns = await getCampaigns(accessToken, adAccountId)
 
   for (const campaign of campaigns) {
     // Upsert campaign

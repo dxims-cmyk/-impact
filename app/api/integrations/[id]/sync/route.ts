@@ -50,12 +50,15 @@ export async function POST(
   try {
     // Decrypt token from DB
     let accessToken: string
-    try {
-      const decrypted = decryptTokens({ access_token: integration.access_token! })
+    const rawToken = integration.access_token!
+    // Encrypted tokens are base64-encoded (long, no dots). Real Meta tokens start with "EA" and contain dots/alphanumeric.
+    const looksEncrypted = rawToken.length > 200 && !rawToken.startsWith('EA')
+    if (looksEncrypted) {
+      const decrypted = decryptTokens({ access_token: rawToken })
       accessToken = decrypted.access_token
-    } catch {
-      // Fallback for pre-encryption plaintext tokens
-      accessToken = integration.access_token!
+    } else {
+      // Pre-encryption plaintext token
+      accessToken = rawToken
     }
 
     // Refresh Meta token if expiring within 7 days

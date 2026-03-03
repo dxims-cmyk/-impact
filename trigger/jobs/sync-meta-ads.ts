@@ -43,12 +43,14 @@ export const syncMetaAdsTask = schedules.task({
       try {
         // Decrypt token from DB
         let accessToken: string
-        try {
-          const decrypted = decryptTokens({ access_token: integration.access_token! })
+        const rawToken = integration.access_token!
+        // Encrypted tokens are base64-encoded (long, no dots). Real Meta tokens start with "EA".
+        const looksEncrypted = rawToken.length > 200 && !rawToken.startsWith('EA')
+        if (looksEncrypted) {
+          const decrypted = decryptTokens({ access_token: rawToken })
           accessToken = decrypted.access_token
-        } catch {
-          // Fallback for pre-encryption plaintext tokens
-          accessToken = integration.access_token!
+        } else {
+          accessToken = rawToken
         }
 
         if (integration.token_expires_at) {
@@ -154,11 +156,13 @@ export const manualSyncMetaAdsTask = task({
     try {
       // Decrypt token from DB
       let accessToken: string
-      try {
-        const decrypted = decryptTokens({ access_token: integration.access_token! })
+      const rawToken = integration.access_token!
+      const looksEncrypted = rawToken.length > 200 && !rawToken.startsWith('EA')
+      if (looksEncrypted) {
+        const decrypted = decryptTokens({ access_token: rawToken })
         accessToken = decrypted.access_token
-      } catch {
-        accessToken = integration.access_token!
+      } else {
+        accessToken = rawToken
       }
 
       if (integration.token_expires_at) {

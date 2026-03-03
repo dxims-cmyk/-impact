@@ -652,7 +652,7 @@ function IntegrationsPageContent(): React.ReactElement {
   // Build combined integration list
   const allIntegrations = Object.entries(integrationMeta).map(([key, meta]) => {
     const dbRow = integrations?.find(i => i.provider === meta.provider)
-    const isDbConnected = dbRow?.status === 'connected'
+    const isDbConnected = dbRow?.status === 'connected' || dbRow?.status === 'error'
     const platformStatus = availabilityMap[meta.provider]
 
     let effectiveStatus: 'connected' | 'available' | 'coming_soon' | 'active'

@@ -146,19 +146,37 @@ export default function ReportsPage() {
   // Mutations
   const generateReport = useGenerateReport()
 
-  // Parse metrics from latest report
+  // Parse metrics from latest report — handles both flat numbers and { value, change, trend } objects
   const currentStats = useMemo(() => {
     if (!latestReport?.metrics) return defaultStats
-    const metrics = latestReport.metrics as ReportMetrics
+    const metrics = latestReport.metrics as Record<string, unknown>
+
+    const toStat = (
+      key: string,
+      fallback: { value: number; change: number; trend: 'up' | 'down' }
+    ): { value: number; change: number; trend: 'up' | 'down' } => {
+      const val = metrics[key]
+      if (val && typeof val === 'object' && 'value' in val) {
+        return val as { value: number; change: number; trend: 'up' | 'down' }
+      }
+      if (typeof val === 'number') {
+        // Flat number from API — wrap into expected format
+        const changeKey = `${key}_change`
+        const change = typeof metrics[changeKey] === 'number' ? (metrics[changeKey] as number) : 0
+        return { value: val, change: Math.round(change), trend: change >= 0 ? 'up' : 'down' }
+      }
+      return fallback
+    }
+
     return {
-      leads: metrics.leads || defaultStats.leads,
-      qualified: metrics.qualified || defaultStats.qualified,
-      booked: metrics.booked || defaultStats.booked,
-      won: metrics.won || defaultStats.won,
-      revenue: metrics.revenue || defaultStats.revenue,
-      cpl: metrics.cpl || defaultStats.cpl,
-      conversionRate: metrics.conversionRate || defaultStats.conversionRate,
-      avgDealSize: metrics.avgDealSize || defaultStats.avgDealSize,
+      leads: toStat('leads', defaultStats.leads),
+      qualified: toStat('qualified', defaultStats.qualified),
+      booked: toStat('booked', defaultStats.booked),
+      won: toStat('won', defaultStats.won),
+      revenue: toStat('revenue', defaultStats.revenue),
+      cpl: toStat('cpl', defaultStats.cpl),
+      conversionRate: toStat('conversionRate', defaultStats.conversionRate),
+      avgDealSize: toStat('avgDealSize', defaultStats.avgDealSize),
     }
   }, [latestReport])
 

@@ -1,5 +1,6 @@
 // lib/hooks/use-integrations.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAdminOrg } from './use-admin-org'
 
 export type IntegrationProvider =
   | 'meta_ads' | 'google_ads' | 'tiktok_ads'
@@ -26,10 +27,14 @@ export interface IntegrationAvailability {
 
 // Fetch all integrations for this org
 export function useIntegrations() {
+  const { orgId } = useAdminOrg()
+  const params = new URLSearchParams()
+  if (orgId) params.set('org', orgId)
+
   return useQuery<Integration[]>({
-    queryKey: ['integrations'],
+    queryKey: ['integrations', orgId],
     queryFn: async () => {
-      const res = await fetch('/api/integrations')
+      const res = await fetch(`/api/integrations?${params}`)
       if (!res.ok) {
         const error = await res.json()
         throw new Error(error.error || 'Failed to fetch integrations')

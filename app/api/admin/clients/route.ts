@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import crypto from 'crypto'
-import { createCustomer, createSubscription } from '@/lib/integrations/stripe-billing'
+import { createCustomer } from '@/lib/integrations/stripe-billing'
 
 // GET /api/admin/clients - List all clients/orgs (admin only)
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const admin = createAdminClient()
   const { data: orgs, error } = await (admin
     .from('organizations') as any)
-    .select('id, name, slug, subscription_tier, subscription_status, plan, plan_changed_at, created_at, settings, account_status, account_locked_at, account_lock_reason, stripe_customer_id, stripe_subscription_id')
+    .select('id, name, slug, subscription_tier, subscription_status, plan, plan_changed_at, created_at, settings, account_status, account_locked_at, account_lock_reason, stripe_customer_id, stripe_subscription_id, membership_status, payment_method, membership_paid_until, total_months_paid')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -170,35 +170,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: userError.message }, { status: 500 })
     }
 
-    // 4. Create Stripe customer + subscription (non-blocking — don't fail client creation)
+    // 4. Create Stripe customer only (no subscription — client starts in preview mode)
     let stripeCustomerId: string | null = null
-    let stripeSubscriptionId: string | null = null
     try {
-      if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_CORE) {
+      if (process.env.STRIPE_SECRET_KEY) {
         const customer = await createCustomer(businessName, email)
         stripeCustomerId = customer.id
-
-        const subscription = await createSubscription(customer.id, 'core')
-        stripeSubscriptionId = subscription.id
 
         await (admin
           .from('organizations') as any)
           .update({
             stripe_customer_id: customer.id,
-            stripe_subscription_id: subscription.id,
-            subscription_status: subscription.status,
+            membership_status: 'preview',
           })
           .eq('id', org.id)
       }
     } catch (stripeErr) {
-      console.error('Stripe setup failed (client still created):', stripeErr)
-      // Store partial customer ID if we got that far
-      if (stripeCustomerId) {
-        await (admin
-          .from('organizations') as any)
-          .update({ stripe_customer_id: stripeCustomerId })
-          .eq('id', org.id)
-      }
+      console.error('Stripe customer creation failed (client still created):', stripeErr)
     }
 
     // 5. Send welcome email (optional)

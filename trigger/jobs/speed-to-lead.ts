@@ -5,6 +5,7 @@ import { sendNewLeadAlert, sendWhatsAppText } from "@/lib/integrations/whatsapp"
 import { sendLeadToZapier, type ZapierLead, type ZapierOrgSettings } from "@/lib/integrations/zapier"
 import { sendSlackNotification } from "@/lib/integrations/slack"
 import { sendEmail } from "@/lib/integrations/resend"
+import { systemLog } from "@/lib/system-log"
 import Anthropic from "@anthropic-ai/sdk"
 
 export const speedToLeadTask = task({
@@ -44,7 +45,7 @@ export const speedToLeadTask = task({
       speed_to_lead_enabled?: boolean
       speed_to_lead_email_enabled?: boolean
       booking_link?: string
-      notification_whatsapp_numbers?: string[]
+      whatsapp_notification_numbers?: string[]
       zapier_webhook_url?: string
       zapier_enabled?: boolean
       ai_responder_enabled?: boolean
@@ -61,7 +62,7 @@ export const speedToLeadTask = task({
     }
 
     const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unknown'
-    const results: { whatsapp?: boolean; email?: boolean; zapier?: boolean; slack?: boolean; ai_welcome?: boolean } = {}
+    const results: { whatsapp?: boolean; email?: boolean; email_notifications?: boolean; zapier?: boolean; slack?: boolean; ai_welcome?: boolean } = {}
 
     // Build AI score string (e.g. "8/10 - Hot")
     const tempLabel = lead.temperature
@@ -72,7 +73,7 @@ export const speedToLeadTask = task({
       : null
 
     // 1. Notify CLIENT via WhatsApp about the new lead
-    const whatsappNumbers = orgSettings.notification_whatsapp_numbers || []
+    const whatsappNumbers = orgSettings.whatsapp_notification_numbers || []
 
     if (whatsappNumbers.length > 0) {
       let allSent = true
@@ -106,6 +107,7 @@ export const speedToLeadTask = task({
             })
         } catch (error) {
           logger.error("WhatsApp notification failed", { to: number, error })
+          await systemLog('error', 'whatsapp', 'WhatsApp notification failed', lead.organization_id, { leadId, error: String(error) })
           allSent = false
         }
       }
@@ -116,6 +118,77 @@ export const speedToLeadTask = task({
         orgId: lead.organization_id,
       })
       results.whatsapp = false
+    }
+
+    // 1b. Email notification to org team members who have new_lead.email enabled
+    try {
+      const { data: orgUsers } = await supabase
+        .from('users')
+        .select('email, first_name, notification_preferences')
+        .eq('organization_id', lead.organization_id)
+
+      if (orgUsers && orgUsers.length > 0) {
+        const usersToNotify = orgUsers.filter(u => {
+          const prefs = u.notification_preferences as Record<string, { email?: boolean }> | null
+          return prefs?.new_lead?.email === true && u.email
+        })
+
+        for (const member of usersToNotify) {
+          try {
+            await sendEmail({
+              to: member.email,
+              subject: `New Lead: ${leadName}${lead.company ? ` from ${lead.company}` : ''}`,
+              text: [
+                `Hi ${member.first_name || 'there'},`,
+                '',
+                `A new lead has been captured in :Impact.`,
+                '',
+                `Name: ${leadName}`,
+                lead.company ? `Company: ${lead.company}` : '',
+                lead.email ? `Email: ${lead.email}` : '',
+                lead.phone ? `Phone: ${lead.phone}` : '',
+                aiScore ? `AI Score: ${aiScore}` : '',
+                lead.source ? `Source: ${lead.source}` : '',
+                '',
+                `View in dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://driveimpact.io'}/dashboard/leads/${leadId}`,
+              ].filter(Boolean).join('\n'),
+              html: `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb;">
+  <div style="max-width:560px;margin:0 auto;padding:20px;">
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div style="background:#1a1a2e;padding:20px 24px;color:#f5f5dc;">
+        <h2 style="margin:0;font-size:18px;">New Lead Captured</h2>
+      </div>
+      <div style="padding:24px;">
+        <p style="margin:0 0 16px;font-size:20px;font-weight:600;color:#1a1a2e;">${leadName}</p>
+        ${lead.company ? `<p style="margin:0 0 8px;color:#666;"><strong>Company:</strong> ${lead.company}</p>` : ''}
+        ${lead.email ? `<p style="margin:0 0 8px;color:#666;"><strong>Email:</strong> ${lead.email}</p>` : ''}
+        ${lead.phone ? `<p style="margin:0 0 8px;color:#666;"><strong>Phone:</strong> ${lead.phone}</p>` : ''}
+        ${aiScore ? `<p style="margin:0 0 8px;color:#666;"><strong>AI Score:</strong> ${aiScore}</p>` : ''}
+        ${lead.source ? `<p style="margin:0 0 16px;color:#666;"><strong>Source:</strong> ${lead.source}</p>` : ''}
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://driveimpact.io'}/dashboard/leads/${leadId}"
+           style="display:inline-block;background:#6E0F1A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+          View Lead
+        </a>
+      </div>
+    </div>
+  </div>
+</body></html>`,
+            })
+            logger.info("Email notification sent to team member", { to: member.email })
+          } catch (emailErr) {
+            logger.error("Email notification to team member failed", { to: member.email, error: emailErr })
+          }
+        }
+
+        if (usersToNotify.length > 0) {
+          results.email_notifications = true
+          logger.info("Email notifications sent to team members", { count: usersToNotify.length })
+        }
+      }
+    } catch (notifError) {
+      logger.error("Failed to process email notifications", { error: notifError })
     }
 
     // 2. Prospect auto-response email
@@ -188,6 +261,7 @@ export const speedToLeadTask = task({
         })
       } catch (error) {
         logger.error("Welcome email failed", { leadId, error })
+        await systemLog('error', 'email', 'Email send failed', lead.organization_id, { leadId, error: String(error) })
         results.email = false
       }
     } else {
@@ -379,6 +453,7 @@ Return ONLY the message text, nothing else.`,
         results.ai_welcome = true
       } catch (error) {
         logger.error("AI welcome message failed", { leadId, error })
+        await systemLog('error', 'whatsapp', 'WhatsApp notification failed', lead.organization_id, { leadId, error: String(error) })
         results.ai_welcome = false
       }
     }

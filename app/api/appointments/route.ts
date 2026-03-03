@@ -50,8 +50,11 @@ export async function GET(request: NextRequest) {
       lead:leads(id, first_name, last_name, email, phone, company)
     `, { count: 'exact' })
 
-  // Filter by org
-  if (!userData.is_agency_user) {
+  // Filter by org — agency users can specify ?org= to view a specific client
+  const orgParam = searchParams.get('org')
+  if (userData.is_agency_user && orgParam) {
+    query = query.eq('organization_id', orgParam)
+  } else if (!userData.is_agency_user) {
     query = query.eq('organization_id', userData.organization_id)
   }
 

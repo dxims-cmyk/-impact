@@ -1,8 +1,30 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET() {
-  const supabase = await createClient()
+const DEFAULT_PREFERENCES: Record<string, { email: boolean; push: boolean; sms: boolean }> = {
+  new_lead: { email: true, push: false, sms: false },
+  hot_lead: { email: true, push: false, sms: false },
+  message: { email: false, push: false, sms: false },
+  appointment: { email: true, push: false, sms: false },
+  report: { email: true, push: false, sms: false },
+  system: { email: true, push: false, sms: false },
+}
+
+function mergeWithDefaults(stored: Record<string, any> | null): Record<string, { email: boolean; push: boolean; sms: boolean }> {
+  const result: Record<string, { email: boolean; push: boolean; sms: boolean }> = {}
+  for (const [key, defaults] of Object.entries(DEFAULT_PREFERENCES)) {
+    const saved = stored?.[key]
+    result[key] = {
+      email: saved?.email ?? defaults.email,
+      push: saved?.push ?? defaults.push,
+      sms: saved?.sms ?? defaults.sms,
+    }
+  }
+  return result
+}
+
+export async function GET(): Promise<NextResponse> {
+  const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -15,27 +37,45 @@ export async function GET() {
     .eq('id', user.id)
     .single()
 
-  return NextResponse.json({ preferences: data?.notification_preferences || {} })
+  // Return flat preferences object (not wrapped) — hook expects this shape
+  const preferences = mergeWithDefaults(data?.notification_preferences as Record<string, any> | null)
+  return NextResponse.json(preferences)
 }
 
-export async function PATCH(req: Request) {
-  const supabase = await createClient()
+export async function PATCH(req: Request): Promise<NextResponse> {
+  const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const preferences = await req.json()
+  const updates = await req.json() as Record<string, { email?: boolean; push?: boolean; sms?: boolean }>
+
+  // Fetch current preferences first to merge
+  const { data: userData } = await supabase
+    .from('users')
+    .select('notification_preferences')
+    .eq('id', user.id)
+    .single()
+
+  const current = mergeWithDefaults(userData?.notification_preferences as Record<string, any> | null)
+
+  // Deep merge: only override the specific channel toggled
+  for (const [key, channels] of Object.entries(updates)) {
+    if (current[key]) {
+      current[key] = { ...current[key], ...channels }
+    }
+  }
 
   const { error } = await supabase
     .from('users')
-    .update({ notification_preferences: preferences })
+    .update({ notification_preferences: current })
     .eq('id', user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json(current)
 }

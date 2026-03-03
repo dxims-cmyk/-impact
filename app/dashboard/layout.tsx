@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ArrowLeft, Eye } from 'lucide-react'
 import { SearchModal } from '@/components/dashboard/search-modal'
 import { NewLeadModal } from '@/components/dashboard/new-lead-modal'
 import { NotificationsDropdown } from '@/components/dashboard/notifications-dropdown'
@@ -10,11 +10,55 @@ import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist
 import { HelpButton } from '@/components/help/HelpButton'
 import { ForcePasswordChange } from '@/components/auth/ForcePasswordChange'
 import { AccountLockoutScreen } from '@/components/dashboard/account-lockout-screen'
+import { MembershipLockoutScreen } from '@/components/dashboard/membership-lockout-screen'
+import { PreviewModeBanner } from '@/components/dashboard/preview-mode-banner'
+import { GracePeriodBanner } from '@/components/dashboard/grace-period-banner'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { useUser } from '@/lib/hooks/use-user'
+import { useMembership } from '@/lib/hooks/use-membership'
 import { createClient } from '@/lib/supabase/client'
+import { AdminContextProvider, useAdminContext } from '@/lib/contexts/admin-context'
+
+function ClientViewBanner(): React.JSX.Element | null {
+  const { viewingOrg, clearViewingOrg, isViewingClient } = useAdminContext()
+
+  if (!isViewingClient || !viewingOrg) return null
+
+  return (
+    <div className="bg-impact/90 text-ivory px-4 py-2 flex items-center justify-between text-sm sticky top-0 z-20">
+      <div className="flex items-center gap-2">
+        <Eye className="w-4 h-4" />
+        <span>
+          Viewing: <strong>{viewingOrg.name}</strong>
+          <span className="ml-2 text-xs opacity-75">
+            ({viewingOrg.plan === 'pro' ? 'Pro' : 'Core'})
+          </span>
+        </span>
+      </div>
+      <button
+        onClick={clearViewingOrg}
+        className="flex items-center gap-1 px-3 py-1 rounded bg-ivory/20 hover:bg-ivory/30 transition-colors text-xs font-medium"
+      >
+        <ArrowLeft className="w-3 h-3" />
+        Back to Admin
+      </button>
+    </div>
+  )
+}
 
 export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <AdminContextProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </AdminContextProvider>
+  )
+}
+
+function DashboardLayoutInner({
   children,
 }: {
   children: React.ReactNode
@@ -26,6 +70,8 @@ export default function DashboardLayout({
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [mustChangePassword, setMustChangePassword] = useState(false)
   const { data: currentUser } = useUser()
+  const { status: membershipStatus, isPreview, isPastDue, isPaused, isSuspended, isCancelled, daysUntilExpiry, paymentMethod } = useMembership()
+  const isAgency = currentUser?.is_agency_user === true
   const supabase = createClient()
 
   // Check if user must change password (first login)
@@ -69,6 +115,15 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 min-w-0">
+        {/* Client View Banner */}
+        <ClientViewBanner />
+
+        {/* Preview Mode Banner */}
+        {!isAgency && isPreview && <PreviewModeBanner />}
+
+        {/* Grace Period Warning Banner */}
+        {!isAgency && isPastDue && <GracePeriodBanner daysLeft={daysUntilExpiry} paymentMethod={paymentMethod} />}
+
         {/* Top Bar */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
           {/* Search */}
@@ -123,8 +178,13 @@ export default function DashboardLayout({
       )}
 
       {/* Account lockout screen - blocks non-agency users when org is locked/suspended */}
-      {currentUser?.organization?.account_status && currentUser.organization.account_status !== 'active' && !currentUser.is_agency_user && (
+      {currentUser?.organization?.account_status && currentUser.organization.account_status !== 'active' && !isAgency && (
         <AccountLockoutScreen reason={currentUser.organization.account_lock_reason} />
+      )}
+
+      {/* Membership lockout - blocks non-agency users when membership is paused/suspended/cancelled */}
+      {!isAgency && (isPaused || isSuspended || isCancelled) && currentUser?.organization?.account_status === 'active' && (
+        <MembershipLockoutScreen status={membershipStatus} paymentMethod={paymentMethod} />
       )}
     </div>
   )

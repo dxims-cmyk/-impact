@@ -111,6 +111,57 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<MetaTo
   }
 }
 
+// Get Facebook Pages the user manages (needed for leadgen webhook routing)
+export interface MetaPage {
+  id: string
+  name: string
+  access_token?: string
+}
+
+export async function getPages(accessToken: string): Promise<MetaPage[]> {
+  const response = await fetch(
+    `${META_BASE_URL}/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
+  )
+
+  if (!response.ok) {
+    // Non-fatal: pages are useful for leadgen routing but not strictly required for ads
+    console.error('Failed to fetch Facebook pages:', await response.text())
+    return []
+  }
+
+  const data = await response.json()
+  return data.data || []
+}
+
+// Subscribe a Facebook Page to the leadgen webhook
+export async function subscribePageToLeadgen(pageId: string, pageAccessToken: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `${META_BASE_URL}/${pageId}/subscribed_apps`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: pageAccessToken,
+          subscribed_fields: ['leadgen']
+        })
+      }
+    )
+
+    const data = await response.json()
+    if (data.success === true) {
+      console.log(`[meta] Subscribed page ${pageId} to leadgen webhook`)
+      return true
+    }
+
+    console.error(`[meta] Failed to subscribe page ${pageId} to leadgen:`, data)
+    return false
+  } catch (err) {
+    console.error(`[meta] Error subscribing page ${pageId} to leadgen:`, err)
+    return false
+  }
+}
+
 // Get ad accounts
 export async function getAdAccounts(accessToken: string): Promise<MetaAdAccount[]> {
   const response = await fetch(

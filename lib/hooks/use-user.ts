@@ -126,7 +126,28 @@ export function useUpdateNotificationPreferences() {
       }
       return res.json()
     },
-    onSuccess: () => {
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ['notification-preferences'] })
+      const previous = queryClient.getQueryData(['notification-preferences'])
+      // Optimistic update — toggle feels instant
+      queryClient.setQueryData(['notification-preferences'], (old: any) => {
+        if (!old) return old
+        const merged = { ...old }
+        for (const [key, channels] of Object.entries(updates)) {
+          if (merged[key]) {
+            merged[key] = { ...merged[key], ...channels }
+          }
+        }
+        return merged
+      })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['notification-preferences'], context.previous)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] })
     },
   })

@@ -21,8 +21,13 @@ import {
   Shield,
   AlertTriangle,
   CreditCard,
+  Banknote,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { RecordPaymentModal } from '@/components/admin/RecordPaymentModal'
+import { MembershipActions } from '@/components/admin/MembershipActions'
+import { PaymentHistoryTable } from '@/components/admin/PaymentHistoryTable'
 
 interface ClientOrg {
   id: string
@@ -37,6 +42,10 @@ interface ClientOrg {
   account_lock_reason?: string
   stripe_customer_id?: string | null
   stripe_subscription_id?: string | null
+  membership_status?: string
+  payment_method?: string | null
+  membership_paid_until?: string | null
+  total_months_paid?: number
   created_at: string
   settings: Record<string, unknown>
   users: {
@@ -76,6 +85,8 @@ export default function AdminUsersPage(): JSX.Element {
   const [lockReason, setLockReason] = useState('')
   const [lockingOrgId, setLockingOrgId] = useState<string | null>(null)
   const [creatingSubFor, setCreatingSubFor] = useState<string | null>(null)
+  const [paymentModal, setPaymentModal] = useState<{ orgId: string; orgName: string; plan: string } | null>(null)
+  const [deletingOrgId, setDeletingOrgId] = useState<string | null>(null)
 
   // Admin guard
   useEffect(() => {
@@ -261,6 +272,33 @@ export default function AdminUsersPage(): JSX.Element {
       toast.error('Error unlocking account')
     } finally {
       setLockingOrgId(null)
+    }
+  }
+
+  const handleDeleteOrg = async (orgId: string, orgName: string): Promise<void> => {
+    if (!confirm(`Are you sure you want to permanently delete "${orgName}"? This will remove ALL data (leads, conversations, users, payments) and CANNOT be undone.`)) {
+      return
+    }
+    if (!confirm(`FINAL WARNING: Delete "${orgName}" and all associated data permanently?`)) {
+      return
+    }
+
+    setDeletingOrgId(orgId)
+    try {
+      const res = await fetch(`/api/admin/organizations/${orgId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        toast.success(`${orgName} deleted`)
+        fetchClients()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to delete client')
+      }
+    } catch {
+      toast.error('Error deleting client')
+    } finally {
+      setDeletingOrgId(null)
     }
   }
 
@@ -631,7 +669,8 @@ export default function AdminUsersPage(): JSX.Element {
                     <p className="text-xs text-navy/50">
                       {org.slug} &middot; Created {new Date(org.created_at).toLocaleDateString()}
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {/* Plan badge */}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                         org.plan === 'pro'
                           ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
@@ -639,20 +678,58 @@ export default function AdminUsersPage(): JSX.Element {
                       }`}>
                         {org.plan === 'pro' ? '⚡ Pro' : 'Core'}
                       </span>
-                      {/* Subscription status */}
+                      {/* Membership status badge */}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        org.subscription_status === 'active' ? 'bg-green-50 text-green-700' :
-                        org.subscription_status === 'past_due' ? 'bg-amber-50 text-amber-700' :
-                        org.subscription_status === 'cancelled' ? 'bg-red-50 text-red-700' :
-                        org.subscription_status === 'cancelling' ? 'bg-amber-50 text-amber-700' :
-                        !org.stripe_subscription_id ? 'bg-gray-100 text-gray-500' :
-                        'bg-gray-100 text-gray-600'
+                        org.membership_status === 'active' ? 'bg-green-50 text-green-700' :
+                        org.membership_status === 'preview' ? 'bg-blue-50 text-blue-700' :
+                        org.membership_status === 'past_due' ? 'bg-amber-50 text-amber-700' :
+                        org.membership_status === 'paused' ? 'bg-yellow-50 text-yellow-700' :
+                        org.membership_status === 'suspended' ? 'bg-red-50 text-red-700' :
+                        org.membership_status === 'cancelled' ? 'bg-gray-100 text-gray-600' :
+                        'bg-blue-50 text-blue-700'
                       }`}>
-                        {!org.stripe_subscription_id ? 'No billing' :
-                         org.subscription_status === 'past_due' ? 'Past due' :
-                         org.subscription_status === 'cancelling' ? 'Cancelling' :
-                         org.subscription_status || 'active'}
+                        {org.membership_status === 'active' ? 'Active' :
+                         org.membership_status === 'preview' ? 'Preview' :
+                         org.membership_status === 'past_due' ? 'Past Due' :
+                         org.membership_status === 'paused' ? 'Paused' :
+                         org.membership_status === 'suspended' ? 'Suspended' :
+                         org.membership_status === 'cancelled' ? 'Cancelled' :
+                         'Preview'}
                       </span>
+                      {/* Payment method indicator */}
+                      {org.payment_method && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-50 text-navy/50 font-medium">
+                          {org.payment_method === 'stripe_recurring' ? 'Stripe' :
+                           org.payment_method === 'card_manual' ? 'Card' :
+                           org.payment_method === 'cash' ? 'Cash' :
+                           org.payment_method === 'bank_transfer' ? 'Bank' : ''}
+                        </span>
+                      )}
+                      {/* Paid until + months */}
+                      {org.membership_paid_until && (
+                        <span className="text-xs text-navy/40">
+                          Paid until {new Date(org.membership_paid_until).toLocaleDateString()}
+                          {org.total_months_paid ? ` (${org.total_months_paid} mo)` : ''}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action buttons row */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {/* Record Payment button */}
+                      <button
+                        onClick={() => setPaymentModal({ orgId: org.id, orgName: org.name, plan: org.plan || 'core' })}
+                        className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-studio/30 text-studio hover:bg-studio/5 transition-colors flex items-center gap-1"
+                      >
+                        <Banknote className="w-3 h-3" />
+                        Record Payment
+                      </button>
+                      {/* Membership actions dropdown */}
+                      <MembershipActions
+                        orgId={org.id}
+                        currentStatus={org.membership_status || 'preview'}
+                        onSuccess={fetchClients}
+                      />
                       {/* Plan change or create subscription */}
                       {org.stripe_subscription_id ? (
                         <button
@@ -678,18 +755,7 @@ export default function AdminUsersPage(): JSX.Element {
                           Create Subscription
                         </button>
                       )}
-                      {/* Account status badge */}
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        (!org.account_status || org.account_status === 'active')
-                          ? 'bg-green-50 text-green-700'
-                          : org.account_status === 'locked'
-                          ? 'bg-red-50 text-red-700'
-                          : 'bg-amber-50 text-amber-700'
-                      }`}>
-                        {(!org.account_status || org.account_status === 'active') ? 'Active' :
-                         org.account_status === 'locked' ? 'Locked' : 'Suspended'}
-                      </span>
-                      {/* Lock/Unlock button */}
+                      {/* Account lock/unlock */}
                       {(!org.account_status || org.account_status === 'active') ? (
                         <button
                           onClick={() => setLockModal({ orgId: org.id, orgName: org.name })}
@@ -713,6 +779,19 @@ export default function AdminUsersPage(): JSX.Element {
                           Unlock
                         </button>
                       )}
+                      {/* Delete org */}
+                      <button
+                        onClick={() => handleDeleteOrg(org.id, org.name)}
+                        disabled={deletingOrgId === org.id}
+                        className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {deletingOrgId === org.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
+                        Delete
+                      </button>
                     </div>
                     {/* Lock reason display */}
                     {org.account_status && org.account_status !== 'active' && org.account_lock_reason && (
@@ -724,6 +803,9 @@ export default function AdminUsersPage(): JSX.Element {
                   </div>
                 </div>
               </div>
+
+              {/* Payment History */}
+              <PaymentHistoryTable orgId={org.id} />
 
               {/* Users in this org */}
               {org.users.length > 0 && (
@@ -750,6 +832,17 @@ export default function AdminUsersPage(): JSX.Element {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Record Payment Modal */}
+      {paymentModal && (
+        <RecordPaymentModal
+          orgId={paymentModal.orgId}
+          orgName={paymentModal.orgName}
+          plan={paymentModal.plan}
+          onClose={() => setPaymentModal(null)}
+          onSuccess={fetchClients}
+        />
       )}
     </div>
   )

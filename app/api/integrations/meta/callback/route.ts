@@ -1,7 +1,7 @@
 // app/api/integrations/meta/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { exchangeCodeForTokens, getLongLivedToken, getAdAccounts } from '@/lib/integrations/meta-ads'
+import { exchangeCodeForTokens, getLongLivedToken, getAdAccounts, getPages, subscribePageToLeadgen } from '@/lib/integrations/meta-ads'
 import { encryptTokens } from '@/lib/encryption'
 
 // GET /api/integrations/meta/callback - Handle Meta OAuth callback
@@ -73,8 +73,11 @@ export async function GET(request: NextRequest) {
     // Get long-lived token
     const longLivedTokens = await getLongLivedToken(tokens.access_token)
 
-    // Get ad accounts
-    const adAccounts = await getAdAccounts(longLivedTokens.access_token)
+    // Get ad accounts and Facebook Pages in parallel
+    const [adAccounts, pages] = await Promise.all([
+      getAdAccounts(longLivedTokens.access_token),
+      getPages(longLivedTokens.access_token),
+    ])
 
     if (!adAccounts || adAccounts.length === 0) {
       return NextResponse.redirect(
@@ -84,6 +87,40 @@ export async function GET(request: NextRequest) {
 
     // Use first ad account (could add UI to select)
     const primaryAccount = adAccounts[0]
+
+    // Build metadata with page_id for leadgen webhook routing
+    const metadata: Record<string, unknown> = {
+      currency: primaryAccount.currency,
+      timezone: primaryAccount.timezone_name,
+      all_accounts: adAccounts.map(a => ({ id: a.id, name: a.name })),
+    }
+
+    // Store page IDs — the leadgen webhook uses metadata.page_id to route leads to the correct org
+    if (pages.length === 1) {
+      metadata.page_id = pages[0].id
+      metadata.page_name = pages[0].name
+    } else if (pages.length > 1) {
+      // Store first page as primary + all pages for reference
+      metadata.page_id = pages[0].id
+      metadata.page_name = pages[0].name
+      metadata.all_pages = pages.map(p => ({ id: p.id, name: p.name }))
+    }
+
+    // Auto-subscribe pages to leadgen webhook
+    if (pages.length > 0) {
+      const subscribeResults = await Promise.all(
+        pages.filter(p => p.access_token).map(async (page) => {
+          const ok = await subscribePageToLeadgen(page.id, page.access_token!)
+          return { id: page.id, name: page.name, subscribed: ok }
+        })
+      )
+      const subscribedPages = subscribeResults.filter(r => r.subscribed)
+      if (subscribedPages.length > 0) {
+        metadata.leadgen_subscribed = true
+        metadata.leadgen_subscribed_at = new Date().toISOString()
+        metadata.leadgen_subscribed_pages = subscribedPages.map(p => p.id)
+      }
+    }
 
     // Check if integration already exists
     const { data: existing } = await supabase
@@ -106,11 +143,7 @@ export async function GET(request: NextRequest) {
           token_expires_at: longLivedTokens.expires_at?.toISOString(),
           account_id: primaryAccount.id,
           account_name: primaryAccount.name,
-          metadata: {
-            currency: primaryAccount.currency,
-            timezone: primaryAccount.timezone_name,
-            all_accounts: adAccounts.map(a => ({ id: a.id, name: a.name })),
-          },
+          metadata,
           sync_error: null,
           updated_at: new Date().toISOString(),
         })
@@ -127,11 +160,7 @@ export async function GET(request: NextRequest) {
           token_expires_at: longLivedTokens.expires_at?.toISOString(),
           account_id: primaryAccount.id,
           account_name: primaryAccount.name,
-          metadata: {
-            currency: primaryAccount.currency,
-            timezone: primaryAccount.timezone_name,
-            all_accounts: adAccounts.map(a => ({ id: a.id, name: a.name })),
-          },
+          metadata,
         })
     }
 

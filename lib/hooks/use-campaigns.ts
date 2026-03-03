@@ -1,6 +1,7 @@
 // lib/hooks/use-campaigns.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AdCampaign, AdPerformance } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
 interface CampaignWithMetrics extends AdCampaign {
   spent: number
@@ -45,6 +46,7 @@ interface CampaignFilters {
 
 // Fetch campaigns with filters
 export function useCampaigns(filters: CampaignFilters = {}) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
@@ -53,9 +55,10 @@ export function useCampaigns(filters: CampaignFilters = {}) {
   if (filters.search) params.set('search', filters.search)
   if (filters.dateRange?.start) params.set('startDate', filters.dateRange.start)
   if (filters.dateRange?.end) params.set('endDate', filters.dateRange.end)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<CampaignsResponse>({
-    queryKey: ['campaigns', filters],
+    queryKey: ['campaigns', filters, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/campaigns?${params}`)
       if (!res.ok) {
@@ -89,9 +92,11 @@ export function useCampaignPerformance(campaignId: string | null, dateRange?: { 
 
 // Fetch aggregated campaign metrics
 export function useCampaignMetrics(dateRange?: { start: string; end: string }) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (dateRange?.start) params.set('startDate', dateRange.start)
   if (dateRange?.end) params.set('endDate', dateRange.end)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<{
     totalSpend: number
@@ -119,7 +124,7 @@ export function useCampaignMetrics(dateRange?: { start: string; end: string }) {
       roas: number
     }[]
   }>({
-    queryKey: ['campaign-metrics', dateRange],
+    queryKey: ['campaign-metrics', dateRange, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/campaigns/metrics?${params}`)
       if (!res.ok) {

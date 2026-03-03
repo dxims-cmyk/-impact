@@ -19,21 +19,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get user's org
+  // Get user's org + agency flag
   const { data: userData } = await supabase
     .from('users')
-    .select('organization_id, role')
+    .select('organization_id, role, is_agency_user')
     .eq('id', user.id)
     .single()
 
-  if (!userData?.organization_id) {
+  if (!userData?.organization_id && !userData?.is_agency_user) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
   }
+
+  // Agency users can view another org's details via ?org= param (read-only)
+  const requestedOrg = request.nextUrl.searchParams.get('org')
+  const targetOrgId = (userData.is_agency_user && requestedOrg) ? requestedOrg : userData.organization_id
 
   const { data: organization, error } = await supabase
     .from('organizations')
     .select('*')
-    .eq('id', userData.organization_id)
+    .eq('id', targetOrgId)
     .single()
 
   if (error) {

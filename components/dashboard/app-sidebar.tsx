@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/lib/hooks/use-user'
 import { usePlan } from '@/lib/hooks/use-plan'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { useState, useEffect, useCallback } from 'react'
 import {
   LayoutDashboard,
@@ -26,6 +26,10 @@ import {
   Images,
   Star,
   Lock,
+  Eye,
+  X,
+  ChevronDown,
+  AlertTriangle,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -33,7 +37,8 @@ import {
   SidebarLink,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAdminContext, type ViewingOrg } from '@/lib/contexts/admin-context'
 
 const SIDEBAR_STORAGE_KEY = 'impact-sidebar-open'
 
@@ -63,6 +68,160 @@ function isActiveRoute(pathname: string, href: string): boolean {
   return pathname.startsWith(href)
 }
 
+interface ClientOrg {
+  id: string
+  name: string
+  plan: 'core' | 'pro'
+  account_status: string
+}
+
+function useAlertCount(enabled: boolean) {
+  return useQuery<number>({
+    queryKey: ['admin-alert-count'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/alerts')
+      if (!res.ok) return 0
+      const data = await res.json()
+      return data.counts?.critical || 0
+    },
+    enabled,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+  })
+}
+
+function useAdminClients(enabled: boolean) {
+  return useQuery<ClientOrg[]>({
+    queryKey: ['admin-clients-list'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/clients')
+      if (!res.ok) throw new Error('Failed to fetch clients')
+      const data = await res.json()
+      return data.map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        plan: org.plan || 'core',
+        account_status: org.account_status || 'active',
+      }))
+    },
+    enabled,
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+function ClientSwitcher({ open: sidebarOpen }: { open: boolean }): React.JSX.Element | null {
+  const { data: user } = useUser()
+  const { viewingOrg, setViewingOrg, clearViewingOrg, isViewingClient } = useAdminContext()
+  const { data: clients } = useAdminClients(user?.is_agency_user === true)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  if (!user?.is_agency_user) return null
+
+  const handleSelect = (client: ClientOrg): void => {
+    setViewingOrg({ id: client.id, name: client.name, plan: client.plan })
+    setDropdownOpen(false)
+  }
+
+  // Compact view when sidebar is collapsed
+  if (!sidebarOpen) {
+    return (
+      <div className="flex justify-center py-1">
+        {isViewingClient ? (
+          <button
+            onClick={clearViewingOrg}
+            className="w-8 h-8 bg-impact/80 rounded-lg flex items-center justify-center"
+            title={`Viewing: ${viewingOrg?.name} — click to exit`}
+          >
+            <Eye className="w-4 h-4 text-ivory" />
+          </button>
+        ) : (
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="w-8 h-8 bg-ivory/10 rounded-lg flex items-center justify-center hover:bg-ivory/20 transition-colors"
+            title="View as Client"
+          >
+            <Eye className="w-4 h-4 text-ivory/70" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // Currently viewing a client — show exit bar
+  if (isViewingClient && viewingOrg) {
+    return (
+      <div className="mx-2 mb-2 p-2 rounded-lg bg-impact/20 border border-impact/30">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Eye className="w-4 h-4 text-impact flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-ivory/60">Viewing as</p>
+              <p className="text-sm font-semibold text-ivory truncate">{viewingOrg.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={clearViewingOrg}
+            className="p-1 rounded hover:bg-ivory/10 transition-colors flex-shrink-0"
+            title="Exit client view"
+          >
+            <X className="w-4 h-4 text-ivory/60" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Dropdown selector
+  return (
+    <div className="mx-2 mb-2 relative">
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-ivory/5 hover:bg-ivory/10 transition-colors text-sm text-ivory/70"
+      >
+        <span className="flex items-center gap-2">
+          <Eye className="w-4 h-4" />
+          View as Client
+        </span>
+        <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', dropdownOpen && 'rotate-180')} />
+      </button>
+
+      <AnimatePresence>
+        {dropdownOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 right-0 top-full mt-1 bg-navy border border-ivory/15 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+          >
+            {!clients?.length ? (
+              <p className="px-3 py-2 text-xs text-ivory/40">No clients found</p>
+            ) : (
+              clients.map((client) => (
+                <button
+                  key={client.id}
+                  onClick={() => handleSelect(client)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-ivory/80 hover:bg-ivory/10 transition-colors text-left"
+                >
+                  <span className="truncate">{client.name}</span>
+                  <span className={cn(
+                    'text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ml-2',
+                    client.plan === 'pro'
+                      ? 'bg-gradient-to-r from-orange-400/20 to-red-500/20 text-orange-400'
+                      : 'bg-ivory/10 text-ivory/40'
+                  )}>
+                    {client.plan === 'pro' ? 'Pro' : 'Core'}
+                  </span>
+                </button>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 function SidebarContent(): React.JSX.Element {
   const pathname = usePathname()
   const router = useRouter()
@@ -71,12 +230,20 @@ function SidebarContent(): React.JSX.Element {
   const { data: user, isLoading: userLoading } = useUser()
   const { isPro } = usePlan()
   const { open, setOpen } = useSidebar()
+  const { viewingOrg, isViewingClient } = useAdminContext()
+  const { data: alertCount } = useAlertCount(user?.is_agency_user === true && !isViewingClient)
 
   const userName = user?.full_name || user?.email?.split('@')[0] || 'User'
   const userEmail = user?.email || ''
   const userInitials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
-  const orgName = user?.organization?.name || 'No Organization'
-  const orgInitials = orgName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
+
+  // Show viewed org name when viewing a client, otherwise admin's own org
+  const displayOrgName = isViewingClient && viewingOrg ? viewingOrg.name : (user?.organization?.name || 'No Organization')
+  const orgInitials = displayOrgName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
+
+  // Use viewed client's plan when viewing, otherwise own
+  const displayPlan = isViewingClient && viewingOrg ? viewingOrg.plan : (isPro ? 'pro' : 'core')
+  const displayIsPro = displayPlan === 'pro'
 
   const handleSignOut = async (): Promise<void> => {
     queryClient.clear()
@@ -119,23 +286,26 @@ function SidebarContent(): React.JSX.Element {
           </span>
           <span
             className={
-              isPro
+              displayIsPro
                 ? 'bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent text-xs font-semibold'
                 : 'text-ivory/50 text-xs font-semibold'
             }
           >
-            {isPro ? 'Pro' : 'Core'}
+            {displayIsPro ? 'Pro' : 'Core'}
           </span>
         </motion.div>
       </Link>
 
       {/* Organization */}
-      <div className="py-3 border-b border-ivory/10 mb-3">
+      <div className={cn('py-3 border-b border-ivory/10 mb-3', isViewingClient && 'border-impact/30')}>
         <div className={cn(
           'flex items-center',
           open ? 'justify-start gap-2 px-2' : 'justify-center'
         )}>
-          <div className="w-8 h-8 bg-impact rounded-lg flex items-center justify-center text-xs font-semibold text-ivory flex-shrink-0">
+          <div className={cn(
+            'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold text-ivory flex-shrink-0',
+            isViewingClient ? 'bg-impact/60' : 'bg-impact'
+          )}>
             {userLoading ? '..' : orgInitials}
           </div>
           <motion.span
@@ -146,16 +316,19 @@ function SidebarContent(): React.JSX.Element {
             transition={{ duration: 0.15 }}
             className="text-sm font-semibold text-ivory truncate whitespace-pre"
           >
-            {userLoading ? 'Loading...' : orgName}
+            {userLoading ? 'Loading...' : displayOrgName}
           </motion.span>
         </div>
       </div>
+
+      {/* Client Switcher (admin only) */}
+      <ClientSwitcher open={open} />
 
       {/* Main Navigation */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => {
           const active = isActiveRoute(pathname, item.href)
-          const locked = item.proOnly && !isPro
+          const locked = item.proOnly && !displayIsPro
 
           return (
             <SidebarLink
@@ -191,8 +364,8 @@ function SidebarContent(): React.JSX.Element {
           )
         })}
 
-        {/* Admin section */}
-        {user?.is_agency_user && (
+        {/* Admin section — hidden when viewing a client */}
+        {user?.is_agency_user && !isViewingClient && (
           <>
             <div className={cn('pt-3 pb-1', open ? 'px-3' : 'px-0')}>
               <motion.p
@@ -216,54 +389,90 @@ function SidebarContent(): React.JSX.Element {
                   <Shield
                     className={cn(
                       'w-5 h-5 flex-shrink-0',
-                      pathname.startsWith('/dashboard/admin')
+                      pathname === '/dashboard/admin/users'
                         ? 'text-ivory'
                         : 'text-ivory/70'
                     )}
                   />
                 ),
               }}
-              active={pathname.startsWith('/dashboard/admin')}
+              active={pathname === '/dashboard/admin/users'}
               onClick={closeMobile}
               className={
-                pathname.startsWith('/dashboard/admin')
+                pathname === '/dashboard/admin/users'
                   ? 'text-ivory font-medium'
                   : 'text-ivory/70 hover:text-ivory'
+              }
+            />
+            <SidebarLink
+              link={{
+                label: 'Alerts',
+                href: '/dashboard/admin/alerts',
+                icon: (
+                  <AlertTriangle
+                    className={cn(
+                      'w-5 h-5 flex-shrink-0',
+                      pathname === '/dashboard/admin/alerts'
+                        ? 'text-ivory'
+                        : 'text-ivory/70'
+                    )}
+                  />
+                ),
+              }}
+              active={pathname === '/dashboard/admin/alerts'}
+              onClick={closeMobile}
+              className={
+                pathname === '/dashboard/admin/alerts'
+                  ? 'text-ivory font-medium'
+                  : 'text-ivory/70 hover:text-ivory'
+              }
+              badge={
+                alertCount && alertCount > 0 ? (
+                  <span className="text-[10px] font-bold bg-red-500 text-white rounded-full w-4.5 h-4.5 flex items-center justify-center min-w-[18px] px-1">
+                    {alertCount > 9 ? '9+' : alertCount}
+                  </span>
+                ) : undefined
               }
             />
           </>
         )}
       </nav>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation — hide Settings when viewing client */}
       <div className="pt-2 mt-2 border-t border-ivory/10 space-y-0.5">
-        {bottomNavigation.map((item) => {
-          const active = isActiveRoute(pathname, item.href)
-          return (
-            <SidebarLink
-              key={item.href}
-              link={{
-                label: item.name,
-                href: item.href,
-                icon: (
-                  <item.icon
-                    className={cn(
-                      'w-5 h-5 flex-shrink-0',
-                      active ? 'text-ivory' : 'text-ivory/70'
-                    )}
-                  />
-                ),
-              }}
-              active={active}
-              onClick={closeMobile}
-              className={
-                active
-                  ? 'text-ivory font-medium'
-                  : 'text-ivory/70 hover:text-ivory'
-              }
-            />
-          )
-        })}
+        {bottomNavigation
+          .filter((item) => {
+            // Hide Settings when viewing a client (no destructive access)
+            if (isViewingClient && item.href === '/dashboard/settings') return false
+            return true
+          })
+          .map((item) => {
+            const active = isActiveRoute(pathname, item.href)
+            return (
+              <SidebarLink
+                key={item.href}
+                link={{
+                  label: item.name,
+                  href: item.href,
+                  icon: (
+                    <item.icon
+                      className={cn(
+                        'w-5 h-5 flex-shrink-0',
+                        active ? 'text-ivory' : 'text-ivory/70'
+                      )}
+                    />
+                  ),
+                }}
+                active={active}
+                onClick={closeMobile}
+                className={
+                  active
+                    ? 'text-ivory font-medium'
+                    : 'text-ivory/70 hover:text-ivory'
+                }
+              />
+            )
+          })}
       </div>
 
       {/* User Menu */}

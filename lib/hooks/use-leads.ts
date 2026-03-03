@@ -1,6 +1,7 @@
 // lib/hooks/use-leads.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Lead, LeadActivity, LeadInsert, LeadUpdate } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
 interface LeadsResponse {
   leads: Lead[]
@@ -26,6 +27,7 @@ interface LeadFilters {
 
 // Fetch leads with filters and pagination
 export function useLeads(filters: LeadFilters = {}) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
@@ -35,10 +37,12 @@ export function useLeads(filters: LeadFilters = {}) {
   if (filters.search) params.set('search', filters.search)
   if (filters.sort) params.set('sort', filters.sort)
   if (filters.order) params.set('order', filters.order)
-  if (filters.org) params.set('org', filters.org)
+  // Admin viewing client: use viewed org; otherwise use explicit filter
+  const effectiveOrg = orgId || filters.org
+  if (effectiveOrg) params.set('org', effectiveOrg)
 
   return useQuery<LeadsResponse>({
-    queryKey: ['leads', filters],
+    queryKey: ['leads', filters, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/leads?${params}`)
       if (!res.ok) {
@@ -85,13 +89,18 @@ export function useLeadTimeline(leadId: string | null) {
 // Create lead mutation
 export function useCreateLead() {
   const queryClient = useQueryClient()
+  const { orgId, isViewingClient } = useAdminOrg()
 
   return useMutation({
     mutationFn: async (data: LeadInsert) => {
+      // When admin is viewing as client, include the target org ID
+      const payload = isViewingClient && orgId
+        ? { ...data, organization_id: orgId }
+        : data
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const error = await res.json()
@@ -175,6 +184,10 @@ export function useQualifyLead() {
 
 // Dashboard metrics hook
 export function useDashboardMetrics() {
+  const { orgId } = useAdminOrg()
+  const params = new URLSearchParams()
+  if (orgId) params.set('org', orgId)
+
   return useQuery<{
     leads: number
     leadsChange: number
@@ -187,9 +200,9 @@ export function useDashboardMetrics() {
     pipeline: { stage: string; count: number }[]
     recentLeads: Lead[]
   }>({
-    queryKey: ['dashboard-metrics'],
+    queryKey: ['dashboard-metrics', orgId],
     queryFn: async () => {
-      const res = await fetch('/api/dashboard/metrics')
+      const res = await fetch(`/api/dashboard/metrics?${params}`)
       if (!res.ok) {
         const error = await res.json()
         throw new Error(error.error || 'Failed to fetch metrics')

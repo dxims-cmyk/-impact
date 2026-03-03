@@ -170,23 +170,44 @@ function LeadCard({
   )
 }
 
-// AI Insights Component
+// AI Insights Component — auto-refreshes every 5 minutes
 function AIInsights() {
   const [insights, setInsights] = useState<{
     analysis: string
     alerts: string[]
     recommendations: { text: string; priority: string }[]
+    meta?: { hasCampaigns: boolean; hasAdData: boolean; totalLeads: number; leadsThisWeek: number }
   } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  useEffect(() => {
+  const fetchInsights = (isRefresh = false): void => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
+
     fetch('/api/insights')
       .then(res => res.json())
       .then(data => {
         setInsights(data)
-        setLoading(false)
+        setLastUpdated(new Date())
       })
-      .catch(() => setLoading(false))
+      .catch(() => {})
+      .finally(() => {
+        setLoading(false)
+        setRefreshing(false)
+      })
+  }
+
+  // Initial load
+  useEffect(() => {
+    fetchInsights()
+  }, [])
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => fetchInsights(true), 5 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   if (loading) {
@@ -207,28 +228,49 @@ function AIInsights() {
 
   return (
     <div className="bg-gradient-to-br from-impact/5 to-camel/5 rounded-2xl p-6 border border-impact/10">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-impact flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-ivory" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-impact flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-ivory" />
+          </div>
+          <h3 className="font-semibold text-navy">AI Insights</h3>
         </div>
-        <h3 className="font-semibold text-navy">AI Insights</h3>
+        <div className="flex items-center gap-2">
+          {lastUpdated && (
+            <span className="text-xs text-navy/30">
+              {formatRelativeTime(lastUpdated.toISOString())}
+            </span>
+          )}
+          <button
+            onClick={() => fetchInsights(true)}
+            disabled={refreshing}
+            className="p-1.5 rounded-lg hover:bg-black/5 transition-colors disabled:opacity-50"
+            title="Refresh insights"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-navy/40 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
       <p className="text-navy/80 mb-4">
         {insights?.analysis || 'No insights available yet.'}
       </p>
+      {insights?.alerts && insights.alerts.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {insights.alerts.map((alert, i) => (
+            <div key={i} className="p-3 rounded-lg bg-impact/10 border border-impact/20">
+              <p className="text-sm font-medium text-impact">{alert}</p>
+            </div>
+          ))}
+        </div>
+      )}
       {insights?.recommendations && insights.recommendations.length > 0 && (
         <div className="space-y-2">
-          {insights.recommendations.slice(0, 3).map((rec, i) => (
+          {insights.recommendations.slice(0, 4).map((rec, i) => (
             <div key={i} className="flex items-start gap-2 text-sm">
               <ArrowRight className={`w-4 h-4 mt-0.5 flex-shrink-0 ${rec.priority === 'high' ? 'text-impact' : 'text-navy/40'}`} />
               <span className="text-navy/70">{rec.text}</span>
             </div>
           ))}
-        </div>
-      )}
-      {insights?.alerts && insights.alerts.length > 0 && (
-        <div className="mt-4 p-3 rounded-lg bg-impact/10 border border-impact/20">
-          <p className="text-sm font-medium text-impact">{insights.alerts[0]}</p>
         </div>
       )}
     </div>

@@ -92,11 +92,10 @@ export default function DemoPage() {
           <>
             <div className="mb-10">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0B1220] mb-4">
-                Book Your Demo
+                See <span className="text-[#E8642C]">:Impact</span> in Action
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 max-w-lg">
-                15 minutes. See <span className="text-[#E8642C] font-medium">:Impact</span> in action.
-                We&apos;ll show you exactly how it works for your business.
+                Tell us about your business and we&apos;ll send you a personalised walkthrough within 5 minutes. No calendar. No waiting.
               </p>
             </div>
 
@@ -188,7 +187,7 @@ export default function DemoPage() {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Request Demo
+                    Send Demo
                   </>
                 )}
               </button>

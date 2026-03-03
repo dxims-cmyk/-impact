@@ -29,6 +29,14 @@ export interface Database {
           account_locked_at: string | null
           account_lock_reason: string | null
           account_locked_by: string | null
+          membership_status: 'preview' | 'active' | 'past_due' | 'paused' | 'suspended' | 'cancelled'
+          payment_method: 'stripe_recurring' | 'card_manual' | 'cash' | 'bank_transfer' | null
+          membership_started_at: string | null
+          membership_paid_until: string | null
+          membership_grace_until: string | null
+          membership_paused_at: string | null
+          membership_cancelled_at: string | null
+          total_months_paid: number
           created_at: string
           updated_at: string
         }
@@ -47,6 +55,14 @@ export interface Database {
           account_locked_at?: string | null
           account_lock_reason?: string | null
           account_locked_by?: string | null
+          membership_status?: 'preview' | 'active' | 'past_due' | 'paused' | 'suspended' | 'cancelled'
+          payment_method?: 'stripe_recurring' | 'card_manual' | 'cash' | 'bank_transfer' | null
+          membership_started_at?: string | null
+          membership_paid_until?: string | null
+          membership_grace_until?: string | null
+          membership_paused_at?: string | null
+          membership_cancelled_at?: string | null
+          total_months_paid?: number
           created_at?: string
           updated_at?: string
         }
@@ -65,6 +81,14 @@ export interface Database {
           account_locked_at?: string | null
           account_lock_reason?: string | null
           account_locked_by?: string | null
+          membership_status?: 'preview' | 'active' | 'past_due' | 'paused' | 'suspended' | 'cancelled'
+          payment_method?: 'stripe_recurring' | 'card_manual' | 'cash' | 'bank_transfer' | null
+          membership_started_at?: string | null
+          membership_paid_until?: string | null
+          membership_grace_until?: string | null
+          membership_paused_at?: string | null
+          membership_cancelled_at?: string | null
+          total_months_paid?: number
           created_at?: string
           updated_at?: string
         }
@@ -781,3 +805,22 @@ export type AutomationAction = Database['public']['Tables']['automation_actions'
 export type AutomationActionInsert = Database['public']['Tables']['automation_actions']['Insert']
 export type AutomationActionUpdate = Database['public']['Tables']['automation_actions']['Update']
 export type AutomationRun = Database['public']['Tables']['automation_runs']['Row']
+
+// Membership payment types
+export interface MembershipPayment {
+  id: string
+  organization_id: string
+  amount: number
+  currency: string
+  payment_method: 'stripe_recurring' | 'card_manual' | 'cash' | 'bank_transfer'
+  period_start: string
+  period_end: string
+  stripe_invoice_id: string | null
+  reference: string | null
+  notes: string | null
+  recorded_by: string | null
+  created_at: string
+}
+
+export type MembershipStatus = 'preview' | 'active' | 'past_due' | 'paused' | 'suspended' | 'cancelled'
+export type PaymentMethod = 'stripe_recurring' | 'card_manual' | 'cash' | 'bank_transfer'

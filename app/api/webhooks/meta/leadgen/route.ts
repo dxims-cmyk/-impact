@@ -6,6 +6,7 @@ import { decryptTokens } from '@/lib/encryption'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
 import { triggerAutomations } from '@/trigger/jobs/run-automation'
+import { systemLog } from '@/lib/system-log'
 
 // GET /api/webhooks/meta/leadgen - Meta webhook verification
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -63,33 +64,45 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const { leadgen_id, page_id, form_id, adgroup_id, ad_id, created_time } = change.value
 
       try {
-        // Find the Meta integration by page_id in metadata, then fall back to account_id match
+        // Find the Meta integration by page_id in metadata, then fall back
         let integration: Record<string, unknown> | null = null
+        const targetPageId = page_id || pageId
 
-        // Try matching by page_id stored in integration metadata
+        // Tier 1: Match by page_id stored in integration metadata (primary lookup)
         const { data: byPage } = await supabase
           .from('integrations')
           .select('*')
           .eq('provider', 'meta_ads')
           .eq('status', 'connected')
-          .contains('metadata', { page_id: page_id || pageId })
+          .contains('metadata', { page_id: targetPageId })
           .single()
 
         if (byPage) {
           integration = byPage
         } else {
-          // Fall back: if only one connected Meta integration, use it
+          // Tier 2: Check all_pages array for multi-page orgs
           const { data: allMeta } = await supabase
             .from('integrations')
             .select('*')
             .eq('provider', 'meta_ads')
             .eq('status', 'connected')
 
-          if (allMeta && allMeta.length === 1) {
-            integration = allMeta[0]
-          } else if (allMeta && allMeta.length > 1) {
-            console.error('Meta webhook: multiple integrations found, cannot determine org for page', page_id || pageId)
-            continue
+          if (allMeta) {
+            // Check if any integration has this page_id in its all_pages array
+            const byAllPages = allMeta.find((i: any) => {
+              const pages = i.metadata?.all_pages
+              return Array.isArray(pages) && pages.some((p: any) => p.id === targetPageId)
+            })
+
+            if (byAllPages) {
+              integration = byAllPages
+            } else if (allMeta.length === 1) {
+              // Tier 3: Single integration fallback
+              integration = allMeta[0]
+            } else if (allMeta.length > 1) {
+              console.error('Meta webhook: multiple integrations found, cannot determine org for page', targetPageId)
+              continue
+            }
           }
         }
 
@@ -134,6 +147,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         if (!accessToken || !organizationId) {
           console.error('Meta webhook: no access token or organization found', { page_id: page_id || pageId })
+          systemLog('critical', 'leadgen', `Leadgen webhook could not route page ${page_id || pageId} to any org`, undefined, { page_id: page_id || pageId, leadgen_id })
           continue
         }
 
@@ -232,6 +246,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         if (createError) {
           console.error('Meta webhook: failed to create lead', createError)
+          systemLog('error', 'leadgen', `Failed to create lead from Meta: ${createError.message}`, organizationId, { leadgen_id, error: createError.message })
           continue
         }
 

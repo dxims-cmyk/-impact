@@ -14,18 +14,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const { data: userData } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, is_agency_user')
     .eq('id', user.id)
     .single()
 
-  if (!userData?.organization_id) {
+  if (!userData?.organization_id && !userData?.is_agency_user) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
   }
+
+  // Agency users can view another org's integrations via ?org= param
+  const orgParam = request.nextUrl.searchParams.get('org')
+  const targetOrgId = (userData.is_agency_user && orgParam) ? orgParam : userData.organization_id
 
   const { data: integrations, error } = await supabase
     .from('integrations')
     .select('id, provider, status, account_name, account_id, last_sync_at, sync_error, metadata, created_at')
-    .eq('organization_id', userData.organization_id)
+    .eq('organization_id', targetOrgId)
     .order('provider', { ascending: true })
 
   if (error) {
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const { data: org } = await supabase
     .from('organizations')
     .select('settings')
-    .eq('id', userData.organization_id)
+    .eq('id', targetOrgId)
     .single()
 
   const orgSettings = (org?.settings || {}) as Record<string, unknown>

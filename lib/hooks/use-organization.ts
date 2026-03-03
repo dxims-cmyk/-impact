@@ -1,13 +1,18 @@
 // lib/hooks/use-organization.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Organization, User } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
-// Fetch current organization
+// Fetch current organization (or viewed client org for admin)
 export function useOrganization() {
+  const { orgId } = useAdminOrg()
+  const params = new URLSearchParams()
+  if (orgId) params.set('org', orgId)
+
   return useQuery<Organization>({
-    queryKey: ['organization'],
+    queryKey: ['organization', orgId],
     queryFn: async () => {
-      const res = await fetch('/api/settings/organization')
+      const res = await fetch(`/api/settings/organization?${params}`)
       if (!res.ok) {
         const error = await res.json()
         throw new Error(error.error || 'Failed to fetch organization')

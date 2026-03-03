@@ -1,6 +1,7 @@
 // lib/hooks/use-appointments.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Appointment } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
 interface AppointmentsResponse {
   appointments: (Appointment & {
@@ -32,6 +33,7 @@ interface AppointmentFilters {
 
 // Fetch appointments with filters
 export function useAppointments(filters: AppointmentFilters = {}) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
@@ -39,9 +41,10 @@ export function useAppointments(filters: AppointmentFilters = {}) {
   if (filters.startDate) params.set('startDate', filters.startDate)
   if (filters.endDate) params.set('endDate', filters.endDate)
   if (filters.leadId) params.set('leadId', filters.leadId)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<AppointmentsResponse>({
-    queryKey: ['appointments', filters],
+    queryKey: ['appointments', filters, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/appointments?${params}`)
       if (!res.ok) {

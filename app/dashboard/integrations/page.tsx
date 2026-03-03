@@ -666,6 +666,8 @@ function IntegrationsPageContent(): React.ReactElement {
       effectiveStatus = 'available'
     }
 
+    const dbMetadata = (dbRow?.metadata || {}) as Record<string, unknown>
+
     return {
       ...meta,
       key,
@@ -674,6 +676,7 @@ function IntegrationsPageContent(): React.ReactElement {
       accountName: dbRow?.account_name,
       lastSync: dbRow?.last_sync_at,
       syncError: dbRow?.sync_error,
+      leadgenSubscribed: dbMetadata.leadgen_subscribed === true,
     }
   })
 
@@ -825,7 +828,7 @@ function IntegrationsPageContent(): React.ReactElement {
 
                 {/* Connected account info + last sync */}
                 {isConnected && (
-                  <p className="text-xs text-navy/40 mb-3">
+                  <p className="text-xs text-navy/40 mb-1">
                     {integration.accountName && <>{integration.accountName} &middot; </>}
                     {integration.lastSync ? (
                       <>Last synced {formatRelativeTime(integration.lastSync)}</>
@@ -833,6 +836,43 @@ function IntegrationsPageContent(): React.ReactElement {
                       <>No sync yet</>
                     )}
                   </p>
+                )}
+
+                {/* Lead Ads subscription status for Meta */}
+                {integration.provider === 'meta_ads' && isConnected && (
+                  <div className="mb-3">
+                    {integration.leadgenSubscribed ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Lead Ads: Connected
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          <AlertCircle className="w-3 h-3" />
+                          Lead Ads: Not Subscribed
+                        </span>
+                        <button
+                          onClick={() => {
+                            toast.promise(
+                              fetch('/api/integrations/meta/subscribe-leadgen', { method: 'POST' }).then(r => {
+                                if (!r.ok) throw new Error('Subscribe failed')
+                                return r.json()
+                              }),
+                              {
+                                loading: 'Subscribing to Lead Ads...',
+                                success: (data: { subscribed: number }) => `Subscribed ${data.subscribed} page(s) to Lead Ads!`,
+                                error: 'Failed to subscribe to Lead Ads',
+                              }
+                            )
+                          }}
+                          className="text-xs text-impact font-medium hover:underline"
+                        >
+                          Subscribe
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Error */}

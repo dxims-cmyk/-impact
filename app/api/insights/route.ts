@@ -32,19 +32,81 @@ export async function GET(request: NextRequest) {
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
   try {
-    // Get campaign performance data
+    // ---- Always fetch lead context (useful regardless of ad data) ----
+
+    // Lead counts this week vs last
+    const { count: leadsThisWeek } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .gte('created_at', weekAgo.toISOString())
+
+    const { count: leadsLastWeek } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .gte('created_at', twoWeeksAgo.toISOString())
+      .lt('created_at', weekAgo.toISOString())
+
+    // Total leads
+    const { count: totalLeads } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+
+    // Stale leads (not contacted in 48h)
+    const { count: staleLeadsCount } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .in('stage', ['new', 'qualified'])
+      .lt('created_at', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
+
+    // Hot leads pending follow-up
+    const { data: hotLeads } = await supabase
+      .from('leads')
+      .select('id, first_name, last_name, ai_summary')
+      .eq('organization_id', orgId)
+      .eq('temperature', 'hot')
+      .in('stage', ['new', 'qualified'])
+      .limit(3)
+
+    // Won leads this week (conversions)
+    const { count: winsThisWeek } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', orgId)
+      .eq('stage', 'won')
+      .gte('updated_at', weekAgo.toISOString())
+
+    // Stage breakdown
+    const { data: stageCounts } = await supabase
+      .from('leads')
+      .select('stage')
+      .eq('organization_id', orgId)
+
+    const stageMap: Record<string, number> = {}
+    for (const row of stageCounts || []) {
+      stageMap[row.stage] = (stageMap[row.stage] || 0) + 1
+    }
+
+    // ---- Check integrations ----
+    const { data: integrations } = await supabase
+      .from('integrations')
+      .select('provider, status')
+      .eq('organization_id', orgId)
+
+    const connectedPlatforms = (integrations || [])
+      .filter((i: any) => i.status === 'active')
+      .map((i: any) => i.provider)
+
+    // ---- Ad campaign + performance data ----
     const { data: campaigns } = await supabase
       .from('ad_campaigns')
-      .select(`
-        id,
-        name,
-        platform,
-        status
-      `)
+      .select('id, name, platform, status')
       .eq('organization_id', orgId)
       .eq('status', 'active')
 
-    // Get performance metrics
     const { data: currentPerf } = await supabase
       .from('ad_performance')
       .select('campaign_id, spend, leads, impressions, clicks, revenue')
@@ -115,77 +177,134 @@ export async function GET(request: NextRequest) {
       }
     }).filter(c => c.spend > 0)
 
-    // Only call AI if there's data
-    if (campaignsForAnalysis.length === 0) {
-      return NextResponse.json({
-        analysis: 'No campaign data available yet. Connect your ad accounts to see AI insights.',
-        alerts: [],
-        optimizations: ['Connect Meta Ads, Google Ads, or TikTok Ads to get started'],
-        recommendations: [
-          { text: 'Connect your first ad platform', priority: 'high' },
-          { text: 'Set up lead form webhooks', priority: 'medium' },
-          { text: 'Configure speed-to-lead automation', priority: 'medium' },
-        ],
-      })
-    }
+    // ---- Build insights based on available data ----
+    const recommendations: { text: string; priority: string }[] = []
+    const alerts: string[] = []
+    let analysis = ''
 
-    // Call Claude for analysis
-    const aiInsights = await analyzeAdPerformance(
-      campaignsForAnalysis,
-      {
-        target_cpl: settings?.target_cpl || 25,
-        target_roas: settings?.target_roas || 3,
-      }
-    )
-
-    // Get additional context
-    // Stale leads (not contacted in 48h)
-    const { count: staleLeadsCount } = await supabase
-      .from('leads')
-      .select('id', { count: 'exact' })
-      .eq('organization_id', orgId)
-      .in('stage', ['new', 'qualified'])
-      .lt('created_at', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
-
-    // Hot leads pending follow-up
-    const { data: hotLeads } = await supabase
-      .from('leads')
-      .select('id, first_name, last_name, ai_summary')
-      .eq('organization_id', orgId)
-      .eq('temperature', 'hot')
-      .in('stage', ['new', 'qualified'])
-      .limit(3)
-
-    // Build recommendations
-    const recommendations = []
-
+    // High-priority: stale leads
     if (staleLeadsCount && staleLeadsCount > 0) {
       recommendations.push({
-        text: `${staleLeadsCount} leads haven't been contacted in 48+ hours`,
+        text: `${staleLeadsCount} lead${staleLeadsCount === 1 ? '' : 's'} haven't been contacted in 48+ hours`,
         priority: 'high',
       })
     }
 
+    // High-priority: hot leads
     for (const lead of hotLeads || []) {
       recommendations.push({
-        text: `Follow up with ${lead.first_name} ${lead.last_name} - high buying intent`,
+        text: `Follow up with ${lead.first_name} ${lead.last_name} — high buying intent`,
         priority: 'high',
       })
     }
 
-    // Add AI optimizations as recommendations
-    for (const opt of aiInsights.optimizations) {
-      recommendations.push({
-        text: opt,
-        priority: 'medium',
-      })
+    if (campaignsForAnalysis.length > 0) {
+      // ---- Has ad performance data → call Claude for full analysis ----
+      const aiInsights = await analyzeAdPerformance(
+        campaignsForAnalysis,
+        {
+          target_cpl: settings?.target_cpl || 25,
+          target_roas: settings?.target_roas || 3,
+        }
+      )
+
+      analysis = aiInsights.analysis
+      alerts.push(...aiInsights.alerts)
+
+      for (const opt of aiInsights.optimizations) {
+        recommendations.push({ text: opt, priority: 'medium' })
+      }
+    } else {
+      // ---- No ad spend data → generate lead-based insights ----
+      const thisWeek = leadsThisWeek || 0
+      const lastWeek = leadsLastWeek || 0
+      const total = totalLeads || 0
+      const wins = winsThisWeek || 0
+
+      // Build contextual analysis
+      const parts: string[] = []
+
+      if (total === 0) {
+        parts.push('No leads captured yet. Add your first lead manually or connect an ad platform to start tracking.')
+      } else {
+        // Lead volume analysis
+        if (thisWeek > lastWeek && lastWeek > 0) {
+          const pct = Math.round(((thisWeek - lastWeek) / lastWeek) * 100)
+          parts.push(`Lead volume is up ${pct}% this week (${thisWeek} vs ${lastWeek} last week).`)
+        } else if (thisWeek < lastWeek && lastWeek > 0) {
+          const pct = Math.round(((lastWeek - thisWeek) / lastWeek) * 100)
+          parts.push(`Lead volume dropped ${pct}% this week (${thisWeek} vs ${lastWeek} last week).`)
+        } else if (thisWeek > 0) {
+          parts.push(`${thisWeek} new lead${thisWeek === 1 ? '' : 's'} this week.`)
+        } else {
+          parts.push('No new leads this week.')
+        }
+
+        // Pipeline health
+        const newCount = stageMap['new'] || 0
+        const qualifiedCount = stageMap['qualified'] || 0
+        const bookedCount = stageMap['booked'] || 0
+
+        if (newCount > 5) {
+          parts.push(`${newCount} leads sitting in 'New' stage — review and qualify them.`)
+        }
+        if (qualifiedCount > 3 && bookedCount === 0) {
+          parts.push(`${qualifiedCount} qualified leads but no booked calls — focus on booking appointments.`)
+        }
+        if (wins > 0) {
+          parts.push(`${wins} deal${wins === 1 ? '' : 's'} won this week.`)
+        }
+      }
+
+      analysis = parts.join(' ')
+
+      // Campaign status recommendations
+      if ((campaigns || []).length > 0 && campaignsForAnalysis.length === 0) {
+        // Has campaigns but no spend data
+        recommendations.push({
+          text: `${(campaigns || []).length} active campaign${(campaigns || []).length === 1 ? '' : 's'} found but no spend data synced yet — performance metrics will appear once ad data is imported`,
+          priority: 'medium',
+        })
+      }
+
+      // Integration recommendations
+      if (connectedPlatforms.length === 0) {
+        recommendations.push({
+          text: 'Connect Meta Ads, Google Ads, or TikTok to see campaign performance insights',
+          priority: 'medium',
+        })
+      }
+
+      // Pipeline recommendations
+      const newLeads = stageMap['new'] || 0
+      if (newLeads > 3) {
+        recommendations.push({
+          text: `Review ${newLeads} unqualified leads in your pipeline`,
+          priority: 'medium',
+        })
+      }
+
+      // Alerts for concerning patterns
+      if ((staleLeadsCount || 0) > 5) {
+        alerts.push(`${staleLeadsCount} leads are going cold — contact them before they lose interest`)
+      }
+      if (thisWeek === 0 && lastWeek > 0) {
+        alerts.push('Lead volume has dropped to zero this week')
+      }
     }
 
     return NextResponse.json({
-      analysis: aiInsights.analysis,
-      alerts: aiInsights.alerts,
-      optimizations: aiInsights.optimizations,
+      analysis,
+      alerts,
+      optimizations: [],
       recommendations,
+      meta: {
+        hasCampaigns: (campaigns || []).length > 0,
+        hasAdData: campaignsForAnalysis.length > 0,
+        totalLeads: totalLeads || 0,
+        leadsThisWeek: leadsThisWeek || 0,
+        connectedPlatforms,
+      },
     })
   } catch (error) {
     console.error('Insights generation error:', error)
@@ -194,6 +313,7 @@ export async function GET(request: NextRequest) {
       alerts: [],
       optimizations: [],
       recommendations: [],
+      meta: { hasCampaigns: false, hasAdData: false, totalLeads: 0, leadsThisWeek: 0, connectedPlatforms: [] },
     })
   }
 }

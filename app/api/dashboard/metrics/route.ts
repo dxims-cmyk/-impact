@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
   }
 
-  const orgId = userData.organization_id
+  // Agency users can view another org's metrics via ?org= param
+  const requestedOrg = request.nextUrl.searchParams.get('org')
+  const orgId = (userData.is_agency_user && requestedOrg) ? requestedOrg : userData.organization_id
 
   // Date ranges
   const now = new Date()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   User,
   Building2,
@@ -18,6 +18,11 @@ import {
   Trash2,
   CreditCard,
   ExternalLink,
+  Receipt,
+  MessageCircle,
+  Plus,
+  Sparkles,
+  Play,
 } from 'lucide-react'
 import {
   useUser,
@@ -31,6 +36,7 @@ import {
   useInviteTeamMember,
   useUpdateTeamMember,
   useRemoveTeamMember,
+  useMembership,
 } from '@/lib/hooks'
 import { toast } from 'sonner'
 
@@ -108,8 +114,22 @@ export default function SettingsPage() {
   const [website, setWebsite] = useState('')
   const [currency, setCurrency] = useState('')
 
+  // Nurture pipeline state
+  const [nurtureEnabled, setNurtureEnabled] = useState(false)
+  const [nurtureTriggering, setNurtureTriggering] = useState(false)
+
+  // WhatsApp notification numbers state
+  const [waNumbers, setWaNumbers] = useState<string[]>([])
+  const [waNewNumber, setWaNewNumber] = useState('')
+  const [waLoading, setWaLoading] = useState(false)
+  const [waSaving, setWaSaving] = useState(false)
+  const [waLoaded, setWaLoaded] = useState(false)
+
   // Billing state
   const [billingLoading, setBillingLoading] = useState(false)
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([])
+  const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false)
+  const [paymentHistoryLoaded, setPaymentHistoryLoaded] = useState(false)
 
   // Hooks
   const { data: user, isLoading: userLoading } = useUser()
@@ -118,6 +138,7 @@ export default function SettingsPage() {
   // Show billing tab for non-agency (client) users only
   const isAgencyUser = (user as any)?.is_agency_user === true
   const tabs = isAgencyUser ? baseTabs : [...baseTabs, billingTab]
+  const { status: membershipStatus, isPreview, isActive, isPastDue, paymentMethod, paidUntil, totalMonthsPaid } = useMembership()
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers()
   const { data: notificationPrefs, isLoading: notifLoading } = useNotificationPreferences()
 
@@ -146,13 +167,44 @@ export default function SettingsPage() {
   useEffect(() => {
     if (organization) {
       setOrgName(organization.name || '')
-      const settings = (organization.settings || {}) as Record<string, string>
+      const settings = (organization.settings || {}) as Record<string, any>
       setIndustry(settings.industry || 'Marketing Agency')
       setTimezone(settings.timezone || 'Europe/London')
       setWebsite(settings.website || '')
       setCurrency(settings.currency || 'GBP')
+      setNurtureEnabled(!!settings.nurture_enabled)
     }
   }, [organization])
+
+  // Load WhatsApp notification numbers when notifications tab is active
+  useEffect(() => {
+    if (activeTab === 'notifications' && !waLoaded) {
+      setWaLoading(true)
+      fetch('/api/settings/notifications/whatsapp')
+        .then(res => res.json())
+        .then(data => {
+          setWaNumbers(Array.isArray(data.numbers) ? data.numbers : [])
+          setWaLoaded(true)
+        })
+        .catch(() => setWaNumbers([]))
+        .finally(() => setWaLoading(false))
+    }
+  }, [activeTab, waLoaded])
+
+  // Load payment history when billing tab is active
+  useEffect(() => {
+    if (activeTab === 'billing' && !paymentHistoryLoaded) {
+      setPaymentHistoryLoading(true)
+      fetch('/api/billing/payments')
+        .then(res => res.json())
+        .then(data => {
+          setPaymentHistory(Array.isArray(data) ? data : [])
+          setPaymentHistoryLoaded(true)
+        })
+        .catch(() => setPaymentHistory([]))
+        .finally(() => setPaymentHistoryLoading(false))
+    }
+  }, [activeTab, paymentHistoryLoaded])
 
   const handleSaveProfile = async () => {
     try {
@@ -195,6 +247,34 @@ export default function SettingsPage() {
       toast.success('Organization settings updated')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update organization')
+    }
+  }
+
+  const handleToggleNurture = async () => {
+    const newEnabled = !nurtureEnabled
+    setNurtureEnabled(newEnabled)
+    try {
+      await updateOrganization.mutateAsync({
+        settings: { nurture_enabled: newEnabled },
+      })
+      toast.success(newEnabled ? 'Pipeline nurture enabled' : 'Pipeline nurture disabled')
+    } catch (error) {
+      setNurtureEnabled(!newEnabled)
+      toast.error('Failed to update setting')
+    }
+  }
+
+  const handleTriggerNurture = async () => {
+    setNurtureTriggering(true)
+    try {
+      const res = await fetch('/api/leads/nurture', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to trigger nurture')
+      toast.success('Pipeline nurture started — check your leads shortly')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to trigger nurture')
+    } finally {
+      setNurtureTriggering(false)
     }
   }
 
@@ -247,6 +327,49 @@ export default function SettingsPage() {
       toast.success('Team member removed')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to remove member')
+    }
+  }
+
+  const handleAddWaNumber = () => {
+    const num = waNewNumber.trim()
+    if (!num) return
+    if (!/^\+[1-9]\d{6,14}$/.test(num)) {
+      toast.error('Invalid format. Use +44XXXXXXXXXX (E.164)')
+      return
+    }
+    if (waNumbers.includes(num)) {
+      toast.error('Number already added')
+      return
+    }
+    if (waNumbers.length >= 5) {
+      toast.error('Maximum 5 numbers allowed')
+      return
+    }
+    setWaNumbers([...waNumbers, num])
+    setWaNewNumber('')
+  }
+
+  const handleRemoveWaNumber = (num: string) => {
+    setWaNumbers(waNumbers.filter(n => n !== num))
+  }
+
+  const handleSaveWaNumbers = async () => {
+    setWaSaving(true)
+    try {
+      const res = await fetch('/api/settings/notifications/whatsapp', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numbers: waNumbers }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to save')
+      }
+      toast.success('WhatsApp numbers saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setWaSaving(false)
     }
   }
 
@@ -467,6 +590,68 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
+                  {/* Pipeline Nurture */}
+                  <div className="pt-4 border-t border-gray-100 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${nurtureEnabled ? 'bg-impact/10' : 'bg-navy/5'}`}>
+                          <Sparkles className={`w-6 h-6 ${nurtureEnabled ? 'text-impact' : 'text-navy/40'}`} />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-navy">Pipeline Nurture</h3>
+                          <p className="text-sm text-navy/50">
+                            {nurtureEnabled
+                              ? 'Active — AI follows up with stale leads daily at 9 AM'
+                              : 'Disabled — leads in your pipeline won\'t be auto-followed up'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleToggleNurture}
+                        disabled={updateOrganization.isPending}
+                        className={`relative w-14 h-7 rounded-full transition-colors flex-shrink-0 ${
+                          nurtureEnabled ? 'bg-impact' : 'bg-gray-200'
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                            nurtureEnabled ? 'translate-x-7' : 'translate-x-0.5'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {nurtureEnabled && (
+                      <>
+                        <div className="bg-navy/[0.02] rounded-xl p-4">
+                          <div className="flex items-start gap-3">
+                            <Sparkles className="w-4 h-4 text-impact mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-navy/70 space-y-1">
+                              <p>Leads in <strong>Qualified</strong>, <strong>Contacted</strong>, and <strong>Booked</strong> stages that haven't been reached in 48+ hours will receive an AI-generated follow-up via email (or WhatsApp if no email).</p>
+                              <p>Up to 20 leads per run. You'll get a WhatsApp summary after each run.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-navy/40">Runs daily at 9:00 AM UTC, or trigger manually.</p>
+                          <button
+                            onClick={handleTriggerNurture}
+                            disabled={nurtureTriggering}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-impact/20 text-sm font-medium text-impact hover:bg-impact/5 transition-colors disabled:opacity-50"
+                          >
+                            {nurtureTriggering ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                            Run Now
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div className="flex justify-end pt-4 border-t border-gray-100">
                     <button
                       onClick={handleSaveOrganization}
@@ -682,6 +867,81 @@ export default function SettingsPage() {
                   })}
                 </div>
               )}
+
+              {/* WhatsApp Alert Numbers */}
+              <div className="pt-4 border-t border-gray-100">
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-navy flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                    WhatsApp Alert Numbers
+                  </h3>
+                  <p className="text-sm text-navy/50 mt-1">
+                    Get instant WhatsApp notifications when new leads arrive. Add up to 5 numbers.
+                  </p>
+                </div>
+
+                {waLoading ? (
+                  <div className="flex items-center gap-2 py-4 text-sm text-navy/40">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Current numbers */}
+                    {waNumbers.map((num) => (
+                      <div key={num} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-navy/40" />
+                          <span className="text-sm font-mono text-navy">{num}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveWaNumber(num)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-navy/30 hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add number input */}
+                    {waNumbers.length < 5 && (
+                      <div className="flex gap-2">
+                        <input
+                          type="tel"
+                          value={waNewNumber}
+                          onChange={(e) => setWaNewNumber(e.target.value)}
+                          placeholder="+44XXXXXXXXXX"
+                          className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddWaNumber() }}
+                        />
+                        <button
+                          onClick={handleAddWaNumber}
+                          className="px-4 py-2.5 rounded-xl border border-gray-200 text-navy hover:bg-gray-50 transition-colors flex items-center gap-1 text-sm font-medium"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Save button */}
+                    <div className="flex justify-end pt-2">
+                      <button
+                        onClick={handleSaveWaNumbers}
+                        disabled={waSaving}
+                        className="btn-primary flex items-center gap-2"
+                      >
+                        {waSaving ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        Save Numbers
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -738,15 +998,15 @@ export default function SettingsPage() {
           {activeTab === 'billing' && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-navy mb-1">Billing & Subscription</h2>
-                <p className="text-sm text-navy/50">Manage your subscription and payment method</p>
+                <h2 className="text-lg font-semibold text-navy mb-1">Billing & Membership</h2>
+                <p className="text-sm text-navy/50">Your membership and payment details</p>
               </div>
 
               {orgLoading ? (
                 <FormSkeleton />
               ) : (
                 <>
-                  {/* Current plan */}
+                  {/* Membership overview */}
                   <div className="p-4 rounded-xl border border-gray-100 space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
@@ -755,16 +1015,34 @@ export default function SettingsPage() {
                           {(organization as any)?.plan === 'pro' ? ': Impact Pro' : ': Impact Core'}
                         </p>
                       </div>
-                      <span className={`text-sm px-3 py-1 rounded-full font-semibold ${
-                        (organization as any)?.plan === 'pro'
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
-                          : 'bg-navy/5 text-navy/60'
-                      }`}>
-                        {(organization as any)?.plan === 'pro' ? 'Pro' : 'Core'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm px-3 py-1 rounded-full font-semibold ${
+                          (organization as any)?.plan === 'pro'
+                            ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                            : 'bg-navy/5 text-navy/60'
+                        }`}>
+                          {(organization as any)?.plan === 'pro' ? 'Pro' : 'Core'}
+                        </span>
+                        <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                          membershipStatus === 'active' ? 'bg-green-50 text-green-700' :
+                          membershipStatus === 'preview' ? 'bg-blue-50 text-blue-700' :
+                          membershipStatus === 'past_due' ? 'bg-amber-50 text-amber-700' :
+                          membershipStatus === 'paused' ? 'bg-yellow-50 text-yellow-700' :
+                          membershipStatus === 'suspended' ? 'bg-red-50 text-red-700' :
+                          membershipStatus === 'cancelled' ? 'bg-gray-100 text-gray-600' :
+                          'bg-blue-50 text-blue-700'
+                        }`}>
+                          {membershipStatus === 'active' ? 'Active' :
+                           membershipStatus === 'preview' ? 'Preview' :
+                           membershipStatus === 'past_due' ? 'Past Due' :
+                           membershipStatus === 'paused' ? 'Paused' :
+                           membershipStatus === 'suspended' ? 'Suspended' :
+                           membershipStatus === 'cancelled' ? 'Cancelled' : 'Preview'}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-50">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-gray-50">
                       <div>
                         <p className="text-xs text-navy/40">Monthly Price</p>
                         <p className="text-sm font-semibold text-navy">
@@ -772,40 +1050,115 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-navy/40">Status</p>
-                        <p className={`text-sm font-semibold ${
-                          (organization as any)?.subscription_status === 'active' ? 'text-green-600' :
-                          (organization as any)?.subscription_status === 'past_due' ? 'text-amber-600' :
-                          (organization as any)?.subscription_status === 'cancelled' ? 'text-red-600' :
-                          'text-navy/60'
-                        }`}>
-                          {(organization as any)?.subscription_status === 'active' ? 'Active' :
-                           (organization as any)?.subscription_status === 'past_due' ? 'Past Due' :
-                           (organization as any)?.subscription_status === 'cancelled' ? 'Cancelled' :
-                           (organization as any)?.subscription_status === 'cancelling' ? 'Cancelling' :
-                           (organization as any)?.subscription_status || 'Active'}
+                        <p className="text-xs text-navy/40">Payment Method</p>
+                        <p className="text-sm font-semibold text-navy">
+                          {paymentMethod === 'stripe_recurring' ? 'Stripe' :
+                           paymentMethod === 'card_manual' ? 'Card' :
+                           paymentMethod === 'cash' ? 'Cash' :
+                           paymentMethod === 'bank_transfer' ? 'Bank Transfer' :
+                           'Not set'}
                         </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-navy/40">Paid Until</p>
+                        <p className="text-sm font-semibold text-navy">
+                          {paidUntil ? new Date(paidUntil).toLocaleDateString() : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-navy/40">Months Paid</p>
+                        <p className="text-sm font-semibold text-navy">{totalMonthsPaid}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Manage billing button */}
-                  <div className="pt-2">
-                    <button
-                      onClick={handleManageBilling}
-                      disabled={billingLoading}
-                      className="btn-primary flex items-center gap-2"
-                    >
-                      {billingLoading ? (
+                  {/* Payment History */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-navy flex items-center gap-2 mb-3">
+                      <Receipt className="w-4 h-4 text-navy/40" />
+                      Payment History
+                    </h3>
+                    {paymentHistoryLoading ? (
+                      <div className="flex items-center gap-2 py-4 text-sm text-navy/40">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ExternalLink className="w-4 h-4" />
-                      )}
-                      Manage Billing
-                    </button>
-                    <p className="text-xs text-navy/40 mt-2">
-                      Update payment method, view invoices, and manage your subscription via Stripe.
-                    </p>
+                        Loading...
+                      </div>
+                    ) : paymentHistory.length === 0 ? (
+                      <p className="text-sm text-navy/40 py-4">No payments recorded yet.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-navy/40 border-b border-gray-100">
+                              <th className="text-left py-2 pr-4 font-medium">Date</th>
+                              <th className="text-left py-2 pr-4 font-medium">Amount</th>
+                              <th className="text-left py-2 pr-4 font-medium">Method</th>
+                              <th className="text-left py-2 pr-4 font-medium">Period</th>
+                              <th className="text-left py-2 font-medium">Reference</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paymentHistory.map((p: any) => (
+                              <tr key={p.id} className="border-b border-gray-50">
+                                <td className="py-2 pr-4 text-navy/70">{new Date(p.created_at).toLocaleDateString()}</td>
+                                <td className="py-2 pr-4 text-navy font-medium">
+                                  {p.currency === 'GBP' ? '£' : p.currency === 'USD' ? '$' : '€'}
+                                  {Number(p.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="py-2 pr-4 text-navy/60">
+                                  {p.payment_method === 'stripe_recurring' ? 'Stripe' :
+                                   p.payment_method === 'card_manual' ? 'Card' :
+                                   p.payment_method === 'cash' ? 'Cash' :
+                                   p.payment_method === 'bank_transfer' ? 'Bank Transfer' : p.payment_method}
+                                </td>
+                                <td className="py-2 pr-4 text-navy/60 whitespace-nowrap">
+                                  {new Date(p.period_start).toLocaleDateString()} – {new Date(p.period_end).toLocaleDateString()}
+                                </td>
+                                <td className="py-2 text-navy/50">{p.reference || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-2">
+                    {paymentMethod === 'stripe_recurring' ? (
+                      <>
+                        <button
+                          onClick={handleManageBilling}
+                          disabled={billingLoading}
+                          className="btn-primary flex items-center gap-2"
+                        >
+                          {billingLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ExternalLink className="w-4 h-4" />
+                          )}
+                          Manage Billing
+                        </button>
+                        <p className="text-xs text-navy/40 mt-2">
+                          Update payment method, view invoices, and manage your subscription via Stripe.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="p-4 rounded-xl border border-gray-100 bg-gray-50">
+                        <p className="text-sm text-navy/70 mb-3">
+                          For billing inquiries, plan changes, or payment questions:
+                        </p>
+                        <a
+                          href="https://wa.me/64212345678?text=Hi%2C%20I%20have%20a%20billing%20question%20about%20my%20Impact%20account"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20BD5A] transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Contact AM:PM Media
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

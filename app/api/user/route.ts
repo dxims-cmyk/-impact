@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     .from('users')
     .select(`
       *,
-      organization:organizations(id, name, slug, subscription_tier, subscription_status, plan, settings, logo_url, account_status, account_locked_at, account_lock_reason)
+      organization:organizations(id, name, slug, subscription_tier, subscription_status, plan, settings, logo_url, account_status, account_locked_at, account_lock_reason, membership_status, membership_paid_until, payment_method, total_months_paid, membership_grace_until)
     `)
     .eq('id', user.id)
     .single()

@@ -1,6 +1,7 @@
 // lib/hooks/use-conversations.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Conversation, Message, MessageInsert } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
 interface ConversationsResponse {
   conversations: (Conversation & {
@@ -34,15 +35,17 @@ export interface ConversationFilters {
 
 // Fetch conversations with filters
 export function useConversations(filters: ConversationFilters = {}) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
   if (filters.status) params.set('status', filters.status)
   if (filters.channel) params.set('channel', filters.channel)
   if (filters.search) params.set('search', filters.search)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<ConversationsResponse>({
-    queryKey: ['conversations', filters],
+    queryKey: ['conversations', filters, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/conversations?${params}`)
       if (!res.ok) {

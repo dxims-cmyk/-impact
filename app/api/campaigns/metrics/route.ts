@@ -38,7 +38,11 @@ export async function GET(request: NextRequest) {
     .from('ad_performance')
     .select('*, campaign:ad_campaigns(id, name, platform)')
 
-  if (!userData.is_agency_user) {
+  // Agency users can specify ?org= to view a specific client's metrics
+  const orgParam = searchParams.get('org')
+  if (userData.is_agency_user && orgParam) {
+    perfQuery = perfQuery.eq('organization_id', orgParam)
+  } else if (!userData.is_agency_user) {
     perfQuery = perfQuery.eq('organization_id', userData.organization_id)
   }
 

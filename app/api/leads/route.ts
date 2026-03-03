@@ -19,6 +19,7 @@ const createLeadSchema = z.object({
   source: z.string().optional(),
   stage: z.string().optional(),
   send_welcome: z.boolean().optional().default(false),
+  organization_id: z.string().uuid().optional(),
   utm_source: z.string().optional(),
   utm_medium: z.string().optional(),
   utm_campaign: z.string().optional(),
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
   // Get user's org
   const { data: userData } = await supabase
     .from('users')
-    .select('organization_id')
+    .select('organization_id, is_agency_user')
     .eq('id', user.id)
     .single()
 
@@ -126,18 +127,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No organization' }, { status: 403 })
   }
 
-  // Parse and validate body
+  // Parse body early to check for org_id override (agency viewing as client)
   const body = await request.json()
+  const targetOrgId = (userData.is_agency_user && body.organization_id)
+    ? body.organization_id
+    : userData.organization_id
+
+  // Check preview mode lead limit
+  const { data: orgData } = await supabase
+    .from('organizations')
+    .select('membership_status')
+    .eq('id', targetOrgId)
+    .single()
+
+  if (orgData?.membership_status === 'preview') {
+    const { count } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', targetOrgId)
+
+    if ((count || 0) >= 2) {
+      return NextResponse.json({
+        error: 'Preview mode allows up to 2 leads. Activate your account for unlimited leads.',
+        code: 'PREVIEW_LIMIT',
+      }, { status: 403 })
+    }
+  }
+
+  // Validate body (already parsed above)
   const validation = createLeadSchema.safeParse(body)
 
   if (!validation.success) {
-    return NextResponse.json({ 
-      error: 'Validation failed', 
-      details: validation.error.flatten() 
+    return NextResponse.json({
+      error: 'Validation failed',
+      details: validation.error.flatten()
     }, { status: 400 })
   }
 
-  // Check for duplicate — build conditions safely
+  // Check for duplicate — scoped to target org only
   const dupConditions: string[] = []
   if (validation.data.email) {
     dupConditions.push(`email.eq.${sanitizeFilterValue(validation.data.email)}`)
@@ -150,31 +177,31 @@ export async function POST(request: NextRequest) {
     ? await supabase
         .from('leads')
         .select('id')
-        .eq('organization_id', userData.organization_id)
+        .eq('organization_id', targetOrgId)
         .or(dupConditions.join(','))
         .single()
     : { data: null }
 
   if (existing) {
-    return NextResponse.json({ 
-      error: 'Lead already exists', 
-      leadId: existing.id 
+    return NextResponse.json({
+      error: 'Lead already exists',
+      leadId: existing.id
     }, { status: 409 })
   }
 
   // Separate flags and extra fields from lead data
-  const { send_welcome, notes, job_title, stage, ...leadFields } = validation.data
+  const { send_welcome, notes, job_title, stage, organization_id: _orgId, ...leadFields } = validation.data
 
   // Store notes and job_title in source_detail JSONB
   const sourceDetail: Record<string, unknown> = {}
   if (notes) sourceDetail.notes = notes
   if (job_title) sourceDetail.job_title = job_title
 
-  // Create lead
+  // Create lead in target org
   const { data: lead, error: createError } = await supabase
     .from('leads')
     .insert({
-      organization_id: userData.organization_id,
+      organization_id: targetOrgId,
       ...leadFields,
       source_detail: Object.keys(sourceDetail).length > 0 ? sourceDetail : null,
       stage: stage || 'new'
@@ -191,7 +218,7 @@ export async function POST(request: NextRequest) {
     .from('lead_activities')
     .insert({
       lead_id: lead.id,
-      organization_id: userData.organization_id,
+      organization_id: targetOrgId,
       type: 'created',
       content: notes || 'Lead created',
       performed_by: user.id
@@ -211,7 +238,7 @@ export async function POST(request: NextRequest) {
 
   // Trigger 'lead_created' automations
   triggerAutomations({
-    organizationId: userData.organization_id,
+    organizationId: targetOrgId,
     leadId: lead.id,
     triggerType: 'lead_created',
   }).catch(() => {})

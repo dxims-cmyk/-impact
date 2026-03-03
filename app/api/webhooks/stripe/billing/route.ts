@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { verifyWebhookSignature, type StripeWebhookEvent } from '@/lib/integrations/stripe'
 import { priceIdToPlan } from '@/lib/integrations/stripe-billing'
+import { systemLog } from '@/lib/system-log'
 
 function getWebhookSecret(): string {
   const secret = process.env.STRIPE_BILLING_WEBHOOK_SECRET
@@ -18,7 +19,7 @@ async function findOrgByCustomer(customerId: string) {
   const admin = createAdminClient()
   const { data, error } = await (admin
     .from('organizations') as any)
-    .select('id, plan, subscription_status, account_status, stripe_subscription_id')
+    .select('id, plan, subscription_status, account_status, stripe_subscription_id, membership_started_at, total_months_paid')
     .eq('stripe_customer_id', customerId)
     .single()
 
@@ -72,37 +73,72 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     switch (event.type) {
       case 'invoice.payment_succeeded': {
+        // Extract invoice period
+        const invoice = obj as Record<string, unknown>
+        const periodStart = invoice.period_start as number | undefined
+        const periodEnd = invoice.period_end as number | undefined
+        const amountPaid = ((invoice.amount_paid as number) || 0) / 100
+        const invoiceId = invoice.id as string
+
         await updateOrg(org.id, {
           account_status: 'active',
           account_locked_at: null,
           account_lock_reason: null,
           account_locked_by: null,
           subscription_status: 'active',
+          membership_status: 'active',
+          payment_method: 'stripe_recurring',
+          membership_started_at: org.membership_started_at || new Date().toISOString(),
+          membership_paid_until: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          total_months_paid: (org.total_months_paid || 0) + 1,
         })
-        console.log(`Payment succeeded for org ${org.id} — account unlocked`)
+
+        // Write payment record
+        if (amountPaid > 0) {
+          const admin = createAdminClient()
+          await (admin.from('membership_payments') as any).insert({
+            organization_id: org.id,
+            amount: amountPaid,
+            currency: (invoice.currency as string)?.toUpperCase() || 'GBP',
+            payment_method: 'stripe_recurring',
+            period_start: periodStart ? new Date(periodStart * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            period_end: periodEnd ? new Date(periodEnd * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            stripe_invoice_id: invoiceId || null,
+            recorded_by: null,
+          })
+        }
+
+        console.log(`Payment succeeded for org ${org.id} — account unlocked, membership active`)
         break
       }
 
       case 'invoice.payment_failed': {
+        const failedInvoice = obj as Record<string, unknown>
         await updateOrg(org.id, {
           account_status: 'locked',
           account_locked_at: new Date().toISOString(),
           account_lock_reason: 'Payment failed — please update your payment method',
           subscription_status: 'past_due',
+          membership_status: 'past_due',
         })
-        console.log(`Payment failed for org ${org.id} — account locked`)
+        console.log(`Payment failed for org ${org.id} — account locked, membership past_due`)
+        await systemLog('error', 'billing', 'Payment failed for org', org.id, { stripe_invoice_id: failedInvoice.id as string, error: 'invoice.payment_failed' })
         break
       }
 
       case 'customer.subscription.deleted': {
+        const deletedSub = obj as Record<string, unknown>
         await updateOrg(org.id, {
           account_status: 'locked',
           account_locked_at: new Date().toISOString(),
           account_lock_reason: 'Subscription cancelled',
           subscription_status: 'cancelled',
           stripe_subscription_id: null,
+          membership_status: 'cancelled',
+          membership_cancelled_at: new Date().toISOString(),
         })
-        console.log(`Subscription deleted for org ${org.id} — account locked`)
+        console.log(`Subscription deleted for org ${org.id} — account locked, membership cancelled`)
+        await systemLog('error', 'billing', 'Subscription deleted for org', org.id, { stripe_subscription_id: deletedSub.id as string, error: 'customer.subscription.deleted' })
         break
       }
 
@@ -145,6 +181,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ received: true })
   } catch (err) {
     console.error('Billing webhook error:', err)
+    await systemLog('error', 'billing', 'Billing webhook handler failed', undefined, { error: String(err) })
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
 }

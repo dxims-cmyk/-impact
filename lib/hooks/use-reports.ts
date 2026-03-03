@@ -1,6 +1,7 @@
 // lib/hooks/use-reports.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Report } from '@/types/database'
+import { useAdminOrg } from './use-admin-org'
 
 interface ReportsResponse {
   reports: Report[]
@@ -20,13 +21,15 @@ interface ReportFilters {
 
 // Fetch reports with filters
 export function useReports(filters: ReportFilters = {}) {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
   if (filters.type) params.set('type', filters.type)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<ReportsResponse>({
-    queryKey: ['reports', filters],
+    queryKey: ['reports', filters, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/reports?${params}`)
       if (!res.ok) {
@@ -110,12 +113,14 @@ export function useSendReport() {
 
 // Get latest report
 export function useLatestReport(type?: 'weekly' | 'monthly') {
+  const { orgId } = useAdminOrg()
   const params = new URLSearchParams()
   params.set('limit', '1')
   if (type) params.set('type', type)
+  if (orgId) params.set('org', orgId)
 
   return useQuery<Report | null>({
-    queryKey: ['latest-report', type],
+    queryKey: ['latest-report', type, orgId],
     queryFn: async () => {
       const res = await fetch(`/api/reports?${params}`)
       if (!res.ok) {

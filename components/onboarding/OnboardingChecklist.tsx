@@ -11,6 +11,8 @@ import {
   Code2,
   Send,
   ChevronRight,
+  Plug,
+  Phone,
 } from 'lucide-react'
 
 interface ChecklistStep {
@@ -30,25 +32,25 @@ const steps: ChecklistStep[] = [
     icon: Building2,
   },
   {
-    id: 'connect_whatsapp',
-    label: 'Connect WhatsApp',
-    description: 'Enable instant lead notifications via WhatsApp',
+    id: 'connect_meta',
+    label: 'Connect Meta Ads',
+    description: 'Sync leads and campaigns from Facebook & Instagram Ads',
     href: '/dashboard/integrations',
-    icon: MessageSquare,
+    icon: Plug,
+  },
+  {
+    id: 'add_whatsapp',
+    label: 'Add WhatsApp number for alerts',
+    description: 'Get instant notifications when new leads arrive',
+    href: '/dashboard/settings',
+    icon: Phone,
   },
   {
     id: 'connect_calendar',
-    label: 'Connect your calendar',
+    label: 'Connect your calendar (optional)',
     description: 'Let leads book directly into your availability',
     href: '/dashboard/integrations',
     icon: Calendar,
-  },
-  {
-    id: 'embed_form',
-    label: 'Get your form embed code',
-    description: 'Add a lead capture form to your website',
-    href: '/dashboard/settings',
-    icon: Code2,
   },
   {
     id: 'test_lead',

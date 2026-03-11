@@ -88,7 +88,25 @@ function useAlertCount(enabled: boolean) {
       const res = await fetch('/api/admin/alerts')
       if (!res.ok) return 0
       const data = await res.json()
-      return data.counts?.critical || 0
+      // Exclude dismissed alerts from badge count
+      const allAlerts = [
+        ...(data.critical || []),
+        ...(data.warnings || []),
+      ]
+      try {
+        const raw = localStorage.getItem('impact-dismissed-alerts')
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ids: string[]; expiry: number }
+          if (Date.now() <= parsed.expiry) {
+            const dismissed = new Set(parsed.ids)
+            const active = allAlerts.filter((a: { id: string }) => !dismissed.has(a.id))
+            return active.length
+          }
+        }
+      } catch {
+        // Fall through to unfiltered count
+      }
+      return (data.counts?.critical || 0) + (data.counts?.warnings || 0)
     },
     enabled,
     staleTime: 60 * 1000,

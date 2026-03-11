@@ -3,12 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 interface Alert {
+  id: string // unique key for dismiss tracking
   type: string
   org_id: string
   org_name: string
   message: string
   timestamp: string
   meta?: Record<string, unknown>
+  // Navigation target when clicking "Go to fix"
+  nav?: {
+    page: string // e.g. '/dashboard/integrations', '/dashboard/leads'
+    description: string // e.g. 'Fix integration', 'Review stale leads'
+  }
+}
+
+function alertId(type: string, orgId: string, extra?: string): string {
+  return `${type}:${orgId}${extra ? ':' + extra : ''}`
 }
 
 // GET /api/admin/alerts - Get system-wide alerts for admin dashboard
@@ -46,11 +56,16 @@ export async function GET(request: NextRequest) {
       for (const i of errorIntegrations) {
         const orgName = (i as any).organizations?.name || 'Unknown'
         critical.push({
+          id: alertId('integration_error', i.organization_id, i.provider),
           type: 'integration_error',
           org_id: i.organization_id,
           org_name: orgName,
           message: `${i.provider} integration error: ${i.sync_error || 'Status: ' + i.status}`,
           timestamp: i.updated_at,
+          nav: {
+            page: '/dashboard/integrations',
+            description: `Fix ${i.provider} integration`,
+          },
         })
       }
     }
@@ -60,7 +75,7 @@ export async function GET(request: NextRequest) {
     const { data: staleLeads } = await supabase
       .from('leads')
       .select('organization_id, organizations(name), created_at')
-      .in('status', ['new', 'qualified'])
+      .in('stage', ['new', 'qualified'])
       .lt('created_at', twoDaysAgo)
       .order('created_at', { ascending: true })
 
@@ -84,12 +99,17 @@ export async function GET(request: NextRequest) {
       for (const [orgId, data] of byOrg) {
         const hoursOld = Math.round((Date.now() - new Date(data.oldest).getTime()) / (1000 * 60 * 60))
         warnings.push({
+          id: alertId('stale_leads', orgId),
           type: 'stale_leads',
           org_id: orgId,
           org_name: data.name,
           message: `${data.count} unactioned lead(s), oldest is ${hoursOld}h old`,
           timestamp: data.oldest,
           meta: { count: data.count, oldest_hours: hoursOld },
+          nav: {
+            page: '/dashboard/leads',
+            description: 'Review stale leads',
+          },
         })
       }
     }
@@ -106,12 +126,17 @@ export async function GET(request: NextRequest) {
           ? Math.round((Date.now() - new Date(org.membership_paid_until).getTime()) / (1000 * 60 * 60 * 24))
           : 0
         warnings.push({
+          id: alertId('payment_past_due', org.id),
           type: 'payment_past_due',
           org_id: org.id,
           org_name: org.name,
           message: `Membership payment overdue by ${daysOverdue} day(s)`,
           timestamp: org.membership_paid_until || new Date().toISOString(),
           meta: { days_overdue: daysOverdue },
+          nav: {
+            page: '/dashboard/settings',
+            description: 'View billing settings',
+          },
         })
       }
     }
@@ -137,11 +162,16 @@ export async function GET(request: NextRequest) {
           // Check org is older than 7 days (don't alert for brand new orgs)
           if (new Date(org.created_at) < new Date(sevenDaysAgo)) {
             warnings.push({
+              id: alertId('no_activity_7d', org.id),
               type: 'no_activity_7d',
               org_id: org.id,
               org_name: org.name,
               message: 'No new leads in the last 7 days',
               timestamp: sevenDaysAgo,
+              nav: {
+                page: '/dashboard/leads',
+                description: 'Check lead pipeline',
+              },
             })
           }
         }
@@ -159,11 +189,16 @@ export async function GET(request: NextRequest) {
     if (newOrgs) {
       for (const org of newOrgs) {
         info.push({
+          id: alertId('new_client', org.id),
           type: 'new_client',
           org_id: org.id,
           org_name: org.name,
           message: `New client (${org.membership_status})`,
           timestamp: org.created_at,
+          nav: {
+            page: '/dashboard/settings',
+            description: 'View client settings',
+          },
         })
       }
     }
@@ -177,11 +212,16 @@ export async function GET(request: NextRequest) {
     if (cancelledOrgs) {
       for (const org of cancelledOrgs) {
         info.push({
+          id: alertId('subscription_cancelled', org.id),
           type: 'subscription_cancelled',
           org_id: org.id,
           org_name: org.name,
           message: 'Membership cancelled',
           timestamp: org.membership_cancelled_at || new Date().toISOString(),
+          nav: {
+            page: '/dashboard/settings',
+            description: 'View membership',
+          },
         })
       }
     }

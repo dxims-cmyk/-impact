@@ -80,7 +80,7 @@ export function MembershipLockoutScreen({ status, paymentMethod }: MembershipLoc
 
           <div className="space-y-3">
             <a
-              href="https://wa.me/64212345678?text=Hi%2C%20I%20need%20help%20with%20my%20Impact%20membership"
+              href="https://wa.me/447386207524?text=Hi%2C%20I%20need%20help%20with%20my%20Impact%20membership"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#25D366] text-white font-semibold hover:bg-[#20BD5A] transition-colors"

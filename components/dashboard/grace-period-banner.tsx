@@ -43,7 +43,7 @@ export function GracePeriodBanner({ daysLeft, paymentMethod }: GracePeriodBanner
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <a
-          href="https://wa.me/64212345678?text=Hi%2C%20I%20need%20help%20with%20my%20Impact%20membership%20payment"
+          href="https://wa.me/447386207524?text=Hi%2C%20I%20need%20help%20with%20my%20Impact%20membership%20payment"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20BD5A] transition-colors"

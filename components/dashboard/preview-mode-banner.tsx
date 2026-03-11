@@ -12,7 +12,7 @@ export function PreviewModeBanner(): JSX.Element {
         </span>
       </div>
       <a
-        href="https://wa.me/64212345678?text=Hi%2C%20I%27d%20like%20to%20activate%20my%20Impact%20account"
+        href="https://wa.me/447386207524?text=Hi%2C%20I%27d%20like%20to%20activate%20my%20Impact%20account"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#25D366] text-white text-xs font-semibold hover:bg-[#20BD5A] transition-colors flex-shrink-0"
@@ -45,7 +45,7 @@ export function PreviewModeGate({ feature, children }: PreviewModeGateProps): JS
             Access to {feature} requires an active membership.
           </p>
           <a
-            href="https://wa.me/64212345678?text=Hi%2C%20I%27d%20like%20to%20activate%20my%20Impact%20account%20to%20access%20all%20features"
+            href="https://wa.me/447386207524?text=Hi%2C%20I%27d%20like%20to%20activate%20my%20Impact%20account%20to%20access%20all%20features"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20BD5A] transition-colors"

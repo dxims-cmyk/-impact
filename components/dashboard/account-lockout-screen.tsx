@@ -82,7 +82,7 @@ export function AccountLockoutScreen({ reason }: AccountLockoutScreenProps): JSX
             )}
 
             <a
-              href="https://wa.me/64212345678?text=Hi%2C%20my%20Impact%20account%20has%20been%20suspended.%20Can%20you%20help%3F"
+              href="https://wa.me/447386207524?text=Hi%2C%20my%20Impact%20account%20has%20been%20suspended.%20Can%20you%20help%3F"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#25D366] text-white font-semibold hover:bg-[#20BD5A] transition-colors"

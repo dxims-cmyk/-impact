@@ -1149,7 +1149,7 @@ export default function SettingsPage() {
                           For billing inquiries, plan changes, or payment questions:
                         </p>
                         <a
-                          href="https://wa.me/64212345678?text=Hi%2C%20I%20have%20a%20billing%20question%20about%20my%20Impact%20account"
+                          href="https://wa.me/447386207524?text=Hi%2C%20I%20have%20a%20billing%20question%20about%20my%20Impact%20account"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20BD5A] transition-colors"

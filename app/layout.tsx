@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
 import { Providers } from './providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-jakarta', weight: ['400', '500', '600', '700', '800'] })
 
 export const viewport: Viewport = {
   themeColor: '#6E0F1A',
@@ -27,11 +28,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full scroll-smooth">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${inter.className} h-full antialiased`}>
+      <body className={`${inter.variable} ${manrope.variable} font-sans h-full antialiased`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `

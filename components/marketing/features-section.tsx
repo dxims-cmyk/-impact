@@ -1,104 +1,115 @@
 'use client'
 
-import {
-  Zap,
-  Brain,
-  MessageSquare,
-  CalendarCheck,
-  Settings,
-  BarChart3,
-} from 'lucide-react'
+import { Zap, Brain, Inbox, CalendarCheck, Settings, BarChart3 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Spotlight } from '@/components/ui/spotlight'
-import { Reveal } from '@/components/marketing/reveal'
+import { useRef } from 'react'
+import { useInView } from 'framer-motion'
+import { FadeIn } from '@/components/marketing/fade-in'
+import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
 const features = [
   {
     icon: Zap,
-    title: '5-Second Alerts',
-    desc: 'WhatsApp, SMS, or email. The moment a lead comes in, you know about it.',
-    accent: 'from-amber-500/10 to-orange-500/10',
+    title: '5-Second WhatsApp Alerts',
+    desc: 'Know about every lead before your competitor even checks their email. Instant notification with name, number, source, and intent.',
+    span: 'lg:col-span-2',
   },
   {
     icon: Brain,
     title: 'AI Lead Scoring',
-    desc: 'Powered by Claude. Every lead scored and qualified automatically.',
-    accent: 'from-violet-500/10 to-purple-500/10',
+    desc: 'Every lead rated 1-10 so you know who to call first.',
+    span: '',
   },
   {
-    icon: MessageSquare,
+    icon: Inbox,
     title: 'Unified Inbox',
-    desc: 'WhatsApp, SMS, email, Instagram DM, Messenger. One conversation view.',
-    accent: 'from-blue-500/10 to-cyan-500/10',
+    desc: 'WhatsApp, SMS, email, Instagram, Messenger. One timeline.',
+    span: '',
   },
   {
     icon: CalendarCheck,
-    title: 'Calendar Sync',
-    desc: 'Cal.com, Calendly, Google Calendar. Leads book directly into your diary.',
-    accent: 'from-emerald-500/10 to-green-500/10',
+    title: 'Calendar & Booking',
+    desc: 'Cal.com integration so leads book themselves in. No back-and-forth.',
+    span: '',
   },
   {
     icon: Settings,
     title: 'Automations',
-    desc: 'Follow-up sequences that run themselves. Never forget a lead again.',
-    accent: 'from-slate-500/10 to-gray-500/10',
+    desc: 'Rules, triggers, follow-up sequences. No code needed.',
+    span: '',
   },
   {
     icon: BarChart3,
-    title: 'ROI Tracking',
-    desc: 'Know exactly which ads, campaigns, and channels bring paying customers.',
-    accent: 'from-rose-500/10 to-pink-500/10',
+    title: 'Lead Analytics',
+    desc: 'See which ads, audiences, and creatives actually bring revenue, not just clicks.',
+    span: 'lg:col-span-2',
   },
 ]
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-  }),
-}
-
 export function FeaturesSection(): React.JSX.Element {
-  return (
-    <section id="features" className="py-20 sm:py-28 bg-gray-50/80 scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal>
-          <p className="text-center text-sm font-medium text-[#E8642C] uppercase tracking-widest mb-4">
-            Features
-          </p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-[#0B1220] mb-6 leading-tight">
-            Everything you need to{' '}
-            <span className="text-[#E8642C]">convert leads</span>
-          </h2>
-          <p className="text-center text-gray-600 text-lg max-w-2xl mx-auto mb-16">
-            One platform. No duct-taping five different tools together.
-          </p>
-        </Reveal>
+  const { theme } = useMarketingTheme()
+  const dark = theme === 'dark'
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-100px' })
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  return (
+    <section id="features" className="py-20 sm:py-28 scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeIn>
+          <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-4 transition-colors duration-700 ${
+            dark ? 'text-white' : 'text-[#0B1220]'
+          }`}>
+            Everything you need. Nothing you don&apos;t.
+          </h2>
+          <p className={`text-center text-lg max-w-xl mx-auto mb-16 transition-colors duration-700 ${
+            dark ? 'text-zinc-500' : 'text-gray-500'
+          }`}>
+            One platform replaces five different tools.
+          </p>
+        </FadeIn>
+
+        {/* Bento grid */}
+        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-40px' }}
-              variants={cardVariants}
+              initial={{ opacity: 0, y: 24 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: i * 0.07, type: 'spring', stiffness: 300, damping: 30 }}
+              className={`group rounded-xl border p-6 flex flex-col spring-hover ${feature.span} ${
+                dark
+                  ? 'border-zinc-800/60 bg-zinc-900/30 hover:border-zinc-700'
+                  : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
+              }`}
             >
-              <Spotlight className="rounded-2xl h-full">
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 sm:p-8 hover:border-gray-200 transition-all duration-300 h-full">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.accent} flex items-center justify-center mb-5`}>
-                    <feature.icon className="w-5 h-5 text-[#0B1220]" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-[#0B1220] mb-2">{feature.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{feature.desc}</p>
-                </div>
-              </Spotlight>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-colors group-hover:bg-[#E8642C]/10 ${
+                dark ? 'bg-zinc-800' : 'bg-gray-100'
+              }`}>
+                <feature.icon className={`w-5 h-5 transition-colors group-hover:text-[#E8642C] ${
+                  dark ? 'text-zinc-400' : 'text-gray-500'
+                }`} />
+              </div>
+              <h3 className={`font-display text-base font-semibold mb-2 transition-colors duration-700 ${
+                dark ? 'text-white' : 'text-[#0B1220]'
+              }`}>
+                {feature.title}
+              </h3>
+              <p className={`text-sm leading-relaxed transition-colors duration-700 ${
+                dark ? 'text-zinc-400' : 'text-gray-600'
+              }`}>
+                {feature.desc}
+              </p>
             </motion.div>
           ))}
         </div>
+
+        <FadeIn delay={0.4}>
+          <p className={`text-center text-sm mt-10 transition-colors duration-700 ${
+            dark ? 'text-zinc-500' : 'text-gray-500'
+          }`}>
+            Plus: AI Receptionist, Outbound Lead Generation, and more on Growth and Pro plans.
+          </p>
+        </FadeIn>
       </div>
     </section>
   )

@@ -1,79 +1,66 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { MarketingThemeProvider } from '@/components/marketing/theme-provider'
+import { MarketingHeader } from '@/components/marketing/marketing-header'
+import { MarketingFooter } from '@/components/marketing/marketing-footer'
+import { ScrollProgress } from '@/components/marketing/scroll-progress'
 
 const siteUrl = 'https://driveimpact.io'
 
 export const metadata: Metadata = {
   title: {
-    default: ':Impact | Stop Losing Leads You Paid For',
+    default: 'Impact | AI Lead Management for Service Businesses',
     template: '%s | :Impact by AM:PM Media',
   },
   description:
-    'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for WhatsApp, SMS, email, Instagram & Messenger. The lead management platform that turns your ad spend into booked appointments.',
+    'Stop losing the leads you paid for. Get WhatsApp alerts in 5 seconds when a new lead comes in, AI lead scoring, and a unified inbox for WhatsApp, SMS, email, Instagram and Messenger. Built for restaurants, clinics, and service businesses running paid ads.',
   metadataBase: new URL(siteUrl),
-  alternates: {
-    canonical: '/',
-  },
+  alternates: { canonical: '/' },
   keywords: [
-    'lead management',
+    'lead management software',
     'speed to lead',
     'WhatsApp lead alerts',
     'AI lead scoring',
-    'lead management software',
+    'lead management for restaurants',
     'CRM for small business',
-    'unified inbox',
-    'lead response time',
+    'unified inbox CRM',
+    'lead response time software',
     'Meta ads lead management',
-    'Google Ads leads',
-    'appointment booking',
-    'lead qualification',
-    'AM:PM Media',
+    'Facebook lead ads CRM',
+    'Google ads lead management',
+    'clinic lead management',
+    'best CRM for Meta ads',
+    'WhatsApp business alerts',
+    'lead qualification software',
+    'appointment booking from ads',
+    'speed to lead software',
+    'lead management platform',
   ],
   authors: [{ name: 'AM:PM Media', url: 'https://www.mediampm.com' }],
   creator: 'AM:PM Media',
   publisher: 'AM:PM Media',
   openGraph: {
     type: 'website',
-    locale: 'en_GB',
+    locale: 'en',
     url: siteUrl,
     siteName: ':Impact by AM:PM Media',
-    title: ':Impact | Stop Losing the Leads You Paid For',
-    description:
-      'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything. Turn your ad spend into booked appointments.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: ':Impact — Lead management platform by AM:PM Media',
-      },
-    ],
+    title: 'Impact | AI Lead Management for Service Businesses',
+    description: 'Get WhatsApp alerts in 5 seconds, AI lead scoring, and a unified inbox for every channel.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: ':Impact | Lead management platform by AM:PM Media' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: ':Impact | Stop Losing the Leads You Paid For',
-    description:
-      'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything. The growth platform that pays for itself.',
+    title: 'Impact | AI Lead Management for Service Businesses',
+    description: 'WhatsApp alerts in 5 seconds. AI lead scoring. One inbox for everything.',
     images: ['/og-image.png'],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+    googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
 }
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -93,6 +80,7 @@ export default function MarketingLayout({
         '@id': 'https://driveimpact.io/#website',
         url: 'https://driveimpact.io',
         name: ':Impact',
+        description: 'AI-powered lead management for service businesses. WhatsApp alerts in 5 seconds, AI lead scoring, unified inbox.',
         publisher: { '@id': 'https://driveimpact.io/#organization' },
       },
       {
@@ -100,130 +88,114 @@ export default function MarketingLayout({
         name: ':Impact',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
-        description:
-          'AI-powered lead management platform with WhatsApp alerts, lead scoring, and unified inbox for businesses running paid ads.',
-        offers: {
-          '@type': 'Offer',
-          price: '1500',
-          priceCurrency: 'GBP',
-          priceValidUntil: '2026-12-31',
-        },
+        description: 'AI-powered lead management platform with 5-second WhatsApp alerts, AI lead scoring, and a unified inbox for WhatsApp, SMS, email, Instagram and Messenger.',
+        offers: [
+          { '@type': 'Offer', name: 'Core', price: '1500', priceCurrency: 'GBP', url: 'https://driveimpact.io/#pricing' },
+          { '@type': 'Offer', name: 'Growth', price: '2000', priceCurrency: 'GBP', url: 'https://driveimpact.io/#pricing' },
+          { '@type': 'Offer', name: 'Pro', price: '2500', priceCurrency: 'GBP', url: 'https://driveimpact.io/#pricing' },
+        ],
         aggregateRating: {
           '@type': 'AggregateRating',
-          ratingValue: '4.9',
-          ratingCount: '12',
+          ratingValue: '5',
+          ratingCount: '3',
+          bestRating: '5',
         },
         featureList: [
           '5-second WhatsApp lead alerts',
           'AI lead scoring and qualification',
-          'Unified inbox (WhatsApp, SMS, email, Instagram, Messenger)',
-          'Calendar sync and booking',
+          'Unified inbox for WhatsApp, SMS, email, Instagram, Messenger',
+          'Calendar sync and booking via Cal.com',
           'Follow-up automations',
-          'ROI tracking and reports',
-          'Meta & Google Ads integration',
+          'ROI tracking and lead analytics',
+          'Meta Ads and Google Ads integration',
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'What types of business is Impact for?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Any service business running paid ads. Restaurants, dental clinics, estate agents, gyms, salons, trades. If you get leads from Meta or Google ads, Impact works for you.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'How fast is setup?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: '48 hours from sign-up to live. We connect your Meta ad account, configure your inbox, and handle all the technical setup.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Do I need technical knowledge?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'None. We handle everything. You get a dashboard and WhatsApp alerts.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'What is the AI Receptionist?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'A voice AI that answers your business calls 24/7, qualifies leads, and books appointments directly into your calendar. Available on Growth and Pro plans.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'How does the unified inbox work?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Every message from WhatsApp, SMS, email, Instagram and Messenger appears in one timeline per lead. No switching between apps.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Can I cancel anytime?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Yes. Monthly billing, no lock-in contracts.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'How is Impact different from GoHighLevel or HubSpot?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Impact is built for SMBs running paid ads. No bloat, no enterprise pricing, no 6-month onboarding. You are live in 48 hours with WhatsApp-first alerts.',
+            },
+          },
         ],
       },
     ],
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <MarketingThemeProvider>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <img src="/ampm-logo.png" alt="AM:PM" className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover" />
-              <span className="text-[#0B1220] font-semibold text-lg sm:text-xl tracking-tight">
-                <span className="text-[#E8642C]">:</span>Impact
-              </span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#how-it-works" className="text-sm text-gray-600 hover:text-[#0B1220] transition-colors">
-                How It Works
-              </a>
-              <a href="#features" className="text-sm text-gray-600 hover:text-[#0B1220] transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-sm text-gray-600 hover:text-[#0B1220] transition-colors">
-                Pricing
-              </a>
-              <a href="#faq" className="text-sm text-gray-600 hover:text-[#0B1220] transition-colors">
-                FAQ
-              </a>
-            </nav>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="hidden sm:inline-flex text-sm text-gray-600 hover:text-[#0B1220] transition-colors px-4 py-2"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/demo"
-                className="inline-flex items-center px-5 py-2.5 rounded-full bg-[#E8642C] text-white text-sm font-medium hover:bg-[#d55a25] transition-all shadow-sm hover:shadow-md"
-              >
-                Book a Demo
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Page Content */}
-      <main>{children}</main>
-
-      {/* Footer */}
-      <footer className="bg-[#0B1220] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            {/* Brand */}
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2.5 mb-4">
-                <img src="/ampm-logo.png" alt="AM:PM" className="w-9 h-9 rounded-lg object-cover" />
-                <span className="font-semibold text-xl tracking-tight">
-                  <span className="text-[#E8642C]">:</span>Impact
-                </span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
-                The lead management platform that turns your ad spend into booked appointments.
-                WhatsApp alerts, AI scoring, one unified inbox.
-              </p>
-              <p className="text-gray-500 text-xs mt-6">
-                A product by <a href="https://www.mediampm.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">AM:PM Media</a>
-              </p>
-            </div>
-
-            {/* Links */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Product</h4>
-              <ul className="space-y-3">
-                <li><a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="text-sm text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                <li><Link href="/demo" className="text-sm text-gray-400 hover:text-white transition-colors">Book a Demo</Link></li>
-                <li><Link href="/login" className="text-sm text-gray-400 hover:text-white transition-colors">Sign In</Link></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Legal</h4>
-              <ul className="space-y-3">
-                <li><Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 mt-12 pt-8 text-center">
-            <p className="text-gray-500 text-xs">&copy; 2026 :Impact. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+      {/* Speculation rules for instant navigation (Acne Studios pattern) */}
+      <script
+        type="speculationrules"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          prerender: [
+            { urls: ['/login', '/demo'] },
+          ],
+          prefetch: [
+            { urls: ['/login', '/demo'] },
+          ],
+        })}}
+      />
+      <ScrollProgress />
+      <MarketingHeader />
+      <main className="monochrome-zone">{children}</main>
+      <MarketingFooter />
+    </MarketingThemeProvider>
   )
 }

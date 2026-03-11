@@ -1,51 +1,80 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Mail } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MovingBorder } from '@/components/ui/moving-border'
+import { FadeIn } from '@/components/marketing/fade-in'
+import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
 export function CtaSection(): React.JSX.Element {
+  const { theme } = useMarketingTheme()
+  const dark = theme === 'dark'
+  const [seconds, setSeconds] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => setSeconds((s) => s + 1), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  const timeDisplay = mins > 0
+    ? `${mins}m ${secs.toString().padStart(2, '0')}s`
+    : `${secs}s`
+
   return (
-    <section className="py-20 sm:py-28 bg-[#0B1220] text-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-            Ready to Stop{' '}
-            <span className="text-[#E8642C]">Losing Leads</span>?
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-400 max-w-xl mx-auto mb-10">
-            Book a 15-minute demo. See exactly how :Impact works for your business.
-            No pressure, no pitch decks.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <MovingBorder
-              containerClassName="w-full sm:w-auto"
-              className="bg-[#E8642C] hover:bg-[#d55a25] transition-colors"
-              duration={3000}
-            >
-              <Link
-                href="/demo"
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 text-white font-semibold text-base w-full"
-              >
-                Book Your Demo
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </MovingBorder>
-            <a
-              href="mailto:hello@mediampm.com"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border border-white/20 text-white font-medium text-base hover:bg-white/5 transition-all"
-            >
-              <Mail className="w-4 h-4" />
-              Get in Touch
-            </a>
+    <section className="py-20 sm:py-28">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Live timer - creates urgency through reality */}
+        <FadeIn>
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono mb-8 transition-colors duration-500 ${
+            dark ? 'bg-zinc-900 border border-zinc-800 text-zinc-400' : 'bg-gray-100 border border-gray-200 text-gray-500'
+          }`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            You&apos;ve been on this page for {timeDisplay}
           </div>
-        </motion.div>
+        </FadeIn>
+
+        <FadeIn delay={0.05}>
+          <h2 className={`font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight transition-colors duration-500 ${
+            dark ? 'text-white' : 'text-[#0B1220]'
+          }`}>
+            Your next lead is coming.
+            <br />
+            <span className="text-[#E8642C]">Will you be ready?</span>
+          </h2>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <p className={`text-lg max-w-lg mx-auto mb-10 transition-colors duration-500 ${
+            dark ? 'text-zinc-400' : 'text-gray-600'
+          }`}>
+            In the time you&apos;ve spent here, {Math.max(1, Math.floor(seconds / 8))} leads went cold
+            somewhere. Don&apos;t let the next one be yours.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.15}>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            className="inline-block"
+          >
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-lg bg-[#E8642C] text-white font-semibold text-base hover:bg-[#d55a25] shadow-lg shadow-[#E8642C]/20 hover:shadow-xl hover:shadow-[#E8642C]/30"
+              style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
+            >
+              Book a Demo
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
+          <p className={`mt-6 text-sm transition-colors duration-500 ${dark ? 'text-zinc-600' : 'text-gray-400'}`}>
+            15 minutes. No pressure. See it live.
+          </p>
+        </FadeIn>
       </div>
     </section>
   )

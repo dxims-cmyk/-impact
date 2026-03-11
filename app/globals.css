@@ -22,6 +22,12 @@
   --border: 214.3 31.8% 91.4%;
   --ring: 346 78% 25%;
   --radius: 0.5rem;
+
+  /* Premium easing curves (Bang & Olufsen / Porsche inspired) */
+  --ease-out-spring: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --ease-in-smooth: cubic-bezier(0.55, 0, 0.1, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -203,12 +209,29 @@
 .reveal-element {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.7s var(--ease-premium),
+              transform 0.7s var(--ease-premium);
 }
 .reveal-element.revealed {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Premium transition defaults for marketing pages */
+.marketing-transition {
+  transition-timing-function: var(--ease-out-spring);
+}
+
+/* Spring hover effect for cards and buttons */
+.spring-hover {
+  transition: transform 0.5s var(--ease-bounce), box-shadow 0.5s var(--ease-out-spring);
+}
+.spring-hover:hover {
+  transform: translateY(-2px);
+}
+.spring-hover:active {
+  transform: translateY(0px);
+  transition-duration: 0.1s;
 }
 
 /* 3D scroll animation perspective */
@@ -216,9 +239,42 @@
   perspective: 1060px;
 }
 
+/* Near-monochrome treatment — page is muted, product UI is the colour event */
+.monochrome-zone {
+  filter: saturate(0.85);
+}
+.monochrome-zone .full-color {
+  filter: saturate(1.18);
+}
+
+/* Custom cursor: hide default on desktop */
+@media (pointer: fine) {
+  .custom-cursor-active,
+  .custom-cursor-active * {
+    cursor: none !important;
+  }
+}
+
+/* Neon data glow for dark mode stat accents */
+.neon-glow {
+  text-shadow: 0 0 20px rgba(232, 100, 44, 0.4), 0 0 40px rgba(232, 100, 44, 0.15);
+}
+
 /* Disable spotlight on touch devices */
 @media (pointer: coarse) {
   .coarse-pointer\:hidden {
     display: none !important;
   }
+}
+
+/* Infinite marquee scroll */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
 }

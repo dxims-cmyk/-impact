@@ -1,103 +1,168 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check } from 'lucide-react'
-import { motion, useInView } from 'framer-motion'
-import { useRef } from 'react'
-import { LampEffect } from '@/components/ui/lamp-effect'
-import { MovingBorder } from '@/components/ui/moving-border'
+import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { FadeIn } from '@/components/marketing/fade-in'
+import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
-const pricingFeatures = [
-  'Instant WhatsApp alerts',
-  'AI lead scoring & qualification',
-  'Unified inbox (5 channels)',
-  'Calendar sync & booking',
-  'Follow-up automations',
-  'Reports & analytics',
-  'Meta & Google Ads integration',
-  'Dedicated onboarding',
+const tiers = [
+  {
+    name: 'Core',
+    price: '1,500',
+    tagline: 'Capture and convert every lead.',
+    features: [
+      '5-second WhatsApp alerts',
+      'AI lead scoring (1-10)',
+      'Unified inbox (all channels)',
+      'Calendar + Cal.com integration',
+      'Automations builder',
+      'Lead analytics dashboard',
+    ],
+    highlight: false,
+  },
+  {
+    name: 'Growth',
+    price: '2,000',
+    tagline: 'Never miss a call again.',
+    badge: 'Most Popular',
+    features: [
+      'Everything in Core',
+      'AI Receptionist that answers, qualifies, and books 24/7',
+      'Call recordings + transcripts',
+      'Advanced automations',
+      'Priority support',
+    ],
+    highlight: true,
+  },
+  {
+    name: 'Pro',
+    price: '2,500',
+    tagline: 'Full-service lead generation.',
+    features: [
+      'Everything in Growth',
+      'Outbound lead generation',
+      'Content gallery',
+      'Reputation management',
+      'Dedicated account manager',
+      'Strategy calls',
+    ],
+    highlight: false,
+  },
 ]
 
 export function PricingSection(): React.JSX.Element {
-  const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const { theme } = useMarketingTheme()
+  const dark = theme === 'dark'
+  const [hovered, setHovered] = useState<number | null>(null)
 
   return (
-    <section id="pricing" className="scroll-mt-20">
-      <LampEffect className="py-20 sm:py-28">
-        <div ref={ref} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-          >
-            <p className="text-center text-sm font-medium text-[#E8642C] uppercase tracking-widest mb-4">
-              Pricing
-            </p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-white mb-6 leading-tight">
-              Simple, transparent pricing
+    <section id="pricing" className="py-20 sm:py-28 scroll-mt-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeIn>
+          <div className="text-center mb-14">
+            <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-4 transition-colors duration-700 ${
+              dark ? 'text-white' : 'text-[#0B1220]'
+            }`}>
+              One price. Everything included.
             </h2>
-            <p className="text-center text-gray-400 text-lg max-w-xl mx-auto mb-16">
-              One plan. Everything included. No hidden fees.
+            <p className={`text-lg max-w-lg mx-auto transition-colors duration-700 ${
+              dark ? 'text-zinc-500' : 'text-gray-500'
+            }`}>
+              No setup fees. No contracts. Cancel anytime.
             </p>
-          </motion.div>
+          </div>
+        </FadeIn>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-            className="max-w-lg mx-auto"
-          >
-            <MovingBorder
-              containerClassName="w-full rounded-2xl"
-              className="bg-white rounded-2xl"
-              borderClassName="rounded-2xl"
-              duration={4000}
-            >
-              <div className="p-8 sm:p-10">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-[#0B1220] mb-2">
-                    <span className="text-[#E8642C]">:</span>Impact Core
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-1 mb-2">
-                    <span className="text-5xl sm:text-6xl font-extrabold text-[#0B1220]">&pound;1,500</span>
-                    <span className="text-gray-500 text-base">/month</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {tiers.map((tier, i) => (
+            <FadeIn key={tier.name} delay={i * 0.08}>
+              <motion.div
+                onHoverStart={() => setHovered(i)}
+                onHoverEnd={() => setHovered(null)}
+                className={`relative rounded-2xl p-7 flex flex-col h-full transition-all duration-300 ${
+                  tier.highlight
+                    ? 'border-2 border-[#E8642C]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#E8642C]/5')
+                    : dark
+                      ? 'border border-zinc-800 bg-zinc-900/30'
+                      : 'border border-gray-200 bg-white shadow-sm'
+                } ${hovered === i ? (dark ? 'border-zinc-600' : 'border-gray-400 shadow-md') : ''}`}
+              >
+                {tier.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E8642C] text-white text-xs font-semibold">
+                      <Sparkles className="w-3 h-3" />
+                      {tier.badge}
+                    </span>
                   </div>
-                  <p className="text-gray-600 text-sm">Everything you need to capture and convert leads</p>
+                )}
+
+                {/* Header */}
+                <div className="mb-6">
+                  <h3 className={`font-display text-lg font-bold mb-1 transition-colors duration-700 ${
+                    dark ? 'text-white' : 'text-[#0B1220]'
+                  }`}>
+                    <span className="text-[#E8642C]">:</span>Impact {tier.name}
+                  </h3>
+                  <p className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>
+                    {tier.tagline}
+                  </p>
                 </div>
 
-                <ul className="space-y-3.5 mb-10">
-                  {pricingFeatures.map((feature) => (
+                {/* Price */}
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className={`font-display text-4xl font-extrabold transition-colors duration-700 ${
+                    dark ? 'text-white' : 'text-[#0B1220]'
+                  }`}>
+                    &pound;{tier.price}
+                  </span>
+                  <span className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>
+                    /mo
+                  </span>
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-3 mb-8 flex-1">
+                  {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-[#E8642C] shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700">{feature}</span>
+                      <Check className={`w-4 h-4 shrink-0 mt-0.5 ${
+                        tier.highlight ? 'text-[#E8642C]' : dark ? 'text-zinc-500' : 'text-gray-400'
+                      }`} />
+                      <span className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-300' : 'text-gray-700'}`}>
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
 
+                {/* CTA */}
                 <Link
                   href="/demo"
-                  className="flex items-center justify-center gap-2 w-full py-4 rounded-full bg-[#E8642C] text-white font-semibold hover:bg-[#d55a25] transition-all shadow-lg shadow-[#E8642C]/20"
+                  className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm transition-all spring-hover ${
+                    tier.highlight
+                      ? 'bg-[#E8642C] text-white hover:bg-[#d55a25]'
+                      : dark
+                        ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                        : 'bg-[#0B1220] text-white hover:bg-[#0B1220]/90'
+                  }`}
                 >
                   Book a Demo
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-
-                <p className="text-center text-xs text-gray-500 mt-5">
-                  Monthly. Cancel anytime. No setup fees.
-                </p>
-              </div>
-            </MovingBorder>
-
-            <p className="text-center text-sm text-gray-400 mt-6">
-              Need done-for-you ads + content?{' '}
-              <Link href="/demo" className="text-[#E8642C] font-medium hover:underline">
-                Ask about :Impact Pro
-              </Link>
-            </p>
-          </motion.div>
+              </motion.div>
+            </FadeIn>
+          ))}
         </div>
-      </LampEffect>
+
+        <FadeIn delay={0.3}>
+          <p className={`text-center text-sm mt-10 transition-colors duration-700 ${
+            dark ? 'text-zinc-500' : 'text-gray-500'
+          }`}>
+            Need a single feature? Add AI Receptionist (&pound;400/mo) or Outbound Leads (&pound;300/mo) to any plan.
+          </p>
+        </FadeIn>
+      </div>
     </section>
   )
 }

@@ -2,24 +2,20 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
 /**
  * Custom cursor that grows on interactive elements.
- * Only renders on non-touch devices.
+ * Only renders on non-touch devices. Starts hidden until first mouse move.
  */
 export function CustomCursor(): React.JSX.Element | null {
-  const { theme } = useMarketingTheme()
-  const dark = theme === 'dark'
-  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [pos, setPos] = useState({ x: -100, y: -100 })
   const [hovering, setHovering] = useState(false)
   const [visible, setVisible] = useState(false)
   const [isTouch, setIsTouch] = useState(true)
   const rafRef = useRef<number>(0)
-  const targetRef = useRef({ x: 0, y: 0 })
+  const targetRef = useRef({ x: -100, y: -100 })
 
   useEffect(() => {
-    // Detect touch device
     const hasCoarse = window.matchMedia('(pointer: coarse)').matches
     if (hasCoarse) return
     setIsTouch(false)
@@ -39,7 +35,6 @@ export function CustomCursor(): React.JSX.Element | null {
       setVisible(false)
     }
 
-    // Smooth follow using RAF
     const tick = (): void => {
       setPos((prev) => ({
         x: prev.x + (targetRef.current.x - prev.x) * 0.15,
@@ -77,14 +72,14 @@ export function CustomCursor(): React.JSX.Element | null {
         >
           <motion.div
             animate={{
-              width: hovering ? 48 : 8,
-              height: hovering ? 48 : 8,
-              x: hovering ? -24 : -4,
-              y: hovering ? -24 : -4,
+              width: hovering ? 40 : 8,
+              height: hovering ? 40 : 8,
+              x: hovering ? -20 : -4,
+              y: hovering ? -20 : -4,
             }}
             transition={{ type: 'spring', stiffness: 500, damping: 28 }}
             className="rounded-full bg-white"
-            style={{ opacity: 0.8 }}
+            style={{ opacity: 0.7 }}
           />
         </motion.div>
       )}

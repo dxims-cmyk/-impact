@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -23,49 +23,59 @@ export async function GET() {
     .from('organizations')
     .select('id, name, plan, created_at')
 
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+  // Count leads per org (last 30 days)
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const { data: metrics } = await supabase
-    .from('usage_metrics')
-    .select('*')
-    .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+  const { data: recentLeads } = await supabase
+    .from('leads')
+    .select('id, organization_id, created_at')
+    .gte('created_at', thirtyDaysAgo.toISOString())
+
+  // Count messages per org (last 30 days)
+  const { data: recentMessages } = await supabase
+    .from('messages')
+    .select('id, organization_id, created_at')
+    .gte('created_at', thirtyDaysAgo.toISOString())
+
+  // Count integrations per org to determine feature adoption
+  const { data: integrations } = await supabase
+    .from('integrations')
+    .select('id, organization_id, provider')
 
   const clients = (orgs || []).map((org) => {
-    const orgMetrics = metrics?.filter(m => m.organization_id === org.id) || []
+    const orgLeads = recentLeads?.filter(l => l.organization_id === org.id) || []
+    const orgMessages = recentMessages?.filter(m => m.organization_id === org.id) || []
 
-    const leadsCount = orgMetrics.reduce((sum, m) => sum + (m.leads_created || 0), 0)
-    const messagesCount = orgMetrics.reduce((sum, m) => sum + (m.messages_sent || 0), 0)
-    const totalViews = orgMetrics.reduce((sum, m) =>
-      sum + (m.views_dashboard || 0) + (m.views_leads || 0) + (m.views_conversations || 0), 0
-    )
+    const leadsCount = orgLeads.length
+    const messagesCount = orgMessages.length
 
-    const lastMetric = orgMetrics.sort((a, b) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    )[0]
-
-    const recentActivity = orgMetrics.filter(m => {
-      const d = new Date(m.date)
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      return d >= sevenDaysAgo
-    }).length
+    // Recent activity: leads or messages in last 7 days
+    const recentLeadActivity = orgLeads.filter(l =>
+      new Date(l.created_at) >= sevenDaysAgo
+    ).length
+    const recentMessageActivity = orgMessages.filter(m =>
+      new Date(m.created_at) >= sevenDaysAgo
+    ).length
+    const recentActivity = recentLeadActivity + recentMessageActivity
 
     const healthScore = Math.min(100, Math.round(
-      (recentActivity * 10) +
+      (Math.min(recentActivity, 7) * 10) +
       (leadsCount > 0 ? 20 : 0) +
-      (messagesCount > 0 ? 20 : 0) +
-      (totalViews > 50 ? 20 : totalViews / 2.5)
+      (messagesCount > 0 ? 20 : 0)
     ))
 
-    const firstHalf = orgMetrics.slice(0, Math.floor(orgMetrics.length / 2))
-    const secondHalf = orgMetrics.slice(Math.floor(orgMetrics.length / 2))
-    const firstHalfViews = firstHalf.reduce((sum, m) => sum + (m.views_dashboard || 0), 0)
-    const secondHalfViews = secondHalf.reduce((sum, m) => sum + (m.views_dashboard || 0), 0)
-
-    let trend = 'stable'
-    if (secondHalfViews > firstHalfViews * 1.2) trend = 'growing'
-    if (secondHalfViews < firstHalfViews * 0.8) trend = 'declining'
+    let trend: string = 'stable'
+    // Compare first half vs second half of 30 day period
+    const midpoint = new Date()
+    midpoint.setDate(midpoint.getDate() - 15)
+    const firstHalfLeads = orgLeads.filter(l => new Date(l.created_at) < midpoint).length
+    const secondHalfLeads = orgLeads.filter(l => new Date(l.created_at) >= midpoint).length
+    if (secondHalfLeads > firstHalfLeads * 1.2) trend = 'growing'
+    if (secondHalfLeads < firstHalfLeads * 0.8) trend = 'declining'
 
     let churnRisk = 'low'
     if (recentActivity === 0) churnRisk = 'high'
@@ -78,7 +88,9 @@ export async function GET() {
       healthScore,
       trend,
       churnRisk,
-      lastActive: lastMetric?.date,
+      lastActive: orgLeads.length > 0
+        ? orgLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.created_at
+        : undefined,
       leadsCount,
       messagesCount
     }
@@ -87,12 +99,14 @@ export async function GET() {
   clients.sort((a, b) => a.healthScore - b.healthScore)
 
   const totalOrgs = orgs?.length || 0
+
+  // Feature adoption based on connected integrations
   const featureAdoption = [
-    { name: 'WhatsApp', count: metrics?.filter(m => m.uses_whatsapp).length || 0 },
-    { name: 'SMS', count: metrics?.filter(m => m.uses_sms).length || 0 },
-    { name: 'Email', count: metrics?.filter(m => m.uses_email).length || 0 },
-    { name: 'Automations', count: metrics?.filter(m => m.uses_automations).length || 0 },
-    { name: 'Forms', count: metrics?.filter(m => m.uses_forms).length || 0 },
+    { name: 'WhatsApp', count: new Set(integrations?.filter(i => i.provider === 'whatsapp').map(i => i.organization_id)).size },
+    { name: 'SMS', count: new Set(integrations?.filter(i => i.provider === 'twilio').map(i => i.organization_id)).size },
+    { name: 'Email', count: new Set(integrations?.filter(i => i.provider === 'resend').map(i => i.organization_id)).size },
+    { name: 'Meta Ads', count: new Set(integrations?.filter(i => i.provider === 'meta_ads').map(i => i.organization_id)).size },
+    { name: 'Google Ads', count: new Set(integrations?.filter(i => i.provider === 'google_ads').map(i => i.organization_id)).size },
   ].map(f => ({
     ...f,
     percentage: totalOrgs ? Math.round((f.count / totalOrgs) * 100) : 0

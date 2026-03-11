@@ -470,10 +470,27 @@ export default function ConversationsPage() {
                           <MessageStatusIcon status={msg.status} />
                         )}
                       </div>
-                      {msg.status === 'failed' && msg.error_message && (
-                        <div className="flex items-center gap-1 mt-1.5 text-xs text-red-200">
-                          <XCircle className="w-3 h-3" />
-                          {msg.error_message}
+                      {msg.status === 'failed' && (
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-red-200">
+                          <div className="flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
+                            {msg.error_message || 'Send failed'}
+                          </div>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              try {
+                                const res = await fetch(`/api/messages/${msg.id}/retry`, { method: 'POST' })
+                                if (!res.ok) throw new Error('Retry failed')
+                                toast.success('Message retrying...')
+                              } catch {
+                                toast.error('Retry failed')
+                              }
+                            }}
+                            className="text-white/80 hover:text-white underline font-medium"
+                          >
+                            Retry
+                          </button>
                         </div>
                       )}
                     </div>

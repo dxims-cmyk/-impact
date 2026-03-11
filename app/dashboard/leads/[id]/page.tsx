@@ -93,7 +93,8 @@ export default function LeadDetailPage() {
 
   const handleStageChange = async (newStage: string) => {
     try {
-      await updateLead.mutateAsync({ id: leadId, data: { stage: newStage } })
+      const dealStatus = newStage === 'won' ? 'won' : newStage === 'lost' ? 'lost' : 'open'
+      await updateLead.mutateAsync({ id: leadId, data: { stage: newStage, deal_status: dealStatus } })
       toast.success(`Stage updated to ${newStage}`)
       refetchLead()
       refetchTimeline()
@@ -586,8 +587,7 @@ export default function LeadDetailPage() {
                   <option value="new">New</option>
                   <option value="contacted">Contacted</option>
                   <option value="qualified">Qualified</option>
-                  <option value="appointment">Appointment</option>
-                  <option value="proposal">Proposal</option>
+                  <option value="booked">Booked</option>
                   <option value="won">Won</option>
                   <option value="lost">Lost</option>
                 </select>

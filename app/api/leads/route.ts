@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { qualifyLeadTask } from '@/trigger/jobs/qualify-lead'
 import { speedToLeadTask } from '@/trigger/jobs/speed-to-lead'
+import { sendNewLeadAlert } from '@/lib/integrations/whatsapp'
 import { z } from 'zod'
 import { sanitizeFilterValue } from '@/lib/utils'
 import { triggerAutomations } from '@/trigger/jobs/run-automation'
@@ -15,6 +16,8 @@ const createLeadSchema = z.object({
   last_name: z.string().optional(),
   company: z.string().optional(),
   job_title: z.string().optional(),
+  website: z.string().optional(),
+  location: z.string().optional(),
   notes: z.string().optional(),
   source: z.string().optional(),
   stage: z.string().optional(),
@@ -158,9 +161,15 @@ export async function POST(request: NextRequest) {
   const validation = createLeadSchema.safeParse(body)
 
   if (!validation.success) {
+    const flat = validation.error.flatten()
+    // Build a human-readable message from field + form errors
+    const fieldErrors = Object.entries(flat.fieldErrors).map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
+    const formErrors = flat.formErrors || []
+    const message = [...formErrors, ...fieldErrors].join('. ') || 'Validation failed'
+
     return NextResponse.json({
-      error: 'Validation failed',
-      details: validation.error.flatten()
+      error: message,
+      details: flat,
     }, { status: 400 })
   }
 
@@ -190,12 +199,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Separate flags and extra fields from lead data
-  const { send_welcome, notes, job_title, stage, organization_id: _orgId, ...leadFields } = validation.data
+  const { send_welcome, notes, job_title, website, location, stage, organization_id: _orgId, ...leadFields } = validation.data
 
-  // Store notes and job_title in source_detail JSONB
+  // Store notes, job_title, website, location in source_detail JSONB
   const sourceDetail: Record<string, unknown> = {}
   if (notes) sourceDetail.notes = notes
   if (job_title) sourceDetail.job_title = job_title
+  if (website) sourceDetail.website = website
+  if (location) sourceDetail.location = location
 
   // Create lead in target org
   const { data: lead, error: createError } = await supabase
@@ -224,12 +235,50 @@ export async function POST(request: NextRequest) {
       performed_by: user.id
     })
 
-  // Trigger background jobs — fire and forget, don't block the response
-  // Always trigger speed-to-lead for the WhatsApp alert to the client
-  // Only send welcome email to the lead if explicitly requested
+  // ---- Instant WhatsApp alert (inline, no queue delay) ----
+  // Send the client notification NOW before returning the response.
+  // This keeps the alert under 2 seconds instead of 8-10 via Trigger.dev.
+  try {
+    const { data: orgForAlert } = await supabase
+      .from('organizations')
+      .select('settings, membership_status')
+      .eq('id', targetOrgId)
+      .single()
+
+    const alertSettings = orgForAlert?.settings as {
+      speed_to_lead_enabled?: boolean
+      whatsapp_notification_numbers?: string[]
+    } | null
+
+    if (alertSettings?.speed_to_lead_enabled) {
+      const AMPM_FALLBACK = '+447386297524'
+      const isActivated = orgForAlert?.membership_status === 'active'
+      const numbers = isActivated
+        ? (alertSettings.whatsapp_notification_numbers || [])
+        : [AMPM_FALLBACK]
+
+      const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'New lead'
+
+      for (const number of numbers) {
+        sendNewLeadAlert({
+          to: number,
+          leadName,
+          leadCompany: lead.company,
+          aiScore: null, // Score not available yet (AI qualifies async)
+        }).catch((err) => {
+          console.error('Inline WhatsApp alert failed:', err)
+        })
+      }
+    }
+  } catch {
+    // Never block lead creation if WhatsApp alert fails
+  }
+
+  // ---- Background jobs (email, Zapier, Slack, AI welcome) ----
+  // Speed-to-lead skips WhatsApp alert (already sent inline above)
   const jobs: Promise<unknown>[] = [
     qualifyLeadTask.trigger({ leadId: lead.id }),
-    speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: !!send_welcome }),
+    speedToLeadTask.trigger({ leadId: lead.id, sendWelcomeEmail: !!send_welcome, skipWhatsAppAlert: true }),
   ]
 
   Promise.all(jobs).catch((error) => {

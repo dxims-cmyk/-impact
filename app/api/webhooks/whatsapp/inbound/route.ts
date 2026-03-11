@@ -33,13 +33,21 @@ interface WhatsAppContact {
   wa_id: string
 }
 
+interface WhatsAppStatus {
+  id: string
+  status: string
+  timestamp: string
+  recipient_id?: string
+  errors?: { code: number; title: string }[]
+}
+
 interface WhatsAppChange {
   value: {
     messaging_product: string
     metadata: { phone_number_id: string }
     contacts?: WhatsAppContact[]
     messages?: WhatsAppMessage[]
-    statuses?: unknown[]
+    statuses?: WhatsAppStatus[]
   }
 }
 
@@ -115,9 +123,52 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   for (const entry of payload.entry) {
     for (const change of entry.changes) {
-      const { messages, contacts } = change.value
+      const { messages, contacts, statuses } = change.value
 
-      // Skip status update webhooks (delivery receipts, etc.)
+      // ---- Handle delivery/read status updates ----
+      if (statuses && Array.isArray(statuses) && statuses.length > 0) {
+        for (const rawStatus of statuses) {
+          const status = rawStatus as { id?: string; status?: string; timestamp?: string }
+          if (!status.id || !status.status) continue
+
+          const statusMap: Record<string, string> = {
+            sent: 'sent',
+            delivered: 'delivered',
+            read: 'read',
+            failed: 'failed',
+          }
+
+          const mappedStatus = statusMap[status.status]
+          if (!mappedStatus) continue
+
+          // Find message by external_id (WhatsApp message ID)
+          const { data: msg } = await supabase
+            .from('messages')
+            .select('id, status')
+            .eq('external_id', status.id)
+            .maybeSingle()
+
+          if (msg) {
+            const ORDER: Record<string, number> = { pending: 0, sent: 1, delivered: 2, read: 3, failed: 4 }
+            const currentOrder = ORDER[msg.status] ?? 0
+            const newOrder = ORDER[mappedStatus] ?? 0
+
+            if (newOrder > currentOrder || mappedStatus === 'failed') {
+              const updateData: Record<string, unknown> = { status: mappedStatus }
+              if (mappedStatus === 'delivered') updateData.delivered_at = new Date().toISOString()
+              if (mappedStatus === 'read') {
+                updateData.read_at = new Date().toISOString()
+                if (!msg.status || msg.status === 'sent') updateData.delivered_at = new Date().toISOString()
+              }
+              if (mappedStatus === 'failed') updateData.error_message = 'WhatsApp delivery failed'
+
+              await supabase.from('messages').update(updateData).eq('id', msg.id)
+            }
+          }
+        }
+      }
+
+      // ---- Handle inbound messages ----
       if (!messages || messages.length === 0) continue
 
       for (const message of messages) {

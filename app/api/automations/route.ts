@@ -7,10 +7,8 @@ const triggerTypes = [
   'lead_created',
   'lead_scored',
   'lead_qualified',
-  'appointment_booked',
-  'appointment_cancelled',
   'form_submitted',
-  'tag_added',
+  // appointment_booked, appointment_cancelled, tag_added removed — no callsite triggers them yet
 ] as const
 
 const actionTypes = [

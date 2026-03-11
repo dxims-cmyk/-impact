@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/lib/hooks/use-user'
-import { usePlan } from '@/lib/hooks/use-plan'
+import { usePlan, PLAN_LEVELS, type PlanType } from '@/lib/hooks/use-plan'
+import { useHasAddon } from '@/lib/hooks/use-addons'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { useState, useEffect, useCallback } from 'react'
 import {
@@ -30,6 +31,7 @@ import {
   X,
   ChevronDown,
   AlertTriangle,
+  Target,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -42,18 +44,22 @@ import { useAdminContext, type ViewingOrg } from '@/lib/contexts/admin-context'
 
 const SIDEBAR_STORAGE_KEY = 'impact-sidebar-open'
 
-const navigation = [
+type AddonKeyType = 'ai_receptionist' | 'outbound_leads'
+interface NavItem { name: string; href: string; icon: typeof LayoutDashboard; minPlan?: PlanType; addonKey?: AddonKeyType }
+
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Leads', href: '/dashboard/leads', icon: Users },
+  { name: 'Outbound', href: '/dashboard/outbound-leads', icon: Target, minPlan: 'pro', addonKey: 'outbound_leads' },
   { name: 'Conversations', href: '/dashboard/conversations', icon: MessageSquare },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
-  { name: 'Calls', href: '/dashboard/calls', icon: Phone, proOnly: true },
+  { name: 'Calls', href: '/dashboard/calls', icon: Phone, minPlan: 'growth', addonKey: 'ai_receptionist' },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: BarChart3 },
   { name: 'Reports', href: '/dashboard/reports', icon: FileText },
-  { name: 'Gallery', href: '/dashboard/gallery', icon: Images, proOnly: true },
-  { name: 'Automations', href: '/dashboard/automations', icon: Zap },
+  { name: 'Gallery', href: '/dashboard/gallery', icon: Images, minPlan: 'pro' },
+  { name: 'Automations', href: '/dashboard/automations', icon: Zap, minPlan: 'growth' },
   { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
-  { name: 'Reputation', href: '/dashboard/settings/reputation', icon: Star },
+  { name: 'Reputation', href: '/dashboard/settings/reputation', icon: Star, minPlan: 'pro' },
   { name: 'Forms', href: '/dashboard/settings/forms', icon: FormInput },
 ]
 
@@ -71,7 +77,7 @@ function isActiveRoute(pathname: string, href: string): boolean {
 interface ClientOrg {
   id: string
   name: string
-  plan: 'core' | 'pro'
+  plan: PlanType
   account_status: string
 }
 
@@ -208,9 +214,11 @@ function ClientSwitcher({ open: sidebarOpen }: { open: boolean }): React.JSX.Ele
                     'text-[10px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ml-2',
                     client.plan === 'pro'
                       ? 'bg-gradient-to-r from-orange-400/20 to-red-500/20 text-orange-400'
-                      : 'bg-ivory/10 text-ivory/40'
+                      : client.plan === 'growth'
+                        ? 'bg-studio/20 text-studio'
+                        : 'bg-ivory/10 text-ivory/40'
                   )}>
-                    {client.plan === 'pro' ? 'Pro' : 'Core'}
+                    {client.plan === 'pro' ? 'Pro' : client.plan === 'growth' ? 'Growth' : 'Core'}
                   </span>
                 </button>
               ))
@@ -228,7 +236,10 @@ function SidebarContent(): React.JSX.Element {
   const queryClient = useQueryClient()
   const supabase = createClient()
   const { data: user, isLoading: userLoading } = useUser()
-  const { isPro } = usePlan()
+  const { plan: currentPlan, planLevel } = usePlan()
+  const hasAIReceptionist = useHasAddon('ai_receptionist')
+  const hasOutboundLeads = useHasAddon('outbound_leads')
+  const addonAccess: Record<string, boolean> = { ai_receptionist: hasAIReceptionist, outbound_leads: hasOutboundLeads }
   const { open, setOpen } = useSidebar()
   const { viewingOrg, isViewingClient } = useAdminContext()
   const { data: alertCount } = useAlertCount(user?.is_agency_user === true && !isViewingClient)
@@ -242,8 +253,8 @@ function SidebarContent(): React.JSX.Element {
   const orgInitials = displayOrgName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'NO'
 
   // Use viewed client's plan when viewing, otherwise own
-  const displayPlan = isViewingClient && viewingOrg ? viewingOrg.plan : (isPro ? 'pro' : 'core')
-  const displayIsPro = displayPlan === 'pro'
+  const displayPlan: PlanType = isViewingClient && viewingOrg ? viewingOrg.plan : currentPlan
+  const displayPlanLevel = PLAN_LEVELS[displayPlan] || 1
 
   const handleSignOut = async (): Promise<void> => {
     queryClient.clear()
@@ -285,13 +296,16 @@ function SidebarContent(): React.JSX.Element {
             : Impact
           </span>
           <span
-            className={
-              displayIsPro
-                ? 'bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent text-xs font-semibold'
-                : 'text-ivory/50 text-xs font-semibold'
-            }
+            className={cn(
+              'text-xs font-semibold',
+              displayPlan === 'pro'
+                ? 'bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent'
+                : displayPlan === 'growth'
+                  ? 'text-studio'
+                  : 'text-ivory/50'
+            )}
           >
-            {displayIsPro ? 'Pro' : 'Core'}
+            {displayPlan === 'pro' ? 'Pro' : displayPlan === 'growth' ? 'Growth' : 'Core'}
           </span>
         </motion.div>
       </Link>
@@ -328,14 +342,25 @@ function SidebarContent(): React.JSX.Element {
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {navigation.map((item) => {
           const active = isActiveRoute(pathname, item.href)
-          const locked = item.proOnly && !displayIsPro
+          const isAgency = user?.is_agency_user === true
+          // Unlocked if: agency user, OR tier is high enough, OR addon is purchased
+          const tierUnlocked = item.minPlan ? displayPlanLevel >= PLAN_LEVELS[item.minPlan] : true
+          const addonUnlocked = item.addonKey ? addonAccess[item.addonKey] : false
+          const locked = isAgency ? false : (!tierUnlocked && !addonUnlocked)
+
+          // Locked items: addon-purchasable → addons page, otherwise → upgrade page
+          const linkHref = locked
+            ? (item.addonKey
+              ? `/dashboard/addons?highlight=${item.addonKey}`
+              : `/dashboard/upgrade?feature=${encodeURIComponent(item.name)}&plan=${item.minPlan}`)
+            : item.href
 
           return (
             <SidebarLink
               key={item.href}
               link={{
                 label: item.name,
-                href: item.href,
+                href: linkHref,
                 icon: (
                   <item.icon
                     className={cn(
@@ -346,7 +371,6 @@ function SidebarContent(): React.JSX.Element {
                 ),
               }}
               active={active}
-              disabled={locked}
               onClick={closeMobile}
               className={cn(
                 active
@@ -432,6 +456,29 @@ function SidebarContent(): React.JSX.Element {
                     {alertCount > 9 ? '9+' : alertCount}
                   </span>
                 ) : undefined
+              }
+            />
+            <SidebarLink
+              link={{
+                label: 'Analytics',
+                href: '/dashboard/admin/analytics',
+                icon: (
+                  <BarChart3
+                    className={cn(
+                      'w-5 h-5 flex-shrink-0',
+                      pathname === '/dashboard/admin/analytics'
+                        ? 'text-ivory'
+                        : 'text-ivory/70'
+                    )}
+                  />
+                ),
+              }}
+              active={pathname === '/dashboard/admin/analytics'}
+              onClick={closeMobile}
+              className={
+                pathname === '/dashboard/admin/analytics'
+                  ? 'text-ivory font-medium'
+                  : 'text-ivory/70 hover:text-ivory'
               }
             />
           </>

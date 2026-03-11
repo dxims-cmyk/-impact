@@ -55,13 +55,11 @@ interface LocalAction {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────
-const TRIGGER_OPTIONS: { value: TriggerType; label: string; icon: typeof Zap }[] = [
-  { value: 'lead_created', label: 'Lead Created', icon: UserPlus },
-  { value: 'lead_scored', label: 'Lead Scored', icon: Target },
-  { value: 'lead_qualified', label: 'Lead Qualified', icon: Check },
-  { value: 'appointment_booked', label: 'Appointment Booked', icon: Calendar },
-  { value: 'appointment_cancelled', label: 'Appointment Cancelled', icon: X },
-  { value: 'form_submitted', label: 'Form Submitted', icon: FileText },
+const TRIGGER_OPTIONS: { value: TriggerType; label: string; icon: typeof Zap; description: string }[] = [
+  { value: 'lead_created', label: 'Lead Created', icon: UserPlus, description: 'Fires when a new lead is added manually or via a form, webhook, or ad platform.' },
+  { value: 'lead_scored', label: 'Lead Scored', icon: Target, description: 'Fires after AI scores a lead. Set a minimum score to only target high-intent leads.' },
+  { value: 'lead_qualified', label: 'Lead Qualified', icon: Check, description: 'Fires when AI assigns a temperature (hot/warm/cold). Filter by temperature below.' },
+  { value: 'form_submitted', label: 'Form Submitted', icon: FileText, description: 'Fires when someone submits your embedded lead capture form.' },
 ]
 
 const ACTION_OPTIONS: { value: ActionType; label: string; icon: typeof Mail }[] = [
@@ -70,6 +68,8 @@ const ACTION_OPTIONS: { value: ActionType; label: string; icon: typeof Mail }[] 
   { value: 'send_sms', label: 'Send SMS', icon: Phone },
   { value: 'send_slack', label: 'Send Slack', icon: Send },
   { value: 'add_tag', label: 'Add Tag', icon: Tag },
+  { value: 'assign_user', label: 'Assign to Team Member', icon: UserPlus },
+  { value: 'create_task', label: 'Create Task', icon: FileText },
   { value: 'wait', label: 'Wait', icon: Clock },
   { value: 'webhook', label: 'Webhook', icon: Globe },
 ]
@@ -102,6 +102,10 @@ function getActionConfigSummary(type: ActionType, config: Record<string, unknown
       return config.minutes ? `Wait ${config.minutes} minute(s)` : 'No duration set'
     case 'webhook':
       return config.url ? String(config.url).substring(0, 50) : 'No URL set'
+    case 'assign_user':
+      return config.user_id ? 'Team member selected' : 'No team member set'
+    case 'create_task':
+      return config.content ? String(config.content).substring(0, 50) + (String(config.content).length > 50 ? '...' : '') : 'No task description set'
     default:
       return ''
   }
@@ -413,7 +417,7 @@ export default function AutomationBuilder({ isOpen, onClose, automation }: Autom
                 <label className="block text-sm font-medium text-navy mb-1.5">
                   When this happens...
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {TRIGGER_OPTIONS.map((trigger) => {
                     const Icon = trigger.icon
                     const selected = triggerType === trigger.value
@@ -424,14 +428,19 @@ export default function AutomationBuilder({ isOpen, onClose, automation }: Autom
                           setTriggerType(trigger.value)
                           setTriggerConfig({})
                         }}
-                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${
                           selected
                             ? 'border-impact bg-impact/5 text-impact'
                             : 'border-gray-100 hover:border-gray-200 text-navy/70 hover:text-navy'
                         }`}
                       >
-                        <Icon className="w-5 h-5 shrink-0" />
-                        <span className="text-sm font-medium">{trigger.label}</span>
+                        <Icon className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-sm font-medium block">{trigger.label}</span>
+                          <span className={`text-[11px] leading-tight block mt-0.5 ${selected ? 'text-impact/70' : 'text-navy/40'}`}>
+                            {trigger.description}
+                          </span>
+                        </div>
                       </button>
                     )
                   })}
@@ -753,6 +762,27 @@ export default function AutomationBuilder({ isOpen, onClose, automation }: Autom
   )
 }
 
+// ─── Variables Helper ────────────────────────────────────────────────
+function VariablesHelper(): React.JSX.Element {
+  const vars = ['lead_name', 'lead_email', 'lead_phone', 'lead_company', 'lead_score']
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      <span className="text-[10px] text-navy/30 mr-1 leading-5">Variables:</span>
+      {vars.map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => navigator.clipboard.writeText(`{{${v}}}`)}
+          className="text-[10px] px-1.5 py-0.5 rounded bg-navy/5 text-navy/50 hover:bg-impact/10 hover:text-impact transition-colors cursor-pointer"
+          title={`Click to copy {{${v}}}`}
+        >
+          {`{{${v}}}`}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── Action Config Renderer ──────────────────────────────────────────
 function renderActionConfig(
   action: LocalAction,
@@ -782,6 +812,7 @@ function renderActionConfig(
               rows={3}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-impact focus:ring-1 focus:ring-impact/20 outline-none text-sm text-navy placeholder:text-navy/30 transition-all resize-none"
             />
+            <VariablesHelper />
           </div>
         </>
       )
@@ -805,6 +836,7 @@ function renderActionConfig(
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-impact focus:ring-1 focus:ring-impact/20 outline-none text-sm text-navy placeholder:text-navy/30 transition-all resize-none"
           />
+          <VariablesHelper />
         </div>
       )
 
@@ -851,6 +883,43 @@ function renderActionConfig(
             placeholder="https://example.com/webhook"
             className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-impact focus:ring-1 focus:ring-impact/20 outline-none text-sm text-navy placeholder:text-navy/30 transition-all"
           />
+          <p className="text-[11px] text-navy/40 mt-1">
+            Sends lead data (name, email, phone, company) as JSON to this URL
+          </p>
+        </div>
+      )
+
+    case 'assign_user':
+      return (
+        <div>
+          <label className="block text-xs font-medium text-navy/50 mb-1">Team Member Email</label>
+          <input
+            type="email"
+            value={(action.action_config.user_id as string) || ''}
+            onChange={(e) => onChange(index, 'user_id', e.target.value)}
+            placeholder="e.g. team@yourcompany.com"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-impact focus:ring-1 focus:ring-impact/20 outline-none text-sm text-navy placeholder:text-navy/30 transition-all"
+          />
+          <p className="text-[11px] text-navy/40 mt-1">
+            The lead will be assigned to this team member for follow-up
+          </p>
+        </div>
+      )
+
+    case 'create_task':
+      return (
+        <div>
+          <label className="block text-xs font-medium text-navy/50 mb-1">Task Description</label>
+          <textarea
+            value={(action.action_config.content as string) || ''}
+            onChange={(e) => onChange(index, 'content', e.target.value)}
+            placeholder="e.g. Follow up with {{lead_name}} within 24 hours"
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-impact focus:ring-1 focus:ring-impact/20 outline-none text-sm text-navy placeholder:text-navy/30 transition-all resize-none"
+          />
+          <p className="text-[11px] text-navy/40 mt-1">
+            Creates a task on the lead&apos;s activity timeline. Supports {'{{lead_name}}'}, {'{{lead_email}}'} variables.
+          </p>
         </div>
       )
 

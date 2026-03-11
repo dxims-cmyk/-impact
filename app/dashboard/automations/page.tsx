@@ -30,8 +30,11 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAutomations, useAutomation, useToggleAutomation, useDeleteAutomation } from '@/lib/hooks'
+import { usePlan } from '@/lib/hooks/use-plan'
+import { FeatureGate } from '@/components/ui/FeatureGate'
 import AutomationBuilder from '@/components/automations/AutomationBuilder'
 import { Automation, AutomationAction } from '@/types/database'
+import { useQuery } from '@tanstack/react-query'
 
 // ─── Trigger / Action display helpers ────────────────────────────────
 type TriggerType = Automation['trigger_type']
@@ -59,12 +62,82 @@ const ACTION_META: Record<ActionType, { label: string; icon: typeof Mail }> = {
   webhook: { label: 'Webhook', icon: Globe },
 }
 
+// ─── Run History Component ───────────────────────────────────────────
+function RunHistory({ automationId }: { automationId: string }): React.JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['automation-runs', automationId],
+    queryFn: async () => {
+      const res = await fetch(`/api/automations/${automationId}/runs`)
+      if (!res.ok) throw new Error('Failed to fetch runs')
+      return res.json() as Promise<{ runs: { id: string; status: string; started_at: string; completed_at: string | null; error: string | null }[] }>
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div className="px-4 py-3 border-t border-gray-100">
+        <div className="flex items-center gap-2 text-xs text-navy/40">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Loading run history...
+        </div>
+      </div>
+    )
+  }
+
+  const runs = data?.runs || []
+
+  if (runs.length === 0) {
+    return (
+      <div className="px-4 py-3 border-t border-gray-100">
+        <p className="text-xs text-navy/40">No runs yet</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-t border-gray-100">
+      <div className="px-4 py-2">
+        <p className="text-[10px] font-medium text-navy/40 uppercase tracking-wider">Recent Runs</p>
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {runs.map((run) => (
+          <div key={run.id} className="px-4 py-2 flex items-center justify-between text-xs hover:bg-gray-50/50">
+            <div className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                run.status === 'completed' ? 'bg-green-500' :
+                run.status === 'failed' ? 'bg-red-500' :
+                run.status === 'running' ? 'bg-amber-500 animate-pulse' :
+                'bg-gray-300'
+              }`} />
+              <span className="text-navy/70 capitalize">{run.status}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {run.error && (
+                <span className="text-red-500 truncate max-w-[200px]" title={run.error}>
+                  {run.error.length > 40 ? run.error.substring(0, 40) + '...' : run.error}
+                </span>
+              )}
+              <span className="text-navy/40 whitespace-nowrap">
+                {new Date(run.started_at).toLocaleDateString()} {new Date(run.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page Component ──────────────────────────────────────────────────
 export default function AutomationsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [builderOpen, setBuilderOpen] = useState(false)
   const [editAutomationId, setEditAutomationId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [expandedRunHistory, setExpandedRunHistory] = useState<string | null>(null)
+
+  // Plan check
+  const { hasFeature } = usePlan()
 
   // Data fetching
   const { data, isLoading, error } = useAutomations()
@@ -190,15 +263,32 @@ export default function AutomationsPage() {
         </div>
         <button
           onClick={() => {
+            if (!hasFeature('advanced_automations')) {
+              toast.error('Automations require the Growth plan or higher')
+              return
+            }
             setEditAutomationId(null)
             setBuilderOpen(true)
           }}
-          className="btn-primary flex items-center gap-2 self-start sm:self-auto"
+          className={`btn-primary flex items-center gap-2 self-start sm:self-auto ${!hasFeature('advanced_automations') ? 'opacity-50' : ''}`}
         >
           <Plus className="w-4 h-4" />
           New Automation
         </button>
       </div>
+
+      {/* Plan gate banner for Core users */}
+      {!hasFeature('advanced_automations') && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-900">Automations are a Growth feature</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Upgrade to Growth or Pro to create and run automations. Contact AM:PM Media to upgrade your plan.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -380,9 +470,19 @@ export default function AutomationsPage() {
 
                 {/* Bottom row: actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <p className="text-xs text-navy/40">
-                    Created {new Date(automation.created_at).toLocaleDateString()}
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-navy/40">
+                      Created {new Date(automation.created_at).toLocaleDateString()}
+                    </p>
+                    {automation.recent_run_count > 0 && (
+                      <button
+                        onClick={() => setExpandedRunHistory(expandedRunHistory === automation.id ? null : automation.id)}
+                        className="text-xs text-impact/70 hover:text-impact transition-colors font-medium"
+                      >
+                        {expandedRunHistory === automation.id ? 'Hide runs' : 'View runs'}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleEdit(automation.id)}
@@ -400,6 +500,11 @@ export default function AutomationsPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Run history (expandable) */}
+                {expandedRunHistory === automation.id && (
+                  <RunHistory automationId={automation.id} />
+                )}
               </div>
             )
           })}

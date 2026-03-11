@@ -16,8 +16,8 @@ export const speedToLeadTask = task({
     minTimeoutInMs: 1000,
     maxTimeoutInMs: 10000,
   },
-  run: async (payload: { leadId: string; sendWelcomeEmail?: boolean }) => {
-    const { leadId, sendWelcomeEmail } = payload
+  run: async (payload: { leadId: string; sendWelcomeEmail?: boolean; skipWhatsAppAlert?: boolean }) => {
+    const { leadId, sendWelcomeEmail, skipWhatsAppAlert } = payload
 
     logger.info("Starting speed-to-lead", { leadId })
 
@@ -30,7 +30,8 @@ export const speedToLeadTask = task({
         *,
         organization:organizations(
           name,
-          settings
+          settings,
+          membership_status
         )
       `)
       .eq('id', leadId)
@@ -73,51 +74,64 @@ export const speedToLeadTask = task({
       : null
 
     // 1. Notify CLIENT via WhatsApp about the new lead
-    const whatsappNumbers = orgSettings.whatsapp_notification_numbers || []
+    // Skip if already sent inline from the API route (skipWhatsAppAlert flag)
+    if (skipWhatsAppAlert) {
+      logger.info("Skipping WhatsApp alert (already sent inline)", { leadId })
+      results.whatsapp = true
+    }
 
-    if (whatsappNumbers.length > 0) {
-      let allSent = true
+    if (!skipWhatsAppAlert) {
+      const AMPM_FALLBACK_NUMBER = '+447386297524'
+      const membershipStatus = (lead.organization as any)?.membership_status as string | null
+      const isActivated = membershipStatus === 'active'
+      const whatsappNumbers = isActivated
+        ? (orgSettings.whatsapp_notification_numbers || [])
+        : [AMPM_FALLBACK_NUMBER]
 
-      for (const number of whatsappNumbers) {
-        try {
-          const result = await sendNewLeadAlert({
-            to: number,
-            leadName,
-            leadCompany: lead.company,
-            aiScore,
-          })
+      if (whatsappNumbers.length > 0) {
+        let allSent = true
 
-          logger.info("WhatsApp notification sent to client", {
-            to: number,
-            messageId: result.messageId,
-          })
-
-          // Log activity
-          await supabase
-            .from('lead_activities')
-            .insert({
-              lead_id: leadId,
-              organization_id: lead.organization_id,
-              type: 'notification_sent',
-              direction: 'outbound',
-              channel: 'whatsapp',
-              content: `New lead alert sent to client (${number})`,
-              metadata: { message_id: result.messageId, recipient: number },
-              is_automated: true,
+        for (const number of whatsappNumbers) {
+          try {
+            const result = await sendNewLeadAlert({
+              to: number,
+              leadName,
+              leadCompany: lead.company,
+              aiScore,
             })
-        } catch (error) {
-          logger.error("WhatsApp notification failed", { to: number, error })
-          await systemLog('error', 'whatsapp', 'WhatsApp notification failed', lead.organization_id, { leadId, error: String(error) })
-          allSent = false
-        }
-      }
 
-      results.whatsapp = allSent
-    } else {
-      logger.info("No WhatsApp notification numbers configured for org", {
-        orgId: lead.organization_id,
-      })
-      results.whatsapp = false
+            logger.info("WhatsApp notification sent to client", {
+              to: number,
+              messageId: result.messageId,
+            })
+
+            // Log activity
+            await supabase
+              .from('lead_activities')
+              .insert({
+                lead_id: leadId,
+                organization_id: lead.organization_id,
+                type: 'notification_sent',
+                direction: 'outbound',
+                channel: 'whatsapp',
+                content: `New lead alert sent to client (${number})`,
+                metadata: { message_id: result.messageId, recipient: number },
+                is_automated: true,
+              })
+          } catch (error) {
+            logger.error("WhatsApp notification failed", { to: number, error })
+            await systemLog('error', 'whatsapp', 'WhatsApp notification failed', lead.organization_id, { leadId, error: String(error) })
+            allSent = false
+          }
+        }
+
+        results.whatsapp = allSent
+      } else {
+        logger.info("No WhatsApp notification numbers configured for org", {
+          orgId: lead.organization_id,
+        })
+        results.whatsapp = false
+      }
     }
 
     // 1b. Email notification to org team members who have new_lead.email enabled

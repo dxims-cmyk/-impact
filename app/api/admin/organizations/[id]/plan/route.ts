@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const supabase = createClient()
 
@@ -25,8 +25,8 @@ export async function PATCH(
 
   const { plan } = await req.json()
 
-  if (!['core', 'pro'].includes(plan)) {
-    return NextResponse.json({ error: 'Invalid plan. Must be "core" or "pro"' }, { status: 400 })
+  if (!['core', 'growth', 'pro'].includes(plan)) {
+    return NextResponse.json({ error: 'Invalid plan. Must be "core", "growth", or "pro"' }, { status: 400 })
   }
 
   const { id } = await params

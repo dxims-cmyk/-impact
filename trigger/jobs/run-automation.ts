@@ -26,7 +26,30 @@ interface Lead {
   organization_id: string
   assigned_to: string | null
   metadata: Record<string, unknown> | null
+  score: number | null
+  temperature: string | null
+  source: string | null
   [key: string]: unknown
+}
+
+// ---------------------------------------------------------------------------
+// Helper: substitute template variables in text
+// Supported: {{lead_name}}, {{lead_email}}, {{lead_phone}}, {{lead_company}},
+//            {{lead_first_name}}, {{lead_last_name}}, {{lead_score}},
+//            {{lead_temperature}}, {{lead_source}}
+// ---------------------------------------------------------------------------
+function substituteVariables(text: string, lead: Lead): string {
+  const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'there'
+  return text
+    .replace(/\{\{lead_name\}\}/gi, fullName)
+    .replace(/\{\{lead_first_name\}\}/gi, lead.first_name || '')
+    .replace(/\{\{lead_last_name\}\}/gi, lead.last_name || '')
+    .replace(/\{\{lead_email\}\}/gi, lead.email || '')
+    .replace(/\{\{lead_phone\}\}/gi, lead.phone || '')
+    .replace(/\{\{lead_company\}\}/gi, lead.company || '')
+    .replace(/\{\{lead_score\}\}/gi, String(lead.score ?? ''))
+    .replace(/\{\{lead_temperature\}\}/gi, lead.temperature || '')
+    .replace(/\{\{lead_source\}\}/gi, lead.source || '')
 }
 
 // ---------------------------------------------------------------------------
@@ -145,10 +168,19 @@ export const runAutomationTask = task({
               if (!typedLead.email) {
                 throw new Error("Lead has no email address")
               }
+              const emailSubject = substituteVariables(
+                (config.subject as string) || "Automated message",
+                typedLead
+              )
+              // Accept both "body" (from UI) and "html_body" (legacy)
+              const emailBody = substituteVariables(
+                (config.body as string) || (config.html_body as string) || (config.template as string) || "",
+                typedLead
+              )
               await sendEmail({
                 to: typedLead.email,
-                subject: (config.subject as string) || "Automated message",
-                html: (config.html_body as string) || (config.template as string) || "",
+                subject: emailSubject,
+                html: emailBody,
               })
               logger.info("send_email completed", { leadId, actionId: action.id })
               break
@@ -159,9 +191,13 @@ export const runAutomationTask = task({
               if (!typedLead.phone) {
                 throw new Error("Lead has no phone number")
               }
+              const waMessage = substituteVariables(
+                (config.message as string) || "",
+                typedLead
+              )
               await sendWhatsAppText({
                 to: typedLead.phone,
-                body: (config.message as string) || "",
+                body: waMessage,
               })
               logger.info("send_whatsapp completed", { leadId, actionId: action.id })
               break
@@ -311,7 +347,10 @@ export const runAutomationTask = task({
 
             // ----- create_task -----
             case "create_task": {
-              const content = (config.content as string) || "Automated task created"
+              const content = substituteVariables(
+                (config.content as string) || "Automated task created",
+                typedLead
+              )
 
               // Log as lead_activity (task/note)
               await supabase.from("lead_activities").insert({

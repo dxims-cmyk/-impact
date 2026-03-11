@@ -296,9 +296,10 @@ export default function DashboardPage() {
 
   const stageColors: Record<string, string> = {
     new: '#6E0F1A',
-    qualified: '#8B1422',
     contacted: '#D4A574',
-    booked: '#2D4A3E',
+    qualified: '#8B1422',
+    appointment: '#2D4A3E',
+    proposal: '#4A3728',
     won: '#2D4A3E',
     lost: '#4A3728',
   }
@@ -389,7 +390,7 @@ export default function DashboardPage() {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-medium text-navy hover:border-impact/30 hover:shadow-sm transition-all"
         >
           <Flame className="w-4 h-4 text-impact" />
-          Hot Leads ({metrics?.pipeline?.find(s => s.stage === 'new')?.count || 0})
+          Hot Leads ({metrics?.hotLeads || 0})
         </Link>
       </div>
 
@@ -399,11 +400,11 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-navy">Pipeline</h2>
           <span className="text-sm text-navy/50">{totalLeads} total leads</span>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {['new', 'qualified', 'contacted', 'booked', 'won', 'lost'].map((stage) => (
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+          {['new', 'contacted', 'qualified', 'appointment', 'proposal', 'won', 'lost'].map((stage) => (
             <Link key={stage} href={`/dashboard/leads?stage=${stage}`}>
               <PipelineStage
-                name={stage.charAt(0).toUpperCase() + stage.slice(1)}
+                name={stage === 'appointment' ? 'Booked' : stage.charAt(0).toUpperCase() + stage.slice(1)}
                 count={metrics?.pipeline?.find(s => s.stage === stage)?.count || 0}
                 color={stageColors[stage]}
                 loading={metricsLoading}

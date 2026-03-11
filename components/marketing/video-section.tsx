@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react'
 import { Play, Pause } from 'lucide-react'
-import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/marketing/fade-in'
 import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
@@ -40,7 +39,7 @@ function VideoCard({ title, src, dark }: { title: string; src: string; dark: boo
       }`}
       onClick={toggle}
     >
-      <div className="relative aspect-[9/16] sm:aspect-[9/16]">
+      <div className="relative aspect-[9/16]">
         <video
           ref={ref}
           src={src}
@@ -49,7 +48,6 @@ function VideoCard({ title, src, dark }: { title: string; src: string; dark: boo
           preload="metadata"
           onEnded={() => setPlaying(false)}
         />
-        {/* Play/Pause overlay */}
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
           playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'
         }`}>
@@ -67,11 +65,6 @@ function VideoCard({ title, src, dark }: { title: string; src: string; dark: boo
           dark ? 'text-white' : 'text-[#0B1220]'
         }`}>
           {title}
-        </p>
-        <p className={`text-xs mt-0.5 transition-colors duration-700 ${
-          dark ? 'text-zinc-500' : 'text-gray-500'
-        }`}>
-          AI Presenter
         </p>
       </div>
     </div>
@@ -100,33 +93,13 @@ export function VideoSection(): React.JSX.Element {
           </div>
         </FadeIn>
 
-        {/* Two AI ad videos side by side */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {videos.map((video, i) => (
             <FadeIn key={video.src} delay={i * 0.1}>
               <VideoCard title={video.title} src={video.src} dark={dark} />
             </FadeIn>
           ))}
         </div>
-
-        {/* Full walkthrough placeholder */}
-        <FadeIn delay={0.2}>
-          <div className={`rounded-2xl border aspect-video flex items-center justify-center transition-colors duration-700 ${
-            dark ? 'border-zinc-800 bg-zinc-900/50' : 'border-gray-200 bg-white shadow-sm'
-          }`}>
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-[#E8642C]/10 flex items-center justify-center mx-auto mb-3">
-                <Play className="w-6 h-6 text-[#E8642C] ml-0.5" />
-              </div>
-              <p className={`text-sm font-medium transition-colors duration-700 ${dark ? 'text-zinc-400' : 'text-gray-500'}`}>
-                Full product walkthrough
-              </p>
-              <p className={`text-xs mt-1 transition-colors duration-700 ${dark ? 'text-zinc-600' : 'text-gray-400'}`}>
-                Loom video coming soon
-              </p>
-            </div>
-          </div>
-        </FadeIn>
       </div>
     </section>
   )

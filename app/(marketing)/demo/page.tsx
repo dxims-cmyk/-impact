@@ -95,7 +95,7 @@ export default function DemoPage() {
                 See <span className="text-[#E8642C]">:Impact</span> in Action
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 max-w-lg">
-                Tell us about your business and we&apos;ll send you a personalised walkthrough within 5 minutes. No calendar. No waiting.
+                Tell us about your business and we&apos;ll be in touch within 24 hours to show you the platform live.
               </p>
             </div>
 

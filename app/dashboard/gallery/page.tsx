@@ -13,11 +13,11 @@ import {
 } from 'lucide-react'
 
 export default function GalleryPage(): JSX.Element {
-  const { isPro } = usePlan()
+  const { isProOrHigher } = usePlan()
   const { creatives, isLoading } = useCreatives()
 
-  // If not Pro, show upgrade prompt
-  if (!isPro) {
+  // Pro-only gate
+  if (!isProOrHigher) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md">

@@ -28,6 +28,7 @@ import { toast } from 'sonner'
 import { RecordPaymentModal } from '@/components/admin/RecordPaymentModal'
 import { MembershipActions } from '@/components/admin/MembershipActions'
 import { PaymentHistoryTable } from '@/components/admin/PaymentHistoryTable'
+import { AdminAddons } from '@/components/admin/AdminAddons'
 
 interface ClientOrg {
   id: string
@@ -173,18 +174,23 @@ export default function AdminUsersPage(): JSX.Element {
     toast.success(`${label} copied!`)
   }
 
-  const handlePlanChange = async (orgId: string, currentPlan: string): Promise<void> => {
-    const newPlan = currentPlan === 'core' ? 'pro' : 'core'
-    const action = newPlan === 'pro' ? 'upgrade to Pro' : 'downgrade to Core'
+  const handlePlanChange = async (orgId: string, newPlan: string): Promise<void> => {
+    const planNames: Record<string, string> = { core: 'Core', growth: 'Growth', pro: 'Pro' }
+    const org = clients?.find((c: any) => c.id === orgId)
+    const currentPlan = org?.plan || 'core'
 
-    if (!confirm(`Are you sure you want to ${action} for this client? This will also update their Stripe subscription.`)) {
+    // Skip if same plan selected
+    if (newPlan === currentPlan) return
+
+    const action = `change plan to ${planNames[newPlan] || newPlan}`
+    if (!confirm(`Are you sure you want to ${action} for this client?`)) {
       return
     }
 
     setChangingPlanFor(orgId)
     try {
-      // Use the subscription API which updates both Stripe and DB
-      const res = await fetch(`/api/admin/organizations/${orgId}/subscription`, {
+      // Always use direct plan API — avoids Stripe errors for cancelled/missing subscriptions
+      const res = await fetch(`/api/admin/organizations/${orgId}/plan`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: newPlan }),
@@ -192,7 +198,7 @@ export default function AdminUsersPage(): JSX.Element {
 
       if (res.ok) {
         fetchClients()
-        toast.success(`Client ${newPlan === 'pro' ? 'upgraded to Pro' : 'downgraded to Core'}`)
+        toast.success(`Client plan changed to ${planNames[newPlan] || newPlan}`)
       } else {
         const data = await res.json()
         toast.error(data.error || 'Failed to change plan')
@@ -674,9 +680,11 @@ export default function AdminUsersPage(): JSX.Element {
                       <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                         org.plan === 'pro'
                           ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
-                          : 'bg-navy/5 text-navy/60'
+                          : org.plan === 'growth'
+                            ? 'bg-studio/10 text-studio'
+                            : 'bg-navy/5 text-navy/60'
                       }`}>
-                        {org.plan === 'pro' ? '⚡ Pro' : 'Core'}
+                        {org.plan === 'pro' ? 'Pro' : org.plan === 'growth' ? 'Growth' : 'Core'}
                       </span>
                       {/* Membership status badge */}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -730,18 +738,19 @@ export default function AdminUsersPage(): JSX.Element {
                         currentStatus={org.membership_status || 'preview'}
                         onSuccess={fetchClients}
                       />
-                      {/* Plan change or create subscription */}
-                      {org.stripe_subscription_id ? (
-                        <button
-                          onClick={() => handlePlanChange(org.id, org.plan || 'core')}
-                          disabled={changingPlanFor === org.id}
-                          className="text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                        >
-                          {changingPlanFor === org.id ? 'Changing...' : (
-                            (org.plan || 'core') === 'core' ? 'Upgrade to Pro' : 'Downgrade to Core'
-                          )}
-                        </button>
-                      ) : (
+                      {/* Plan change */}
+                      <select
+                        value={org.plan || 'core'}
+                        onChange={(e) => handlePlanChange(org.id, e.target.value)}
+                        disabled={changingPlanFor === org.id}
+                        className="text-xs px-2 py-0.5 rounded-full font-medium border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 bg-white cursor-pointer"
+                      >
+                        <option value="core">Core</option>
+                        <option value="growth">Growth</option>
+                        <option value="pro">Pro</option>
+                      </select>
+                      {/* Create Stripe subscription if none exists */}
+                      {!org.stripe_subscription_id && (
                         <button
                           onClick={() => handleCreateSubscription(org.id)}
                           disabled={creatingSubFor === org.id}
@@ -800,9 +809,13 @@ export default function AdminUsersPage(): JSX.Element {
                         {org.account_lock_reason}
                       </p>
                     )}
+
                   </div>
                 </div>
               </div>
+
+              {/* Add-ons */}
+              <AdminAddons orgId={org.id} orgPlan={org.plan || 'core'} />
 
               {/* Payment History */}
               <PaymentHistoryTable orgId={org.id} />

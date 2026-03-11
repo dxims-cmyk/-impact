@@ -34,16 +34,22 @@ function getSecretKey(): string {
   return key
 }
 
-function getPriceId(plan: 'core' | 'pro'): string {
-  const key = plan === 'core' ? 'STRIPE_PRICE_CORE' : 'STRIPE_PRICE_PRO'
+function getPriceId(plan: 'core' | 'growth' | 'pro'): string {
+  const envKeys: Record<string, string> = {
+    core: 'STRIPE_PRICE_CORE',
+    growth: 'STRIPE_PRICE_GROWTH',
+    pro: 'STRIPE_PRICE_PRO',
+  }
+  const key = envKeys[plan]
   const id = process.env[key]
   if (!id) throw new Error(`${key} is not set`)
   return id
 }
 
 /** Map a Stripe price ID back to a plan name */
-export function priceIdToPlan(priceId: string): 'core' | 'pro' | null {
+export function priceIdToPlan(priceId: string): 'core' | 'growth' | 'pro' | null {
   if (priceId === process.env.STRIPE_PRICE_CORE) return 'core'
+  if (priceId === process.env.STRIPE_PRICE_GROWTH) return 'growth'
   if (priceId === process.env.STRIPE_PRICE_PRO) return 'pro'
   return null
 }
@@ -94,7 +100,7 @@ export async function createCustomer(
 /** Create a subscription for a customer (defaults to Core plan) */
 export async function createSubscription(
   customerId: string,
-  plan: 'core' | 'pro' = 'core'
+  plan: 'core' | 'growth' | 'pro' = 'core'
 ): Promise<StripeSubscription> {
   const body = new URLSearchParams()
   body.append('customer', customerId)
@@ -123,10 +129,10 @@ export async function cancelSubscription(
   })
 }
 
-/** Swap subscription price (Core ↔ Pro) */
+/** Swap subscription price (Core ↔ Growth ↔ Pro) */
 export async function updateSubscriptionPrice(
   subscriptionId: string,
-  newPlan: 'core' | 'pro'
+  newPlan: 'core' | 'growth' | 'pro'
 ): Promise<StripeSubscription> {
   // First get the subscription to find the item ID
   const sub = await stripeRequest<StripeSubscription>(`/subscriptions/${subscriptionId}`)

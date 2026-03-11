@@ -128,17 +128,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       case 'customer.subscription.deleted': {
         const deletedSub = obj as Record<string, unknown>
-        await updateOrg(org.id, {
-          account_status: 'locked',
-          account_locked_at: new Date().toISOString(),
-          account_lock_reason: 'Subscription cancelled',
-          subscription_status: 'cancelled',
-          stripe_subscription_id: null,
-          membership_status: 'cancelled',
-          membership_cancelled_at: new Date().toISOString(),
-        })
-        console.log(`Subscription deleted for org ${org.id} — account locked, membership cancelled`)
-        await systemLog('error', 'billing', 'Subscription deleted for org', org.id, { stripe_subscription_id: deletedSub.id as string, error: 'customer.subscription.deleted' })
+        const deletedSubId = deletedSub.id as string
+        const deletedMeta = deletedSub.metadata as Record<string, string> | undefined
+
+        // Check if this is an addon subscription
+        if (deletedMeta?.addon_key) {
+          const admin = createAdminClient()
+          await (admin as any)
+            .from('account_addons')
+            .update({ status: 'cancelled' })
+            .eq('stripe_subscription_id', deletedSubId)
+          console.log(`Addon subscription ${deletedSubId} cancelled for org ${org.id}`)
+        } else {
+          // Main membership subscription
+          await updateOrg(org.id, {
+            account_status: 'locked',
+            account_locked_at: new Date().toISOString(),
+            account_lock_reason: 'Subscription cancelled',
+            subscription_status: 'cancelled',
+            stripe_subscription_id: null,
+            membership_status: 'cancelled',
+            membership_cancelled_at: new Date().toISOString(),
+          })
+          console.log(`Subscription deleted for org ${org.id} — account locked, membership cancelled`)
+          await systemLog('error', 'billing', 'Subscription deleted for org', org.id, { stripe_subscription_id: deletedSubId, error: 'customer.subscription.deleted' })
+        }
         break
       }
 
@@ -170,6 +184,42 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             updates.account_locked_by = null
           }
           await updateOrg(org.id, updates)
+        }
+        break
+      }
+
+      case 'checkout.session.completed': {
+        const session = obj as Record<string, unknown>
+        const metadata = session.metadata as Record<string, string> | undefined
+        const addonKey = metadata?.addon_key
+        const addonOrgId = metadata?.organization_id
+        const subId = session.subscription as string | undefined
+
+        if (addonKey && addonOrgId && subId) {
+          const admin = createAdminClient()
+          const { data: existing } = await (admin as any)
+            .from('account_addons')
+            .select('id')
+            .eq('organization_id', addonOrgId)
+            .eq('addon_key', addonKey)
+            .single()
+
+          if (existing) {
+            await (admin as any)
+              .from('account_addons')
+              .update({ status: 'active', stripe_subscription_id: subId, granted_by: null })
+              .eq('id', existing.id)
+          } else {
+            await (admin as any)
+              .from('account_addons')
+              .insert({
+                organization_id: addonOrgId,
+                addon_key: addonKey,
+                stripe_subscription_id: subId,
+                status: 'active',
+              })
+          }
+          console.log(`Addon ${addonKey} activated for org ${addonOrgId}`)
         }
         break
       }

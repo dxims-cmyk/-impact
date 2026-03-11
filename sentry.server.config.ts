@@ -1,18 +1,34 @@
 import * as Sentry from '@sentry/nextjs'
-import { nodeProfilingIntegration } from '@sentry/profiling-node'
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+const isProduction = process.env.NODE_ENV === 'production'
 
-  integrations: [nodeProfilingIntegration()],
+async function initSentry() {
+  const integrations: Sentry.Integration[] = []
 
-  // Performance monitoring
-  tracesSampleRate: 0.1,
+  if (isProduction) {
+    try {
+      const { nodeProfilingIntegration } = await import('@sentry/profiling-node')
+      integrations.push(nodeProfilingIntegration())
+    } catch {
+      // Native profiler not available — skip
+    }
+  }
 
-  // Profiling
-  profileSessionSampleRate: 1.0,
-  profileLifecycle: 'trace',
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  environment: process.env.NODE_ENV,
-})
+    integrations,
+
+    // Performance monitoring
+    tracesSampleRate: 0.1,
+
+    // Profiling (only effective when profiling integration loads)
+    profileSessionSampleRate: isProduction ? 1.0 : 0,
+    profileLifecycle: 'trace',
+
+    environment: process.env.NODE_ENV,
+  })
+}
+
+initSentry()

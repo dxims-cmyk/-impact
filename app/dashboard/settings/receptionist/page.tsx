@@ -19,10 +19,13 @@ import {
   AlertCircle,
   CheckCircle,
   Power,
+  Lock,
 } from 'lucide-react'
 import Link from 'next/link'
+import { usePlan } from '@/lib/hooks/use-plan'
 
 export default function ReceptionistSettingsPage() {
+  const { isGrowthOrHigher } = usePlan()
   const { data: organization, isLoading: orgLoading } = useOrganization()
   const updateOrganization = useUpdateOrganization()
 
@@ -147,6 +150,33 @@ export default function ReceptionistSettingsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Growth+ gate
+  if (!isGrowthOrHigher) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-orange-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-navy mb-3">AI Receptionist</h1>
+          <p className="text-navy/60 mb-6">
+            Enable 24/7 AI-powered call handling that qualifies leads, books appointments,
+            and sends you instant notifications.
+          </p>
+          <p className="text-navy/40 text-sm mb-6">
+            This feature is available on :Impact Growth
+          </p>
+          <a
+            href="mailto:dxims@mediampm.com?subject=Impact Growth Upgrade - AI Receptionist"
+            className="btn-primary text-sm px-6 py-2.5"
+          >
+            Contact AM:PM to Upgrade
+          </a>
+        </div>
+      </div>
+    )
   }
 
   if (orgLoading) {

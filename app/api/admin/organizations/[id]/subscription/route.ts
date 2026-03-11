@@ -30,7 +30,7 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
 // ── POST: Create subscription for org (backfill) ─────────────────────
 
 const createSchema = z.object({
-  plan: z.enum(['core', 'pro']).default('core'),
+  plan: z.enum(['core', 'growth', 'pro']).default('core'),
 })
 
 export async function POST(
@@ -122,7 +122,7 @@ export async function POST(
 // ── PATCH: Change subscription plan ──────────────────────────────────
 
 const updateSchema = z.object({
-  plan: z.enum(['core', 'pro']),
+  plan: z.enum(['core', 'growth', 'pro']),
 })
 
 export async function PATCH(

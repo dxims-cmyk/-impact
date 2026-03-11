@@ -35,7 +35,7 @@ interface ReviewPlatform {
 }
 
 export default function ReputationSettingsPage(): JSX.Element {
-  const { isPro } = usePlan()
+  const { isProOrHigher } = usePlan()
   const { data: organization } = useOrganization()
   const [settings, setSettings] = useState<ReputationSettings | null>(null)
   const [platforms, setPlatforms] = useState<ReviewPlatform[]>([])
@@ -129,8 +129,8 @@ export default function ReputationSettingsPage(): JSX.Element {
     }
   }
 
-  // Pro gate — Core users see locked screen
-  if (!isPro) {
+  // Pro gate — Core/Growth users see locked screen
+  if (!isProOrHigher) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md">

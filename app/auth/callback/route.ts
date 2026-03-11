@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-// Admin emails that should get owner role
-const ADMIN_EMAILS = ['dxims@mediampm.com']
+// Admin emails that should get owner role (configurable via ADMIN_EMAILS env var)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'dxims@mediampm.com').split(',').map(e => e.trim())
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)

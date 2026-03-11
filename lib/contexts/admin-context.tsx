@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 export interface ViewingOrg {
   id: string
   name: string
-  plan: 'core' | 'pro'
+  plan: 'core' | 'growth' | 'pro'
 }
 
 interface AdminContextType {

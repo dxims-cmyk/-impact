@@ -22,7 +22,7 @@ export interface Database {
           settings: Json
           subscription_tier: 'launch' | 'grow' | 'scale'
           subscription_status: 'active' | 'past_due' | 'cancelled'
-          plan: 'core' | 'pro'
+          plan: 'core' | 'growth' | 'pro'
           plan_changed_at: string | null
           stripe_customer_id: string | null
           account_status: 'active' | 'locked' | 'suspended'
@@ -48,7 +48,7 @@ export interface Database {
           settings?: Json
           subscription_tier?: 'launch' | 'grow' | 'scale'
           subscription_status?: 'active' | 'past_due' | 'cancelled'
-          plan?: 'core' | 'pro'
+          plan?: 'core' | 'growth' | 'pro'
           plan_changed_at?: string | null
           stripe_customer_id?: string | null
           account_status?: 'active' | 'locked' | 'suspended'
@@ -74,7 +74,7 @@ export interface Database {
           settings?: Json
           subscription_tier?: 'launch' | 'grow' | 'scale'
           subscription_status?: 'active' | 'past_due' | 'cancelled'
-          plan?: 'core' | 'pro'
+          plan?: 'core' | 'growth' | 'pro'
           plan_changed_at?: string | null
           stripe_customer_id?: string | null
           account_status?: 'active' | 'locked' | 'suspended'
@@ -770,6 +770,65 @@ export interface Database {
           completed_at?: string | null
           error?: string | null
           metadata?: Json | null
+        }
+      }
+      outbound_leads: {
+        Row: {
+          id: string
+          organization_id: string
+          created_by: string | null
+          business_name: string
+          phone: string | null
+          website: string | null
+          address: string | null
+          rating: number | null
+          reviews_count: number | null
+          category: string | null
+          place_id: string | null
+          status: 'to_call' | 'called' | 'interested' | 'booked' | 'closed' | 'dead'
+          notes: string | null
+          search_term: string | null
+          search_location: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          created_by?: string | null
+          business_name: string
+          phone?: string | null
+          website?: string | null
+          address?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          category?: string | null
+          place_id?: string | null
+          status?: 'to_call' | 'called' | 'interested' | 'booked' | 'closed' | 'dead'
+          notes?: string | null
+          search_term?: string | null
+          search_location?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          created_by?: string | null
+          business_name?: string
+          phone?: string | null
+          website?: string | null
+          address?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          category?: string | null
+          place_id?: string | null
+          status?: 'to_call' | 'called' | 'interested' | 'booked' | 'closed' | 'dead'
+          notes?: string | null
+          search_term?: string | null
+          search_location?: string | null
+          created_at?: string
+          updated_at?: string
         }
       }
     }

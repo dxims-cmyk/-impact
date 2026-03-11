@@ -4,7 +4,7 @@ import { useMarketingTheme } from '@/components/marketing/theme-provider'
 import { FadeIn } from '@/components/marketing/fade-in'
 
 const clients = [
-  { name: 'Wee Drop', type: 'Hospitality', metric: 'Response time cut to 30s' },
+  { name: 'This Could Be You', type: 'Your Industry', metric: 'Get started today' },
   { name: 'Dxims', type: 'Creative Agency', metric: '200+ leads managed' },
   { name: 'AM:PM Media', type: 'Marketing Agency', metric: 'Built it. Uses it daily.' },
   { name: 'Impact Demo', type: 'SaaS Platform', metric: '3x lead conversion' },

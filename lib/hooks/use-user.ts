@@ -10,7 +10,7 @@ export function useUser() {
       name: string
       slug: string
       subscription_tier: string
-      plan: 'core' | 'pro'
+      plan: 'core' | 'growth' | 'pro'
       account_status: 'active' | 'locked' | 'suspended'
       account_locked_at: string | null
       account_lock_reason: string | null

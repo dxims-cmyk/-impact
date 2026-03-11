@@ -32,10 +32,16 @@ export async function GET(request: NextRequest) {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  // Current week leads
-  const { data: currentLeads, count: currentCount } = await supabase
+  // All-time total leads
+  const { count: totalLeadCount } = await supabase
     .from('leads')
-    .select('*', { count: 'exact' })
+    .select('id', { count: 'exact' })
+    .eq('organization_id', orgId)
+
+  // Current week leads (for trend calculation)
+  const { count: currentCount } = await supabase
+    .from('leads')
+    .select('id', { count: 'exact' })
     .eq('organization_id', orgId)
     .gte('created_at', weekAgo.toISOString())
 
@@ -105,13 +111,15 @@ export async function GET(request: NextRequest) {
     ? ((bookedCount! - prevBookedCount) / prevBookedCount) * 100
     : 0
 
-  // Pipeline counts
+  // Pipeline counts + hot lead count
   const { data: pipelineData } = await supabase
     .from('leads')
-    .select('stage')
+    .select('stage, temperature')
     .eq('organization_id', orgId)
 
-  const pipeline = ['new', 'qualified', 'contacted', 'booked', 'won', 'lost'].map(stage => ({
+  const hotLeadCount = pipelineData?.filter(l => l.temperature === 'hot').length || 0
+
+  const pipeline = ['new', 'contacted', 'qualified', 'appointment', 'proposal', 'won', 'lost'].map(stage => ({
     stage,
     count: pipelineData?.filter(l => l.stage === stage).length || 0,
   }))
@@ -125,7 +133,7 @@ export async function GET(request: NextRequest) {
     .limit(5)
 
   return NextResponse.json({
-    leads: currentCount || 0,
+    leads: totalLeadCount || 0,
     leadsChange: Math.round(leadsChange),
     cpl: Math.round(cpl * 100) / 100,
     cplChange: Math.round(cplChange),
@@ -134,6 +142,7 @@ export async function GET(request: NextRequest) {
     roas: Math.round(roas * 10) / 10,
     roasChange: Math.round(roasChange),
     pipeline,
+    hotLeads: hotLeadCount,
     recentLeads: recentLeads || [],
   })
 }

@@ -17,8 +17,10 @@ import {
   Loader2,
   Search,
   Filter,
+  Lock,
 } from 'lucide-react'
 import Link from 'next/link'
+import { usePlan } from '@/lib/hooks/use-plan'
 
 // Format seconds as "Xm Ys"
 function formatDuration(seconds: number | null): string {
@@ -200,12 +202,43 @@ function CallRow({ call }: { call: Call }) {
   )
 }
 
+function CallsGate(): JSX.Element {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center max-w-md">
+        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-8 h-8 text-orange-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-navy mb-3">AI Receptionist Calls</h1>
+        <p className="text-navy/60 mb-6">
+          Get 24/7 AI-powered call handling with automatic lead capture,
+          transcripts, and recordings.
+        </p>
+        <p className="text-navy/40 text-sm mb-6">
+          This feature is available on :Impact Growth
+        </p>
+        <a
+          href="mailto:dxims@mediampm.com?subject=Impact Growth Upgrade - AI Receptionist"
+          className="btn-primary text-sm px-6 py-2.5"
+        >
+          Contact AM:PM to Upgrade
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export default function CallsPage() {
+  const { isGrowthOrHigher } = usePlan()
   const [statusFilter, setStatusFilter] = useState<string>('')
   const { data, isLoading, error } = useCalls({
     status: statusFilter || undefined,
     limit: 50,
   })
+
+  if (!isGrowthOrHigher) {
+    return <CallsGate />
+  }
 
   const calls = data?.calls || []
 

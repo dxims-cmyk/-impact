@@ -2,15 +2,21 @@
 // Run with: npx tsx scripts/create-test-user.ts
 
 import { createClient } from '@supabase/supabase-js'
+import 'dotenv/config'
 
-const supabaseUrl = 'https://btdghcmiqkgcnuzintgr.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0ZGdoY21pcWtnY251emludGdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNjkyMDUsImV4cCI6MjA4NTg0NTIwNX0.-_beYwU5H_Kf8f8-eeKhKSozipkCgdxDSZx0_KLo_8k'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY env vars')
+  process.exit(1)
+}
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 async function createTestUser() {
-  const email = 'test@impactengine.io'
-  const password = 'TestUser123!'
+  const email = process.env.TEST_USER_EMAIL || 'test@impactengine.io'
+  const password = process.env.TEST_USER_PASSWORD || 'TestUser123!'
 
   console.log('Creating test user...')
   console.log('Email:', email)

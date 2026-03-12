@@ -2,9 +2,15 @@
 // Run with: npx tsx scripts/reset-admin-password.ts
 
 import { createClient } from '@supabase/supabase-js'
+import 'dotenv/config'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://btdghcmiqkgcnuzintgr.supabase.co'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl) {
+  console.error('Error: NEXT_PUBLIC_SUPABASE_URL environment variable is required')
+  process.exit(1)
+}
 
 if (!supabaseServiceKey) {
   console.error('Error: SUPABASE_SERVICE_ROLE_KEY environment variable is required')
@@ -22,8 +28,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 async function resetPassword() {
-  const email = 'dxims@mediampm.com'
-  const newPassword = 'Admin123!' // You can change this after logging in
+  const email = process.env.ADMIN_EMAIL || 'dxims@mediampm.com'
+  const newPassword = process.env.ADMIN_PASSWORD || 'Admin123!' // You can change this after logging in
 
   console.log('Looking up user:', email)
 

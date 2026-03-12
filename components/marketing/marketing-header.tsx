@@ -106,7 +106,7 @@ export function MarketingHeader(): React.JSX.Element {
               className="hidden sm:inline-flex items-center px-5 py-2.5 rounded-lg bg-[#E8642C] text-white text-sm font-semibold spring-hover hover:bg-[#d55a25] hover:shadow-lg hover:shadow-[#E8642C]/20"
               style={{ transitionTimingFunction: 'var(--ease-bounce)' }}
             >
-              Book a Demo
+              Get Early Access
             </Link>
             <MobileNav />
           </div>

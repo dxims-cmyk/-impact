@@ -3,46 +3,37 @@
 import Image from 'next/image'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, Brain, Plug, BarChart3 } from 'lucide-react'
+import { Plug, Zap, Target } from 'lucide-react'
 import { FadeIn } from '@/components/marketing/fade-in'
 import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
 const steps = [
   {
-    id: 'capture',
-    icon: Zap,
-    label: 'Capture',
-    title: 'Leads land. You get alerted instantly.',
-    description: 'Leads from Meta Ads, Google Ads, web forms, and manual entry all funnel into one place. You get a WhatsApp message within seconds.',
-    screenshot: '/screenshots/leads-table.png',
-    alt: 'Impact leads table with AI scoring, stage tracking, and source attribution',
-  },
-  {
-    id: 'qualify',
-    icon: Brain,
-    label: 'Qualify',
-    title: 'AI reads every lead so you don\'t have to.',
-    description: 'Each lead is scored 1-10 and classified as hot, warm, or cold. The AI writes a summary so you know exactly who to call first.',
-    screenshot: '/screenshots/lead-detail.png',
-    alt: 'Lead detail view showing AI analysis, contact info, actions, and timeline',
-  },
-  {
     id: 'connect',
     icon: Plug,
     label: 'Connect',
-    title: 'Plugs into the tools you already use.',
-    description: 'Meta Ads, Google Ads, WhatsApp, Cal.com, Zapier, and more. One-click integrations that sync leads, bookings, and ad performance automatically.',
+    title: 'Link your ad accounts. We handle the rest.',
+    description: 'Connect your Meta Ads in one click. We set up your lead capture, configure your inbox channels, and get you live within 48 hours.',
     screenshot: '/screenshots/integrations.png',
-    alt: 'Integrations page showing Meta Ads, Google Calendar, WhatsApp, Cal.com, and more connected',
+    alt: 'Integrations page showing Meta Ads, WhatsApp, Cal.com, and more connected',
   },
   {
-    id: 'track',
-    icon: BarChart3,
-    label: 'Track',
-    title: 'See what\'s working. Cut what isn\'t.',
-    description: 'Pipeline view, KPI cards, AI insights, and campaign performance — all in real time. Know your cost per lead, ROAS, and close rate at a glance.',
+    id: 'alert',
+    icon: Zap,
+    label: 'Alert',
+    title: 'Every lead scored by AI. Sent to your phone in 5 seconds.',
+    description: 'When a lead comes in, AI reads it, scores it 1 to 10, and classifies it as hot, warm, or cold. You get a WhatsApp message with the lead details before your competitor even knows they enquired.',
+    screenshot: '/screenshots/lead-detail.png',
+    alt: 'Lead detail view showing AI score, qualification summary, and contact info',
+  },
+  {
+    id: 'close',
+    icon: Target,
+    label: 'Close',
+    title: 'Reply from one inbox. Book meetings. Track your pipeline.',
+    description: 'WhatsApp, SMS, email, Instagram, and Messenger in one timeline per lead. Leads can book directly into your calendar. See which ads bring revenue and which waste money.',
     screenshot: '/screenshots/dashboard-main.png',
-    alt: 'Impact dashboard with KPIs, pipeline stages, recent leads, and AI insights',
+    alt: 'Impact dashboard with pipeline stages, KPIs, recent leads, and campaign analytics',
   },
 ]
 
@@ -67,7 +58,7 @@ export function ProductShowcase(): React.JSX.Element {
             <h2 className={`font-display text-3xl sm:text-4xl font-bold transition-colors duration-700 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
-              From ad click to closed deal
+              Three steps. Zero leads lost.
             </h2>
           </div>
         </FadeIn>

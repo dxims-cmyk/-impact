@@ -14,24 +14,24 @@ const tiers = [
     tagline: 'Capture and convert every lead.',
     features: [
       '5-second WhatsApp alerts',
-      'AI lead scoring (1-10)',
-      'Unified inbox (all channels)',
-      'Calendar + Cal.com integration',
-      'Automations builder',
-      'Lead analytics dashboard',
+      'AI lead scoring (1 to 10, hot/warm/cold)',
+      'Unified inbox (WhatsApp, SMS, email, Instagram, Messenger)',
+      'Calendar booking via Cal.com',
+      'Automations builder (triggers, rules, sequences)',
+      'Lead analytics and campaign tracking',
     ],
     highlight: false,
   },
   {
     name: 'Growth',
     price: '2,000',
-    tagline: 'Never miss a call again.',
+    tagline: 'Everything in Core, plus AI call handling.',
     badge: 'Most Popular',
     features: [
       'Everything in Core',
-      'AI Receptionist that answers, qualifies, and books 24/7',
-      'Call recordings + transcripts',
-      'Advanced automations',
+      'AI Receptionist: answers calls 24/7, qualifies leads, books appointments',
+      'Call recordings and transcripts',
+      'Advanced automations (delays, conditions, webhooks)',
       'Priority support',
     ],
     highlight: true,
@@ -39,12 +39,12 @@ const tiers = [
   {
     name: 'Pro',
     price: '2,500',
-    tagline: 'Full-service lead generation.',
+    tagline: 'The full growth engine.',
     features: [
       'Everything in Growth',
-      'Outbound lead generation',
-      'Content gallery',
-      'Reputation management',
+      'Outbound lead generation: find new prospects via Google Places data',
+      'Content gallery: upload business photos and videos for ad creatives',
+      'Reputation management: track and respond to Google/Facebook reviews',
       'Dedicated account manager',
       'Strategy calls',
     ],
@@ -65,12 +65,12 @@ export function PricingSection(): React.JSX.Element {
             <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-4 transition-colors duration-700 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
-              One price. Everything included.
+              Simple pricing. Serious results.
             </h2>
             <p className={`text-lg max-w-lg mx-auto transition-colors duration-700 ${
               dark ? 'text-zinc-500' : 'text-gray-500'
             }`}>
-              No setup fees. No contracts. Cancel anytime.
+              No setup fees. No lock-in. Cancel anytime.
             </p>
           </div>
         </FadeIn>
@@ -147,7 +147,7 @@ export function PricingSection(): React.JSX.Element {
                         : 'bg-[#0B1220] text-white hover:bg-[#0B1220]/90'
                   }`}
                 >
-                  Book a Demo
+                  Get Early Access
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </motion.div>

@@ -19,7 +19,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
     const animate = (now: number) => {
       const progress = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
       setCount(Math.round(eased * target))
       if (progress < 1) frame = requestAnimationFrame(animate)
     }
@@ -51,12 +51,12 @@ export function PainPointStats(): React.JSX.Element {
           <h2 className={`font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-4 transition-colors duration-500 ${
             dark ? 'text-white' : 'text-[#0B1220]'
           }`}>
-            Your leads are dying while you check email.
+            The maths behind every missed lead.
           </h2>
           <p className={`text-center text-base sm:text-lg max-w-2xl mx-auto mb-12 transition-colors duration-500 ${
             dark ? 'text-zinc-400' : 'text-gray-600'
           }`}>
-            The data is brutal. Speed wins. Everything else is an excuse.
+            Speed is not a nice-to-have. It is the difference between winning and losing the deal.
           </p>
         </FadeIn>
 
@@ -102,10 +102,10 @@ export function PainPointStats(): React.JSX.Element {
                 5s
               </div>
               <p className={`text-sm font-medium mb-1 transition-colors duration-500 ${dark ? 'text-white' : 'text-[#0B1220]'}`}>
-                Impact&apos;s response time
+                Impact alerts you on WhatsApp
               </p>
               <p className="text-xs text-[#E8642C] font-semibold">
-                9,400x faster than average
+                That is 33,840x faster.
               </p>
             </div>
           </FadeIn>
@@ -118,7 +118,7 @@ export function PainPointStats(): React.JSX.Element {
               dark ? 'bg-zinc-900 border border-zinc-800 text-zinc-400' : 'bg-gray-50 border border-gray-200 text-gray-500'
             }`}>
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              In the last {seconds}s, roughly {Math.max(1, Math.floor(seconds / 6))} leads went unanswered
+              In the last {seconds}s, roughly {Math.max(1, Math.floor(seconds / 6))} leads went unanswered across the UK
             </div>
           </div>
         </FadeIn>

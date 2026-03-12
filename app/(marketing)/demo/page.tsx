@@ -9,10 +9,10 @@ export default function DemoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
+    company: '',
     email: '',
     phone: '',
-    company: '',
-    message: '',
+    ad_spend: '',
   })
 
   const [error, setError] = useState<string | null>(null)
@@ -38,11 +38,11 @@ export default function DemoPage() {
           email: formData.email || undefined,
           phone: formData.phone || undefined,
           company: formData.company || undefined,
-          message: formData.message || undefined,
+          message: formData.ad_spend ? `Monthly ad spend: ${formData.ad_spend}` : undefined,
           source: 'driveimpact-demo',
           utm_source: 'driveimpact',
           utm_medium: 'website',
-          utm_campaign: 'demo-request',
+          utm_campaign: 'early-access',
         }),
       })
 
@@ -61,7 +61,7 @@ export default function DemoPage() {
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0B1220] transition-colors mb-10"
@@ -76,10 +76,10 @@ export default function DemoPage() {
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-[#0B1220] mb-4">
-              We&apos;ll be in touch
+              You are in.
             </h1>
             <p className="text-gray-600 text-lg max-w-md mx-auto">
-              Thanks for your interest. We&apos;ll reach out within 24 hours to schedule your demo.
+              We just got your WhatsApp alert. Expect a personalised demo from us within the hour.
             </p>
             <Link
               href="/"
@@ -92,10 +92,10 @@ export default function DemoPage() {
           <>
             <div className="mb-10">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0B1220] mb-4">
-                See <span className="text-[#E8642C]">:Impact</span> in Action
+                Get early access to <span className="text-[#E8642C]">:Impact</span>
               </h1>
-              <p className="text-lg sm:text-xl text-gray-600 max-w-lg">
-                Tell us about your business and we&apos;ll be in touch within 24 hours to show you the platform live.
+              <p className="text-lg text-gray-600 max-w-lg">
+                Tell us about your business. We will send you a personalised demo within the hour.
               </p>
             </div>
 
@@ -122,10 +122,11 @@ export default function DemoPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#0B1220] mb-1.5">
-                    Company
+                    Business Name
                   </label>
                   <input
                     type="text"
+                    required
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8642C]/30 focus:border-[#E8642C] transition-all"
@@ -137,10 +138,11 @@ export default function DemoPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-medium text-[#0B1220] mb-1.5">
-                    Email <span className="text-gray-400 font-normal text-xs">(or phone below)</span>
+                    Email
                   </label>
                   <input
                     type="email"
+                    required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8642C]/30 focus:border-[#E8642C] transition-all"
@@ -153,6 +155,7 @@ export default function DemoPage() {
                   </label>
                   <input
                     type="tel"
+                    required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8642C]/30 focus:border-[#E8642C] transition-all"
@@ -163,21 +166,26 @@ export default function DemoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#0B1220] mb-1.5">
-                  Tell us about your business
+                  Monthly ad spend <span className="text-gray-400 font-normal text-xs">(optional)</span>
                 </label>
-                <textarea
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8642C]/30 focus:border-[#E8642C] transition-all resize-none"
-                  placeholder="What industry are you in? How many leads do you get per month? What's your biggest challenge with leads right now?"
-                />
+                <select
+                  value={formData.ad_spend}
+                  onChange={(e) => setFormData({ ...formData, ad_spend: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8642C]/30 focus:border-[#E8642C] transition-all text-gray-700"
+                >
+                  <option value="">Select range</option>
+                  <option value="Under £500">Under £500</option>
+                  <option value="£500 - £2,000">£500 - £2,000</option>
+                  <option value="£2,000 - £5,000">£2,000 - £5,000</option>
+                  <option value="£5,000 - £10,000">£5,000 - £10,000</option>
+                  <option value="£10,000+">£10,000+</option>
+                </select>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#E8642C] text-white font-medium hover:bg-[#d55a25] transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-[#E8642C] text-white font-semibold hover:bg-[#d55a25] transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
@@ -187,7 +195,7 @@ export default function DemoPage() {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Send Demo
+                    Get Early Access
                   </>
                 )}
               </button>

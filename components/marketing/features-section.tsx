@@ -10,38 +10,38 @@ import { useMarketingTheme } from '@/components/marketing/theme-provider'
 const features = [
   {
     icon: Zap,
-    title: '5-Second WhatsApp Alerts',
-    desc: 'Know about every lead before your competitor even checks their email. Instant notification with name, number, source, and intent.',
+    title: 'Get alerted before your competitor checks their email.',
+    desc: 'WhatsApp notification within 5 seconds of a lead coming in. Name, number, source, and AI score included.',
     span: 'lg:col-span-2',
   },
   {
     icon: Brain,
-    title: 'AI Lead Scoring',
-    desc: 'Every lead rated 1-10 so you know who to call first.',
+    title: 'Know which leads are worth calling first.',
+    desc: 'AI reads every enquiry and scores it 1 to 10. Hot leads go to the top. No more guessing.',
     span: '',
   },
   {
     icon: Inbox,
-    title: 'Unified Inbox',
-    desc: 'WhatsApp, SMS, email, Instagram, Messenger. One timeline.',
+    title: 'Every message, one place.',
+    desc: 'WhatsApp, SMS, email, Instagram DM, and Messenger. One timeline per lead. No app switching.',
     span: '',
   },
   {
     icon: CalendarCheck,
-    title: 'Calendar & Booking',
-    desc: 'Cal.com integration so leads book themselves in. No back-and-forth.',
+    title: 'Leads book themselves in.',
+    desc: 'Cal.com integration lets leads pick a time from your calendar directly. No back and forth.',
     span: '',
   },
   {
     icon: Settings,
-    title: 'Automations',
-    desc: 'Rules, triggers, follow-up sequences. No code needed.',
+    title: 'Set it and forget it.',
+    desc: 'Automated follow-up sequences, triggers, and rules. Keep leads warm without lifting a finger.',
     span: '',
   },
   {
     icon: BarChart3,
-    title: 'Lead Analytics',
-    desc: 'See which ads, audiences, and creatives actually bring revenue, not just clicks.',
+    title: 'See what is working. Cut what is not.',
+    desc: 'Track which ads, audiences, and creatives bring actual revenue. Not just clicks.',
     span: 'lg:col-span-2',
   },
 ]
@@ -59,12 +59,12 @@ export function FeaturesSection(): React.JSX.Element {
           <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-4 transition-colors duration-700 ${
             dark ? 'text-white' : 'text-[#0B1220]'
           }`}>
-            Everything you need. Nothing you don&apos;t.
+            What changes when you turn Impact on.
           </h2>
           <p className={`text-center text-lg max-w-xl mx-auto mb-16 transition-colors duration-700 ${
             dark ? 'text-zinc-500' : 'text-gray-500'
           }`}>
-            One platform replaces five different tools.
+            Six tools replaced by one platform. Every feature earns its place.
           </p>
         </FadeIn>
 
@@ -107,7 +107,7 @@ export function FeaturesSection(): React.JSX.Element {
           <p className={`text-center text-sm mt-10 transition-colors duration-700 ${
             dark ? 'text-zinc-500' : 'text-gray-500'
           }`}>
-            Plus: AI Receptionist, Outbound Lead Generation, and more on Growth and Pro plans.
+            Plus: AI Receptionist (Growth), Outbound Lead Generation (Pro), and more.
           </p>
         </FadeIn>
       </div>

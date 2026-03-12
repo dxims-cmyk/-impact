@@ -9,31 +9,39 @@ import { useMarketingTheme } from '@/components/marketing/theme-provider'
 const faqs = [
   {
     question: 'What types of business is Impact for?',
-    answer: 'Any service business running paid ads. Restaurants, dental clinics, estate agents, gyms, salons, trades. If you get leads from Meta or Google ads, Impact works for you.',
+    answer: 'Any service business running paid ads. Restaurants, dental clinics, estate agents, gyms, salons, trades. If you get leads from Meta Ads and need to respond fast, Impact is for you.',
+  },
+  {
+    question: 'Is Impact live yet?',
+    answer: 'We are onboarding founding clients now. Early access includes hands-on setup, priority support, and direct access to the team building the product.',
   },
   {
     question: 'How fast is setup?',
-    answer: '48 hours from sign-up to live. We connect your Meta ad account, configure your inbox, and handle all the technical setup.',
+    answer: '48 hours from sign-up to live. We connect your Meta ad account, configure your inbox channels, and handle all the technical setup. You do not need to touch any code.',
   },
   {
     question: 'Do I need technical knowledge?',
-    answer: 'None. We handle everything. You get a dashboard and WhatsApp alerts.',
+    answer: 'None. We handle everything. You get a dashboard and WhatsApp alerts. If you can read a text message, you can use Impact.',
   },
   {
-    question: "What's the AI Receptionist?",
-    answer: 'A voice AI that answers your business calls 24/7, qualifies leads, and books appointments directly into your calendar. Available on Growth and Pro plans, or as a £400/mo addon.',
+    question: 'What is the AI Receptionist?',
+    answer: 'A voice AI that answers your business calls 24/7, qualifies leads with natural conversation, and books appointments into your calendar. Available on Growth and Pro plans, or as a £400/mo addon on Core.',
   },
   {
     question: 'How does the unified inbox work?',
-    answer: 'Every message from WhatsApp, SMS, email, Instagram and Messenger appears in one timeline per lead. No switching between apps.',
+    answer: 'Every message from WhatsApp, SMS, email, Instagram DM, and Messenger appears in one timeline per lead. You reply from one place. No switching between apps.',
   },
   {
     question: 'Can I cancel anytime?',
-    answer: 'Yes. Monthly billing, no lock-in contracts.',
+    answer: 'Yes. Monthly billing, no lock-in contracts. We keep clients because the product works, not because of fine print.',
   },
   {
     question: 'How is Impact different from GoHighLevel or HubSpot?',
-    answer: "Impact is built for SMBs running paid ads. No bloat, no enterprise pricing, no 6-month onboarding. You're live in 48 hours with WhatsApp-first alerts.",
+    answer: 'Impact is built for UK service businesses running Meta Ads. No bloat, no enterprise pricing, no 6-month onboarding. You are live in 48 hours with WhatsApp-first alerts and AI lead scoring out of the box.',
+  },
+  {
+    question: 'Run an agency?',
+    answer: 'We offer white-label options for agencies who want to resell Impact under their own brand. Get in touch at hello@driveimpact.io to discuss.',
   },
 ]
 

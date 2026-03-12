@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, ChevronDown } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { FadeIn } from '@/components/marketing/fade-in'
@@ -90,8 +90,8 @@ export function HeroSection(): React.JSX.Element {
               <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 transition-colors duration-500 ${
                 dark ? 'bg-zinc-800/80 text-zinc-300' : 'bg-gray-100 text-gray-600'
               }`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                Now live for service businesses
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E8642C] animate-pulse" />
+                Early access. Limited spots.
               </div>
             </motion.div>
 
@@ -99,9 +99,11 @@ export function HeroSection(): React.JSX.Element {
               <h1 className={`font-display text-[2.5rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold leading-[1.05] tracking-tight transition-colors duration-500 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>
-                Every lead.
+                Your leads go cold
                 <br />
-                <span className="text-[#E8642C]">Answered in 5 seconds.</span>
+                in 5 minutes.
+                <br />
+                <span className="text-[#E8642C]">Impact responds in 5 seconds.</span>
               </h1>
             </motion.div>
 
@@ -109,8 +111,8 @@ export function HeroSection(): React.JSX.Element {
               <p className={`mt-5 text-base sm:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0 transition-colors duration-500 ${
                 dark ? 'text-zinc-400' : 'text-gray-600'
               }`}>
-                WhatsApp alerts the moment a lead comes in. AI scores them instantly.
-                One inbox for WhatsApp, SMS, email, Instagram, and Messenger.
+                AI lead management for service businesses running Meta Ads.
+                Every lead captured, scored, and sent to your WhatsApp before your competitor checks their email.
               </p>
             </motion.div>
 
@@ -118,9 +120,9 @@ export function HeroSection(): React.JSX.Element {
             <motion.div variants={entranceChild}>
               <div className="mt-6 flex items-center justify-center lg:justify-start gap-6">
                 {[
-                  { value: '40%', label: 'Higher close rate' },
-                  { value: '5s', label: 'Response time' },
-                  { value: '0', label: 'Leads missed' },
+                  { value: '5s', label: 'WhatsApp alert' },
+                  { value: '1-10', label: 'AI lead score' },
+                  { value: '5', label: 'Channels, one inbox' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center lg:text-left">
                     <div className={`text-xl sm:text-2xl font-bold text-[#E8642C] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
@@ -132,9 +134,9 @@ export function HeroSection(): React.JSX.Element {
               </div>
             </motion.div>
 
-            {/* Single CTA */}
+            {/* Dual CTA */}
             <motion.div variants={entranceChild}>
-              <div className="mt-8 flex items-center justify-center lg:justify-start">
+              <div className="mt-8 flex items-center justify-center lg:justify-start gap-4">
                 <motion.div
                   whileHover={{ scale: 1.03, y: -2 }}
                   whileTap={{ scale: 0.97 }}
@@ -145,10 +147,19 @@ export function HeroSection(): React.JSX.Element {
                     className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-[#E8642C] text-white font-semibold text-sm hover:bg-[#d55a25] shadow-lg shadow-[#E8642C]/20 hover:shadow-xl hover:shadow-[#E8642C]/30"
                     style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
                   >
-                    Book a Demo
+                    Get Early Access
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </motion.div>
+                <a
+                  href="#how-it-works"
+                  className={`inline-flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium transition-colors duration-300 ${
+                    dark ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-[#0B1220]'
+                  }`}
+                >
+                  See How It Works
+                  <ChevronDown className="w-4 h-4" />
+                </a>
               </div>
             </motion.div>
           </motion.div>

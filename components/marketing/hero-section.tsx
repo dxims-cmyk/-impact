@@ -11,14 +11,14 @@ import { FluidBackground } from '@/components/marketing/fluid-background'
 
 const spring = { type: 'spring' as const, stiffness: 400, damping: 17 }
 
-/* ───────── Phone Frame with Real WhatsApp Screenshot ───────── */
+/* ───────── Phone Frame ───────── */
 function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, margin: '-50px' })
 
   return (
     <div ref={ref} className="relative">
-      {/* Glow behind phone */}
+      {/* Glow */}
       <div className={`absolute inset-0 scale-125 rounded-full blur-[100px] transition-colors duration-500 ${
         dark ? 'bg-[#6E0F1A]/[0.08]' : 'bg-[#6E0F1A]/[0.10]'
       }`} />
@@ -27,20 +27,19 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
         initial={{ opacity: 0, y: 30, rotateX: 8 }}
         animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-[260px] sm:w-[300px] lg:w-[320px]"
+        className="relative"
         style={{ perspective: '800px' }}
       >
-        {/* Phone bezel frame */}
-        <div className={`relative rounded-[3rem] border-[6px] shadow-2xl ${
+        <div className={`relative rounded-[2.8rem] border-[5px] shadow-2xl ${
           dark
             ? 'border-zinc-800 bg-black shadow-black/60'
             : 'border-gray-900 bg-black shadow-gray-400/50'
         }`}>
           {/* Dynamic Island */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-[90px] h-[26px] bg-black rounded-full" />
+          <div className="absolute top-[6px] left-1/2 -translate-x-1/2 z-10 w-[72px] h-[22px] bg-black rounded-full" />
 
-          {/* Screenshot — no overflow hidden, rounded corners clip naturally */}
-          <div className="rounded-[2.5rem] overflow-hidden">
+          {/* Screenshot */}
+          <div className="rounded-[2.3rem] overflow-hidden">
             <Image
               src="/screenshots/whatsapp-notifications-cropped.png"
               alt="Real WhatsApp notifications showing new lead alerts from Impact"
@@ -52,14 +51,14 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
           </div>
 
           {/* Home indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 w-[100px] h-[4px] bg-white/30 rounded-full" />
+          <div className="absolute bottom-[5px] left-1/2 -translate-x-1/2 z-10 w-[80px] h-[3px] bg-white/30 rounded-full" />
         </div>
       </motion.div>
     </div>
   )
 }
 
-/* ───────── Page entrance stagger ───────── */
+/* ───────── Entrance animations ───────── */
 const entrance = {
   hidden: { opacity: 0 },
   show: {
@@ -78,7 +77,7 @@ export function HeroSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className="relative pt-24 sm:pt-32 lg:pt-40 pb-8 sm:pb-16 overflow-hidden">
+    <section className="relative pt-28 sm:pt-36 lg:pt-44 pb-12 sm:pb-20 overflow-hidden">
       <FluidBackground />
       <div className="absolute inset-0 -z-10">
         <div className={`absolute inset-0 transition-opacity duration-500 ${
@@ -90,9 +89,9 @@ export function HeroSection(): React.JSX.Element {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Two-column hero: Copy left, Phone right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-center">
-          {/* Left: Copy */}
+        {/* Golden ratio grid: ~61.8% copy / ~38.2% phone */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10 lg:gap-16 items-center">
+          {/* Left: Copy — golden ratio dominant side */}
           <motion.div
             variants={entrance}
             initial="hidden"
@@ -100,7 +99,7 @@ export function HeroSection(): React.JSX.Element {
             className="text-center lg:text-left"
           >
             <motion.div variants={entranceChild}>
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 transition-colors duration-500 ${
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 transition-colors duration-500 ${
                 dark ? 'bg-zinc-800/80 text-zinc-300' : 'bg-gray-100 text-gray-600'
               }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#6E0F1A] animate-pulse" />
@@ -109,7 +108,7 @@ export function HeroSection(): React.JSX.Element {
             </motion.div>
 
             <motion.div variants={entranceChild}>
-              <h1 className={`font-display text-[2.5rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold leading-[1.05] tracking-tight transition-colors duration-500 ${
+              <h1 className={`font-display text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold leading-[1.08] tracking-tight transition-colors duration-500 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>
                 Your leads go cold
@@ -121,7 +120,7 @@ export function HeroSection(): React.JSX.Element {
             </motion.div>
 
             <motion.div variants={entranceChild}>
-              <p className={`mt-5 text-base sm:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0 transition-colors duration-500 ${
+              <p className={`mt-6 text-base sm:text-lg leading-relaxed max-w-md mx-auto lg:mx-0 transition-colors duration-500 ${
                 dark ? 'text-zinc-400' : 'text-gray-600'
               }`}>
                 AI lead management for service businesses running Meta Ads.
@@ -131,15 +130,15 @@ export function HeroSection(): React.JSX.Element {
 
             {/* Stats strip */}
             <motion.div variants={entranceChild}>
-              <div className="mt-6 flex items-center justify-center lg:justify-start gap-6">
+              <div className="mt-8 flex items-center justify-center lg:justify-start gap-8">
                 {[
                   { value: '5s', label: 'WhatsApp alert' },
                   { value: '1-10', label: 'AI lead score' },
                   { value: '5', label: 'Channels, one inbox' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center lg:text-left">
-                    <div className={`text-xl sm:text-2xl font-bold text-[#6E0F1A] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
-                    <div className={`text-[10px] sm:text-xs transition-colors duration-500 ${
+                    <div className={`text-2xl sm:text-3xl font-bold text-[#6E0F1A] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
+                    <div className={`text-[11px] sm:text-xs transition-colors duration-500 ${
                       dark ? 'text-zinc-500' : 'text-gray-500'
                     }`}>{stat.label}</div>
                   </div>
@@ -149,7 +148,7 @@ export function HeroSection(): React.JSX.Element {
 
             {/* Dual CTA */}
             <motion.div variants={entranceChild}>
-              <div className="mt-8 flex items-center justify-center lg:justify-start gap-4">
+              <div className="mt-10 flex items-center justify-center lg:justify-start gap-4">
                 <motion.div
                   whileHover={{ scale: 1.03, y: -2 }}
                   whileTap={{ scale: 0.97 }}
@@ -157,7 +156,7 @@ export function HeroSection(): React.JSX.Element {
                 >
                   <Link
                     href="/demo"
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-[#6E0F1A] text-white font-semibold text-sm hover:bg-[#8B1422] shadow-lg shadow-[#6E0F1A]/20 hover:shadow-xl hover:shadow-[#6E0F1A]/30"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-[#6E0F1A] text-white font-semibold text-sm hover:bg-[#8B1422] shadow-lg shadow-[#6E0F1A]/20 hover:shadow-xl hover:shadow-[#6E0F1A]/30"
                     style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
                   >
                     Get Early Access
@@ -166,7 +165,7 @@ export function HeroSection(): React.JSX.Element {
                 </motion.div>
                 <a
                   href="#how-it-works"
-                  className={`inline-flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium transition-colors duration-300 ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-4 text-sm font-medium transition-colors duration-300 ${
                     dark ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-[#0B1220]'
                   }`}
                 >
@@ -177,17 +176,19 @@ export function HeroSection(): React.JSX.Element {
             </motion.div>
           </motion.div>
 
-          {/* Right: Phone with WhatsApp notification */}
+          {/* Right: Phone — golden ratio minor side, height-constrained */}
           <FadeIn delay={0.15}>
             <div className="flex justify-center lg:justify-end">
-              <PhoneHero dark={dark} />
+              <div className="w-[240px] sm:w-[260px] lg:w-[280px]">
+                <PhoneHero dark={dark} />
+              </div>
             </div>
           </FadeIn>
         </div>
 
-        {/* Real product screenshot below hero */}
+        {/* Dashboard screenshot */}
         <FadeIn delay={0.3}>
-          <div className="mt-20 sm:mt-28 max-w-6xl mx-auto">
+          <div className="mt-24 sm:mt-32">
             <div className={`relative rounded-2xl border overflow-hidden shadow-2xl transition-colors duration-500 ${
               dark ? 'border-zinc-800 shadow-black/40' : 'border-gray-200 shadow-gray-300/40'
             }`}>
@@ -212,7 +213,7 @@ export function HeroSection(): React.JSX.Element {
                 className="w-full h-auto"
                 priority
               />
-              {/* Glow behind screenshot */}
+              {/* Glow */}
               <div className={`absolute -inset-px -z-10 rounded-2xl blur-xl transition-colors duration-500 ${
                 dark ? 'bg-gradient-to-b from-[#6E0F1A]/10 to-transparent' : 'bg-gradient-to-b from-[#6E0F1A]/5 to-transparent'
               }`} />

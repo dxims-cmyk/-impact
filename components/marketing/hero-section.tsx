@@ -45,7 +45,7 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
               src="/screenshots/whatsapp-notifications-cropped.png"
               alt="Real WhatsApp notifications showing new lead alerts from Impact"
               width={1320}
-              height={2150}
+              height={2868}
               className="w-full h-auto block"
               priority
             />

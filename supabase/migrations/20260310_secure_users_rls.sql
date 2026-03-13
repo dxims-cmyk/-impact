@@ -18,9 +18,8 @@
 -- 1. Drop the overly permissive UPDATE policy
 DROP POLICY IF EXISTS "Users can update their own profile" ON users;
 
--- 2. Replace with column-restricted UPDATE policy
--- Users can only update safe fields (full_name, avatar_url, notification_preferences)
--- Sensitive fields (is_agency_user, role, organization_id) must remain unchanged
+-- 2. Drop + recreate column-restricted UPDATE policy
+DROP POLICY IF EXISTS "Users can update their own safe fields" ON users;
 CREATE POLICY "Users can update their own safe fields" ON users
   FOR UPDATE
   USING (id = auth.uid())
@@ -32,6 +31,7 @@ CREATE POLICY "Users can update their own safe fields" ON users
 
 -- 3. Secure INSERT policy — prevent users creating admin accounts via direct insert
 DROP POLICY IF EXISTS "Users can insert" ON users;
+DROP POLICY IF EXISTS "Only non-agency inserts allowed" ON users;
 CREATE POLICY "Only non-agency inserts allowed" ON users
   FOR INSERT
   WITH CHECK (
@@ -39,9 +39,8 @@ CREATE POLICY "Only non-agency inserts allowed" ON users
   );
 
 -- 4. Explicit agency users management policy
--- (The existing "Agency users can manage orgs" only covers organizations table;
---  this ensures agency users can manage user records across all orgs)
 DROP POLICY IF EXISTS "Agency users can manage users" ON users;
+DROP POLICY IF EXISTS "Agency users can manage all users" ON users;
 CREATE POLICY "Agency users can manage all users" ON users
   FOR ALL
   USING (

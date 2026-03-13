@@ -1,15 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { checkRateLimit, rateLimitHeaders, RATE_LIMITS, DAILY_SCRAPE_LIMIT } from '@/lib/rate-limit'
 
 const searchSchema = z.object({
   searchTerm: z.string().min(1, 'Search term is required'),
   location: z.string().min(1, 'Location is required'),
-  count: z.number().min(1).max(500).default(100),
+  count: z.number().min(1).max(DAILY_SCRAPE_LIMIT).default(100),
 })
 
+/**
+ * Get the number of outbound leads imported today for an org.
+ * This is the source of truth — in-memory counters can be bypassed on redeploy.
+ */
+async function getTodaysImportCount(orgId: string): Promise<number> {
+  const supabase = createClient()
+  const todayStart = new Date()
+  todayStart.setUTCHours(0, 0, 0, 0)
+
+  const { count, error } = await supabase
+    .from('outbound_leads')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', orgId)
+    .gte('created_at', todayStart.toISOString())
+
+  if (error) {
+    console.error('Failed to check daily scrape count:', error)
+    // Fail closed — deny if we can't verify
+    return DAILY_SCRAPE_LIMIT
+  }
+
+  return count || 0
+}
+
 // POST — start an Apify Google Places crawl
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -31,6 +56,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
+  // --- Rate limit: 5 searches per hour per org ---
+  const rateKey = `scrape:${userData.organization_id}`
+  const rateResult = checkRateLimit(rateKey, RATE_LIMITS.scrape)
+  if (!rateResult.success) {
+    return NextResponse.json(
+      { error: 'Too many searches. Try again later.' },
+      { status: 429, headers: rateLimitHeaders(rateResult) }
+    )
+  }
+
   const body = await request.json()
   const parsed = searchSchema.safeParse(body)
   if (!parsed.success) {
@@ -38,14 +73,27 @@ export async function POST(request: NextRequest) {
   }
 
   const { searchTerm, location, count } = parsed.data
-  const apifyToken = process.env.APIFY_TOKEN
 
+  // --- Daily limit: 200 leads per org (DB-enforced, not bypassable) ---
+  const todaysCount = await getTodaysImportCount(userData.organization_id)
+  const remaining = DAILY_SCRAPE_LIMIT - todaysCount
+
+  if (remaining <= 0) {
+    return NextResponse.json(
+      { error: `Daily limit of ${DAILY_SCRAPE_LIMIT} leads reached. Resets at midnight UTC.` },
+      { status: 429 }
+    )
+  }
+
+  // Clamp requested count to what's actually available today
+  const allowedCount = Math.min(count, remaining)
+
+  const apifyToken = process.env.APIFY_TOKEN
   if (!apifyToken) {
     return NextResponse.json({ error: 'APIFY_TOKEN not configured' }, { status: 500 })
   }
 
   try {
-    // Start the Apify actor run
     const startRes = await fetch(
       `https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token=${apifyToken}`,
       {
@@ -54,7 +102,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           searchTerms: [searchTerm],
           locationQuery: location,
-          maxCrawledPlacesPerSearch: count,
+          maxCrawledPlacesPerSearch: allowedCount,
           language: 'en',
           maxImages: 0,
           maxReviews: 0,
@@ -80,6 +128,8 @@ export async function POST(request: NextRequest) {
       status: 'RUNNING',
       searchTerm,
       location,
+      dailyRemaining: remaining - allowedCount,
+      requestedCount: allowedCount,
     })
   } catch (error) {
     console.error('Apify search error:', error)
@@ -88,7 +138,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET — poll run status or fetch results
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -102,13 +152,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing runId' }, { status: 400 })
   }
 
+  // Validate runId format (alphanumeric only — prevents injection)
+  if (!/^[a-zA-Z0-9]+$/.test(runId)) {
+    return NextResponse.json({ error: 'Invalid runId' }, { status: 400 })
+  }
+
   const apifyToken = process.env.APIFY_TOKEN
   if (!apifyToken) {
     return NextResponse.json({ error: 'APIFY_TOKEN not configured' }, { status: 500 })
   }
 
   try {
-    // Check run status
     const statusRes = await fetch(
       `https://api.apify.com/v2/actor-runs/${runId}?token=${apifyToken}`
     )
@@ -128,14 +182,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: runStatus, error: `Run ${runStatus.toLowerCase()}` })
     }
 
-    // SUCCEEDED — fetch dataset results
+    // SUCCEEDED — fetch dataset results (capped to daily limit)
     const datasetId = statusData.data?.defaultDatasetId
     if (!datasetId) {
       return NextResponse.json({ status: 'SUCCEEDED', results: [] })
     }
 
+    // Validate datasetId format
+    if (!/^[a-zA-Z0-9]+$/.test(datasetId)) {
+      return NextResponse.json({ error: 'Invalid dataset ID' }, { status: 400 })
+    }
+
     const dataRes = await fetch(
-      `https://api.apify.com/v2/datasets/${datasetId}/items?token=${apifyToken}&limit=500`
+      `https://api.apify.com/v2/datasets/${datasetId}/items?token=${apifyToken}&limit=${DAILY_SCRAPE_LIMIT}`
     )
 
     if (!dataRes.ok) {

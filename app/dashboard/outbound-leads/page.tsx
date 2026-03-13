@@ -200,7 +200,14 @@ function OutboundLeadsContent() {
         searchTerm,
         searchLocation,
       })
-      toast.success(`Imported ${result.imported} leads`)
+      if (result.warning) {
+        toast.warning(result.warning)
+      } else {
+        toast.success(`Imported ${result.imported} leads`)
+      }
+      if (result.dailyRemaining !== undefined) {
+        toast.info(`${result.dailyRemaining} leads remaining today`)
+      }
       setSearchResults(null)
       setSearchTerm('')
       setSearchLocation('')
@@ -356,12 +363,12 @@ function OutboundLeadsContent() {
             <input
               type="number"
               min={1}
-              max={500}
+              max={200}
               value={searchCount}
-              onChange={(e) => setSearchCount(Math.min(500, Math.max(1, parseInt(e.target.value) || 100)))}
+              onChange={(e) => setSearchCount(Math.min(200, Math.max(1, parseInt(e.target.value) || 100)))}
               disabled={isSearching}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-center focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent disabled:opacity-50"
-              title="Number of results"
+              title="Max 200 per day"
             />
           </div>
           <button

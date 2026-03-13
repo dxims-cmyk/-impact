@@ -37,12 +37,14 @@ CREATE INDEX IF NOT EXISTS idx_outbound_leads_created ON outbound_leads(organiza
 -- RLS
 ALTER TABLE outbound_leads ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "outbound_leads_org_isolation" ON outbound_leads;
 CREATE POLICY "outbound_leads_org_isolation" ON outbound_leads
   FOR ALL USING (
     organization_id = get_user_org_id() OR is_agency_user()
   );
 
 -- Updated_at trigger
+DROP TRIGGER IF EXISTS update_outbound_leads_updated_at ON outbound_leads;
 CREATE TRIGGER update_outbound_leads_updated_at
   BEFORE UPDATE ON outbound_leads
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

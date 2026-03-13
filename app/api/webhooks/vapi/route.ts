@@ -38,6 +38,30 @@ function extractCallerName(payload: any): string | null {
   )
 }
 
+// Parse call outcome (hot/warm/cold) from transcript or summary
+function parseCallOutcome(transcript: string | null, summary: string | null): string | null {
+  const text = `${transcript || ''} ${summary || ''}`.toLowerCase()
+  // The system prompt instructs the AI to say "HOT/WARM/COLD lead"
+  if (text.includes('hot lead') || text.includes('classify this as a hot')) return 'hot'
+  if (text.includes('warm lead') || text.includes('classify this as a warm')) return 'warm'
+  if (text.includes('cold lead') || text.includes('classify this as a cold')) return 'cold'
+  return null
+}
+
+// Parse what action was taken during the call
+function parseActionTaken(transcript: string | null, summary: string | null, payload: any): string | null {
+  const text = `${transcript || ''} ${summary || ''}`.toLowerCase()
+  // Check if call was transferred
+  if (payload?.call?.forwardedPhoneNumber || text.includes('transfer') || text.includes('connect you with')) return 'transferred'
+  // Check if a booking was offered
+  if (text.includes('book') || text.includes('schedule') || text.includes('cal.com')) return 'booked'
+  // Check for voicemail / no answer
+  if (text.includes('voicemail') || text.includes('no answer')) return 'voicemail'
+  if (payload?.call?.endedReason === 'customer-did-not-answer') return 'no_answer'
+  // Default: call ended normally
+  return 'ended'
+}
+
 // Resolve org ID from assistant metadata or integrations table
 async function resolveOrgId(
   request: NextRequest,
@@ -217,6 +241,10 @@ export async function POST(request: NextRequest) {
         const phoneNumber = extractPhoneNumber(payload)
         const callerName = extractCallerName(payload)
 
+        // Parse call outcome from transcript/summary
+        const outcome = parseCallOutcome(transcript, summary)
+        const actionTaken = parseActionTaken(transcript, summary, payload)
+
         // Calculate duration
         const startedAt = payload.call?.startedAt
         const endedAt = payload.call?.endedAt || new Date().toISOString()
@@ -280,7 +308,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Update call record with full details
+        // Update call record with full details + outcome
         await supabase
           .from('calls')
           .upsert({
@@ -296,6 +324,8 @@ export async function POST(request: NextRequest) {
             summary,
             lead_id: leadId,
             ended_at: endedAt,
+            outcome,
+            action_taken: actionTaken,
             metadata: {
               assistant_id: payload.call?.assistantId || payload.call?.assistant?.id,
               cost: payload.call?.cost || payload.cost,
@@ -328,6 +358,14 @@ export async function POST(request: NextRequest) {
                 source: 'vapi',
               },
             })
+
+          // Update lead temperature if we got a clear outcome from the call
+          if (outcome === 'hot' || outcome === 'warm' || outcome === 'cold') {
+            await supabase
+              .from('leads')
+              .update({ temperature: outcome })
+              .eq('id', leadId)
+          }
 
           // Trigger AI qualification with transcript context
           qualifyLeadTask.trigger({ leadId }).catch((err) => {

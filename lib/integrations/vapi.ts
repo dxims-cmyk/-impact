@@ -176,6 +176,82 @@ export async function getCall(
   return response.json()
 }
 
+// --- Outbound call ---
+
+export interface CreateOutboundCallParams {
+  assistantId: string
+  phoneNumberId: string // VAPI phone number ID to call FROM
+  customerNumber: string // Lead's phone number to call
+  metadata?: Record<string, unknown>
+}
+
+export async function createOutboundCall(
+  params: CreateOutboundCallParams
+): Promise<VapiCall> {
+  const response = await fetch(`${VAPI_BASE_URL}/call`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      assistantId: params.assistantId,
+      phoneNumberId: params.phoneNumberId,
+      customer: {
+        number: params.customerNumber,
+      },
+      metadata: params.metadata || {},
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Unknown error' }))
+    throw new Error(`Vapi createOutboundCall failed (${response.status}): ${error.message || JSON.stringify(error)}`)
+  }
+
+  return response.json()
+}
+
+// --- Business hours helper ---
+
+export interface BusinessHours {
+  enabled: boolean
+  timezone: string
+  days: number[] // 0=Sun, 1=Mon, ..., 6=Sat
+  start: string  // "09:00"
+  end: string    // "17:00"
+}
+
+export function isWithinBusinessHours(hours: BusinessHours | null | undefined): boolean {
+  if (!hours || !hours.enabled) return true // No hours configured = always available
+
+  const now = new Date()
+  // Get current time in the org's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: hours.timezone || 'Europe/London',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+    weekday: 'short',
+  })
+
+  const parts = formatter.formatToParts(now)
+  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0')
+  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0')
+  const weekdayStr = parts.find(p => p.type === 'weekday')?.value || ''
+
+  // Map weekday string to number
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+  const currentDay = dayMap[weekdayStr] ?? new Date().getDay()
+
+  if (!hours.days.includes(currentDay)) return false
+
+  const currentMinutes = hour * 60 + minute
+  const [startH, startM] = hours.start.split(':').map(Number)
+  const [endH, endM] = hours.end.split(':').map(Number)
+  const startMinutes = startH * 60 + startM
+  const endMinutes = endH * 60 + endM
+
+  return currentMinutes >= startMinutes && currentMinutes < endMinutes
+}
+
 // Build the system prompt for the AI receptionist
 export function buildReceptionistSystemPrompt(config: {
   businessName: string
@@ -183,32 +259,57 @@ export function buildReceptionistSystemPrompt(config: {
   questions: string[]
   calendarLink?: string
   transferNumber?: string
+  greetingStyle?: 'formal' | 'casual'
+  isWithinHours?: boolean
 }): string {
   const questionsList = config.questions
     .map((q, i) => `${i + 1}. ${q}`)
     .join('\n')
 
-  return `You are a professional and friendly AI receptionist for ${config.businessName}.
+  const tone = config.greetingStyle === 'casual'
+    ? 'Use a warm, casual, and friendly tone. Be conversational like a helpful colleague.'
+    : 'Use a professional, polished tone. Be courteous and businesslike.'
 
-Your role is to:
-1. Greet callers warmly and professionally
-2. Gather their name and contact information (phone number if not already known, email if possible)
-3. Ask qualifying questions to understand their needs
-4. Provide helpful information based on their questions
-5. Offer to book a meeting or transfer to a team member when appropriate
+  const transferBlock = config.transferNumber && config.isWithinHours !== false
+    ? `If the caller is clearly ready to buy, very interested, or asks to speak to someone, transfer them immediately to: ${config.transferNumber}. Say something like "Let me connect you with the team right now."`
+    : ''
 
-Qualifying questions to ask (in natural conversation, not all at once):
+  const bookingBlock = config.calendarLink
+    ? `If the caller wants to schedule a meeting or consultation, provide this booking link: ${config.calendarLink}. Say "I can send you a link to book a time that works for you."`
+    : ''
+
+  const outsideHoursNote = config.isWithinHours === false && config.calendarLink
+    ? `IMPORTANT: The team is currently outside business hours. Do NOT offer to transfer the call. Instead, guide the caller to book a meeting using the booking link.`
+    : ''
+
+  return `You are an AI receptionist for ${config.businessName}.
+
+${tone}
+
+Your job on every call:
+1. Greet the caller and get their name
+2. Find out why they're calling
+3. Ask the qualifying questions below (naturally, one at a time)
+4. Based on their answers, take the right action:
+   - HOT (ready to buy, urgent need, clear budget): Transfer to the team
+   - WARM (interested but not urgent): Offer to book a meeting
+   - COLD (just browsing, wrong fit, no budget): Thank them and end politely
+
+Qualifying questions (ask in natural conversation):
 ${questionsList}
 
-${config.calendarLink ? `If the caller wants to book a meeting or consultation, provide this booking link: ${config.calendarLink}` : ''}
-${config.transferNumber ? `If the caller insists on speaking to a human or the question is outside your scope, transfer them to: ${config.transferNumber}` : ''}
+${outsideHoursNote}
+${transferBlock}
+${bookingBlock}
 
-Important rules:
-- Always be polite, professional, and concise
-- Collect the caller's name early in the conversation
-- Ask one question at a time, listen to the response before moving on
-- If the caller seems ready to commit, guide them toward booking
-- Summarize what you learned at the end of the call
-- Never make up information about services or pricing — offer to have a team member follow up
-- Keep responses conversational and natural`
+At the end of every call, you MUST state your assessment clearly:
+"Based on our conversation, I'd classify this as a [HOT/WARM/COLD] lead because [brief reason]."
+
+Rules:
+- Collect the caller's name and email if possible
+- Ask ONE question at a time, listen before moving on
+- Never fabricate pricing, availability, or service details
+- If unsure, offer to have the team follow up
+- Keep responses short and natural (this is a phone call, not an essay)
+- Summarize what you learned before ending`
 }

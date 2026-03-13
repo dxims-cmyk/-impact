@@ -14,6 +14,8 @@ export interface Call {
   transcript: string | null
   recording_url: string | null
   summary: string | null
+  outcome: 'hot' | 'warm' | 'cold' | null
+  action_taken: 'transferred' | 'booked' | 'ended' | 'voicemail' | 'no_answer' | null
   metadata: Record<string, unknown> | null
   created_at: string
   ended_at: string | null

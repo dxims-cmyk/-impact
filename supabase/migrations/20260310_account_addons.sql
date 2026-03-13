@@ -26,8 +26,10 @@ CREATE INDEX IF NOT EXISTS idx_account_addons_status ON account_addons(status);
 
 ALTER TABLE account_addons ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own org addons" ON account_addons;
 CREATE POLICY "Users can view own org addons" ON account_addons
   FOR SELECT USING (organization_id = get_user_org_id() OR is_agency_user());
 
+DROP POLICY IF EXISTS "Agency users manage all addons" ON account_addons;
 CREATE POLICY "Agency users manage all addons" ON account_addons
   FOR ALL USING (is_agency_user());

@@ -7,7 +7,6 @@ import {
   Phone,
   MessageSquare,
   Calendar,
-  ArrowRight,
   Save,
   Plus,
   Trash2,
@@ -20,11 +19,69 @@ import {
   CheckCircle,
   Power,
   Lock,
+  Clock,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePlan } from '@/lib/hooks/use-plan'
 
-export default function ReceptionistSettingsPage() {
+const DAYS_OF_WEEK = [
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+  { value: 0, label: 'Sun' },
+]
+
+const INDUSTRY_DEFAULTS: Record<string, string[]> = {
+  'trades': [
+    'What type of work do you need done?',
+    'When do you need this completed by?',
+    'What is your approximate budget?',
+    'Is this an emergency or can it be scheduled?',
+  ],
+  'construction': [
+    'What type of project are you planning?',
+    'What is the approximate size or scope?',
+    'What is your budget range?',
+    'When are you looking to start?',
+  ],
+  'hospitality': [
+    'What type of event or booking are you looking for?',
+    'How many guests are you expecting?',
+    'What date are you considering?',
+    'Do you have any special requirements?',
+  ],
+  'health': [
+    'What service are you looking for?',
+    'Is this your first visit?',
+    'Do you have any specific concerns or conditions?',
+    'When would you like to come in?',
+  ],
+  'real_estate': [
+    'Are you looking to buy, sell, or rent?',
+    'What area are you interested in?',
+    'What is your budget range?',
+    'What is your timeline for moving?',
+  ],
+  'default': [
+    'What service are you interested in?',
+    'What is your budget range?',
+    'When are you looking to get started?',
+  ],
+}
+
+function getDefaultQuestions(industry: string | undefined): string[] {
+  if (!industry) return INDUSTRY_DEFAULTS.default
+  const lower = industry.toLowerCase()
+  for (const [key, questions] of Object.entries(INDUSTRY_DEFAULTS)) {
+    if (lower.includes(key)) return questions
+  }
+  return INDUSTRY_DEFAULTS.default
+}
+
+export default function ReceptionistSettingsPage(): JSX.Element {
   const { isGrowthOrHigher } = usePlan()
   const { data: organization, isLoading: orgLoading } = useOrganization()
   const updateOrganization = useUpdateOrganization()
@@ -32,6 +89,7 @@ export default function ReceptionistSettingsPage() {
   // Form state
   const [enabled, setEnabled] = useState(false)
   const [greeting, setGreeting] = useState('')
+  const [greetingStyle, setGreetingStyle] = useState<'formal' | 'casual'>('formal')
   const [questions, setQuestions] = useState<string[]>([''])
   const [calendarLink, setCalendarLink] = useState('')
   const [transferNumber, setTransferNumber] = useState('')
@@ -40,91 +98,111 @@ export default function ReceptionistSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [setupComplete, setSetupComplete] = useState(false)
 
+  // Business hours state
+  const [hoursEnabled, setHoursEnabled] = useState(false)
+  const [hoursTimezone, setHoursTimezone] = useState('Europe/London')
+  const [hoursDays, setHoursDays] = useState<number[]>([1, 2, 3, 4, 5])
+  const [hoursStart, setHoursStart] = useState('09:00')
+  const [hoursEnd, setHoursEnd] = useState('17:00')
+
   // Initialize from org settings
   useEffect(() => {
     if (organization) {
       const settings = (organization.settings || {}) as Record<string, any>
+      const industry = settings.industry as string | undefined
       setEnabled(!!settings.ai_receptionist_enabled)
       setGreeting(settings.ai_receptionist_greeting || `Thanks for calling ${organization.name}. How can I help you today?`)
+      setGreetingStyle(settings.ai_receptionist_greeting_style || 'formal')
       setQuestions(
         settings.ai_receptionist_questions?.length > 0
           ? settings.ai_receptionist_questions
-          : ['What service are you interested in?', 'What is your budget range?', 'When are you looking to get started?']
+          : getDefaultQuestions(industry)
       )
       setCalendarLink(settings.ai_receptionist_calendar_link || settings.booking_link || '')
       setTransferNumber(settings.ai_receptionist_transfer_number || '')
       setPhoneNumber(settings.ai_receptionist_phone || '')
       setAssistantId(settings.ai_receptionist_assistant_id || '')
       setSetupComplete(!!settings.ai_receptionist_assistant_id)
+
+      // Business hours
+      const bh = settings.ai_receptionist_business_hours
+      if (bh) {
+        setHoursEnabled(!!bh.enabled)
+        setHoursTimezone(bh.timezone || 'Europe/London')
+        setHoursDays(bh.days || [1, 2, 3, 4, 5])
+        setHoursStart(bh.start || '09:00')
+        setHoursEnd(bh.end || '17:00')
+      }
     }
   }, [organization])
 
-  // Add question
-  const addQuestion = () => {
+  const addQuestion = (): void => {
+    if (questions.length >= 5) {
+      toast.error('Maximum 5 qualifying questions')
+      return
+    }
     setQuestions([...questions, ''])
   }
 
-  // Remove question
-  const removeQuestion = (index: number) => {
+  const removeQuestion = (index: number): void => {
     if (questions.length <= 1) return
     setQuestions(questions.filter((_, i) => i !== index))
   }
 
-  // Update question
-  const updateQuestion = (index: number, value: string) => {
+  const updateQuestion = (index: number, value: string): void => {
     const updated = [...questions]
     updated[index] = value
     setQuestions(updated)
   }
 
-  // Move question up
-  const moveQuestion = (index: number, direction: 'up' | 'down') => {
+  const moveQuestion = (index: number, direction: 'up' | 'down'): void => {
     if (
       (direction === 'up' && index === 0) ||
       (direction === 'down' && index === questions.length - 1)
-    ) {
-      return
-    }
+    ) return
     const updated = [...questions]
     const targetIndex = direction === 'up' ? index - 1 : index + 1
     ;[updated[index], updated[targetIndex]] = [updated[targetIndex], updated[index]]
     setQuestions(updated)
   }
 
-  // Toggle enabled/disabled
-  const handleToggle = async () => {
+  const toggleDay = (day: number): void => {
+    setHoursDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort()
+    )
+  }
+
+  const handleToggle = async (): Promise<void> => {
     const newEnabled = !enabled
     setEnabled(newEnabled)
-
     try {
       await updateOrganization.mutateAsync({
         settings: { ai_receptionist_enabled: newEnabled },
       })
       toast.success(newEnabled ? 'AI Receptionist enabled' : 'AI Receptionist disabled')
-    } catch (error) {
-      setEnabled(!newEnabled) // revert
+    } catch {
+      setEnabled(!newEnabled)
       toast.error('Failed to update setting')
     }
   }
 
-  // Save full configuration and create/update Vapi assistant
-  const handleSave = async () => {
-    // Validate
+  const handleSave = async (): Promise<void> => {
     if (!greeting.trim()) {
       toast.error('Please enter a greeting message')
       return
     }
-
     const validQuestions = questions.filter((q) => q.trim())
     if (validQuestions.length === 0) {
       toast.error('Please add at least one qualifying question')
       return
     }
+    if (validQuestions.length > 5) {
+      toast.error('Maximum 5 qualifying questions')
+      return
+    }
 
     setSaving(true)
-
     try {
-      // POST to /api/integrations/vapi/setup to create/update the Vapi assistant
       const res = await fetch('/api/integrations/vapi/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,6 +211,14 @@ export default function ReceptionistSettingsPage() {
           questions: validQuestions,
           calendarLink: calendarLink.trim(),
           transferNumber: transferNumber.trim(),
+          greetingStyle,
+          businessHours: hoursEnabled ? {
+            enabled: true,
+            timezone: hoursTimezone,
+            days: hoursDays,
+            start: hoursStart,
+            end: hoursEnd,
+          } : { enabled: false, timezone: hoursTimezone, days: hoursDays, start: hoursStart, end: hoursEnd },
         }),
       })
 
@@ -230,7 +316,7 @@ export default function ReceptionistSettingsPage() {
             <div>
               <h2 className="font-semibold text-navy">AI Receptionist</h2>
               <p className="text-sm text-navy/50">
-                {enabled ? 'Active — answering incoming calls' : 'Disabled — calls will not be answered by AI'}
+                {enabled ? 'Active - auto-calls new leads after 30 seconds' : 'Disabled - leads will not receive AI calls'}
               </p>
             </div>
           </div>
@@ -292,7 +378,26 @@ export default function ReceptionistSettingsPage() {
         </div>
       )}
 
-      {/* Greeting */}
+      {/* Greeting Style */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="w-5 h-5 text-navy/50" />
+          <div>
+            <h3 className="font-semibold text-navy">Greeting Style</h3>
+            <p className="text-sm text-navy/50">How the AI speaks to your callers</p>
+          </div>
+        </div>
+        <select
+          value={greetingStyle}
+          onChange={(e) => setGreetingStyle(e.target.value as 'formal' | 'casual')}
+          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy bg-white focus:outline-none focus:ring-2 focus:ring-impact cursor-pointer"
+        >
+          <option value="formal">Formal - Professional and polished</option>
+          <option value="casual">Casual - Warm and conversational</option>
+        </select>
+      </div>
+
+      {/* Greeting Message */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
         <div className="flex items-center gap-3">
           <MessageSquare className="w-5 h-5 text-navy/50" />
@@ -305,10 +410,11 @@ export default function ReceptionistSettingsPage() {
           value={greeting}
           onChange={(e) => setGreeting(e.target.value)}
           rows={3}
+          maxLength={500}
           placeholder="Thanks for calling {business}. How can I help you today?"
           className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent resize-none"
         />
-        <p className="text-xs text-navy/40">Keep it friendly, professional, and under 500 characters.</p>
+        <p className="text-xs text-navy/40">{greeting.length}/500 characters</p>
       </div>
 
       {/* Qualifying Questions */}
@@ -318,16 +424,18 @@ export default function ReceptionistSettingsPage() {
             <Settings className="w-5 h-5 text-navy/50" />
             <div>
               <h3 className="font-semibold text-navy">Qualifying Questions</h3>
-              <p className="text-sm text-navy/50">Questions the AI will ask to qualify leads</p>
+              <p className="text-sm text-navy/50">Questions the AI will ask to qualify leads (3-5 recommended)</p>
             </div>
           </div>
-          <button
-            onClick={addQuestion}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
+          {questions.length < 5 && (
+            <button
+              onClick={addQuestion}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-navy hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </button>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -364,6 +472,98 @@ export default function ReceptionistSettingsPage() {
         </div>
       </div>
 
+      {/* Business Hours */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-navy/50" />
+            <div>
+              <h3 className="font-semibold text-navy">Business Hours</h3>
+              <p className="text-sm text-navy/50">Outside these hours, leads are offered booking instead of live transfer</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setHoursEnabled(!hoursEnabled)}
+            className={`relative w-14 h-7 rounded-full transition-colors ${
+              hoursEnabled ? 'bg-studio' : 'bg-gray-200'
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                hoursEnabled ? 'translate-x-7' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+
+        {hoursEnabled && (
+          <div className="space-y-4 pt-2">
+            {/* Days */}
+            <div>
+              <label className="text-xs font-semibold text-navy/50 uppercase tracking-wider mb-2 block">Days</label>
+              <div className="flex gap-2">
+                {DAYS_OF_WEEK.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => toggleDay(value)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      hoursDays.includes(value)
+                        ? 'bg-impact text-ivory'
+                        : 'bg-gray-100 text-navy/50 hover:bg-gray-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Range */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-navy/50 uppercase tracking-wider mb-1 block">Start</label>
+                <input
+                  type="time"
+                  value={hoursStart}
+                  onChange={(e) => setHoursStart(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact"
+                />
+              </div>
+              <span className="text-navy/30 mt-5">to</span>
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-navy/50 uppercase tracking-wider mb-1 block">End</label>
+                <input
+                  type="time"
+                  value={hoursEnd}
+                  onChange={(e) => setHoursEnd(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact"
+                />
+              </div>
+            </div>
+
+            {/* Timezone */}
+            <div>
+              <label className="text-xs font-semibold text-navy/50 uppercase tracking-wider mb-1 block">Timezone</label>
+              <select
+                value={hoursTimezone}
+                onChange={(e) => setHoursTimezone(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-navy bg-white focus:outline-none focus:ring-2 focus:ring-impact cursor-pointer"
+              >
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="Europe/Dublin">Europe/Dublin (GMT/IST)</option>
+                <option value="Europe/Paris">Europe/Paris (CET)</option>
+                <option value="Europe/Berlin">Europe/Berlin (CET)</option>
+                <option value="America/New_York">America/New York (EST)</option>
+                <option value="America/Chicago">America/Chicago (CST)</option>
+                <option value="America/Los_Angeles">America/Los Angeles (PST)</option>
+                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Calendar Link */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
         <div className="flex items-center gap-3">
@@ -388,7 +588,7 @@ export default function ReceptionistSettingsPage() {
           <Phone className="w-5 h-5 text-navy/50" />
           <div>
             <h3 className="font-semibold text-navy">Transfer Number</h3>
-            <p className="text-sm text-navy/50">If the caller insists on a human, the AI will transfer to this number</p>
+            <p className="text-sm text-navy/50">Hot leads are live-transferred to this number during business hours</p>
           </div>
         </div>
         <input
@@ -398,6 +598,9 @@ export default function ReceptionistSettingsPage() {
           placeholder="+44 7XXX XXXXXX"
           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-impact focus:border-transparent"
         />
+        <p className="text-xs text-navy/40">
+          Outside business hours{hoursEnabled ? '' : ' (if hours are enabled)'}, the AI will offer to book a meeting instead of transferring.
+        </p>
       </div>
 
       {/* Save Button */}

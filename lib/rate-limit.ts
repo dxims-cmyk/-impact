@@ -53,7 +53,13 @@ export const RATE_LIMITS = {
 
   // Bulk operations
   bulk: { limit: 5, windowMs: 60 * 1000 }, // 5 per minute
+
+  // Outbound leads scraping — 5 searches per hour per org
+  scrape: { limit: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
 }
+
+// Daily scrape limit per organization (enforced via DB count)
+export const DAILY_SCRAPE_LIMIT = 200
 
 /**
  * Check rate limit for a given identifier

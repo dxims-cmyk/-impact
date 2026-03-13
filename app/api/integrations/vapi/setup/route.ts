@@ -6,13 +6,25 @@ import {
   createAssistant,
   updateAssistant,
   buildReceptionistSystemPrompt,
+  isWithinBusinessHours,
+  type BusinessHours,
 } from '@/lib/integrations/vapi'
+
+const businessHoursSchema = z.object({
+  enabled: z.boolean(),
+  timezone: z.string().default('Europe/London'),
+  days: z.array(z.number().min(0).max(6)),
+  start: z.string().regex(/^\d{2}:\d{2}$/),
+  end: z.string().regex(/^\d{2}:\d{2}$/),
+}).optional()
 
 const setupSchema = z.object({
   greeting: z.string().min(1, 'Greeting is required').max(500),
   questions: z.array(z.string().min(1)).min(1, 'At least one qualifying question is required'),
   calendarLink: z.string().url().optional().or(z.literal('')),
   transferNumber: z.string().optional().or(z.literal('')),
+  greetingStyle: z.enum(['formal', 'casual']).default('formal'),
+  businessHours: businessHoursSchema,
 })
 
 // POST /api/integrations/vapi/setup — Create or update a Vapi assistant for the org
@@ -57,7 +69,7 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
-  const { greeting, questions, calendarLink, transferNumber } = validation.data
+  const { greeting, questions, calendarLink, transferNumber, greetingStyle, businessHours } = validation.data
 
   // Get current org to read existing settings and name
   const { data: org, error: orgError } = await supabase
@@ -80,6 +92,8 @@ export async function POST(request: NextRequest) {
     questions,
     calendarLink: calendarLink || undefined,
     transferNumber: transferNumber || undefined,
+    greetingStyle: greetingStyle || 'formal',
+    isWithinHours: businessHours ? isWithinBusinessHours(businessHours as BusinessHours) : true,
   })
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://driveimpact.io'
@@ -127,6 +141,8 @@ export async function POST(request: NextRequest) {
       ai_receptionist_questions: questions,
       ai_receptionist_calendar_link: calendarLink || null,
       ai_receptionist_transfer_number: transferNumber || null,
+      ai_receptionist_greeting_style: greetingStyle || 'formal',
+      ai_receptionist_business_hours: businessHours || null,
     }
 
     await supabase

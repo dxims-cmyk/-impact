@@ -184,6 +184,54 @@ What to test:
 ```
 This is required for every task completion.
 
+## Thinking Modes
+- Use Ultrathink for: migrations, security changes, multi-file refactors, anything touching auth/payments/Stripe/Supabase, landing page rebuilds, prompt-driven multi-phase builds
+- Use sub agents for: codebase-wide audits, reading multiple directories at once, research tasks across many files, pre-build file structure reviews
+- Default mode is fine for: single component edits, copy changes, styling updates, small bug fixes
+
+## Brand
+- Impact brand colour: #6E0F1A (dark maroon/crimson). NOT #E8642C (orange).
+- AM:PM Media brand: navy (#2C3E5A) and white only. No red.
+- No em dashes in any client-facing copy. Clients flag these as AI-generated.
+
+## Landing Page (driveimpact.io)
+- 11-section conversion architecture based on Apify-style simplicity
+- Every section has ONE job: hook, educate, prove, or convert
+- Features described as outcomes, not nouns
+- No fake testimonials. Pre-launch - use credibility signals instead.
+- CTA: "Get Early Access" (primary), not "Book a Demo"
+- Do NOT add Aceternity UI effects (LampEffect, MovingBorder, ContainerScrollAnimation, TextGenerateEffect, Spotlight) to the landing page
+- Keep existing subtle animations. Do not replace working animation patterns.
+- Do NOT add framer-motion if it's not already a dependency
+
+## AI Receptionist Flow
+- Lead arrives > 30 second delay > Vapi AI calls the lead to vet them
+- HOT: live transfer to client's phone number
+- WARM: book a call/meeting via Cal.com
+- COLD: thank and end, log the result
+- Clients primarily close by phone call, not text/email/messenger
+- Growth+ plan feature, or £400/mo addon for Core
+
+## Pricing (current)
+- Core: £1,500/mo
+- Growth: £2,000/mo (Most Popular)
+- Pro: £2,500/mo
+- Addons: AI Receptionist £400/mo (Core only), Outbound Leads £300/mo (Core + Growth)
+
+## Rules
+- ALWAYS read existing code before modifying. Do not assume file contents.
+- Do NOT hallucinate features. Only reference what exists in the codebase.
+- Do NOT add dependencies without asking first.
+- Do NOT touch dashboard/API routes when working on landing page and vice versa.
+- Check Supabase schema before writing migrations. Do not assume table structures.
+- Cross-check every claim on the landing page against actual built features.
+- When working on mediampm.com vs driveimpact.io - they complement each other but must NOT duplicate copy or structure. mediampm.com/impact = discovery/redirect. driveimpact.io = educate/prove/convert.
+
+## Live Integrations
+Meta Lead Ads, WhatsApp, SMS, Email, Instagram DM, Facebook Messenger, Cal.com, Stripe, Vapi, Apify
+
+## Coming Soon Integrations
+Google Ads, TikTok Ads
 
 <!-- TRIGGER.DEV basic START -->
 # Trigger.dev Basic Tasks (v4)

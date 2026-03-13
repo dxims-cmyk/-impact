@@ -6,6 +6,7 @@ import { sendLeadToZapier, type ZapierLead, type ZapierOrgSettings } from "@/lib
 import { sendSlackNotification } from "@/lib/integrations/slack"
 import { sendEmail } from "@/lib/integrations/resend"
 import { systemLog } from "@/lib/system-log"
+import { autoCallLeadTask } from "./auto-call-lead"
 import Anthropic from "@anthropic-ai/sdk"
 
 export const speedToLeadTask = task({
@@ -469,6 +470,16 @@ Return ONLY the message text, nothing else.`,
         logger.error("AI welcome message failed", { leadId, error })
         await systemLog('error', 'whatsapp', 'WhatsApp notification failed', lead.organization_id, { leadId, error: String(error) })
         results.ai_welcome = false
+      }
+    }
+
+    // 6. Auto-call lead via AI Receptionist (if enabled and lead has phone)
+    if (lead.phone && (orgSettings as any)?.ai_receptionist_enabled) {
+      try {
+        await autoCallLeadTask.trigger({ leadId })
+        logger.info("Auto-call triggered for lead", { leadId })
+      } catch (error) {
+        logger.error("Failed to trigger auto-call", { leadId, error })
       }
     }
 

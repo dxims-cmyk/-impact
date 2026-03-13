@@ -3,7 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 
 type LogLevel = 'info' | 'warning' | 'error' | 'critical'
-type LogCategory = 'webhook' | 'email' | 'whatsapp' | 'sync' | 'billing' | 'auth' | 'leadgen'
+type LogCategory = 'webhook' | 'email' | 'whatsapp' | 'sync' | 'billing' | 'auth' | 'leadgen' | 'vapi'
 
 export async function systemLog(
   level: LogLevel,

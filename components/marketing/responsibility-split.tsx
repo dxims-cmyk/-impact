@@ -28,12 +28,12 @@ export function ResponsibilitySplit(): React.JSX.Element {
   const inView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section className={`py-20 sm:py-28 transition-colors duration-700 ${
+    <section className={`py-24 sm:py-32 transition-colors duration-700 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
-          <div className="text-center mb-14">
+          <div className="text-center mb-16">
             <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-4 transition-colors duration-700 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
@@ -42,7 +42,7 @@ export function ResponsibilitySplit(): React.JSX.Element {
           </div>
         </FadeIn>
 
-        <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* You */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}

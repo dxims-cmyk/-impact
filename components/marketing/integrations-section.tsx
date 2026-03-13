@@ -108,7 +108,7 @@ export function IntegrationsSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className={`py-20 sm:py-28 transition-colors duration-700 ${
+    <section className={`py-24 sm:py-32 transition-colors duration-700 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -118,7 +118,7 @@ export function IntegrationsSection(): React.JSX.Element {
           }`}>
             Plugs into your existing stack.
           </h2>
-          <p className={`text-center text-lg max-w-xl mx-auto mb-14 transition-colors duration-700 ${
+          <p className={`text-center text-lg max-w-xl mx-auto mb-16 transition-colors duration-700 ${
             dark ? 'text-zinc-500' : 'text-gray-500'
           }`}>
             Connect your ad accounts, messaging channels, calendar, and payments. All in one place.

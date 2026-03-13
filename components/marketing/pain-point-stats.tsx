@@ -42,7 +42,7 @@ export function PainPointStats(): React.JSX.Element {
   }, [])
 
   return (
-    <section className={`py-20 sm:py-28 border-t transition-colors duration-500 ${
+    <section className={`py-24 sm:py-32 border-t transition-colors duration-500 ${
       dark ? 'border-zinc-900' : 'border-gray-200'
     }`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,7 +53,7 @@ export function PainPointStats(): React.JSX.Element {
           }`}>
             The maths behind every missed lead.
           </h2>
-          <p className={`text-center text-base sm:text-lg max-w-2xl mx-auto mb-12 transition-colors duration-500 ${
+          <p className={`text-center text-base sm:text-lg max-w-2xl mx-auto mb-16 transition-colors duration-500 ${
             dark ? 'text-zinc-400' : 'text-gray-600'
           }`}>
             Speed is not a nice-to-have. It is the difference between winning and losing the deal.
@@ -61,9 +61,9 @@ export function PainPointStats(): React.JSX.Element {
         </FadeIn>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FadeIn delay={0.05}>
-            <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
+            <div className={`rounded-2xl border p-8 text-center transition-colors duration-500 spring-hover ${
               dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
             }`}>
               <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>
@@ -79,7 +79,7 @@ export function PainPointStats(): React.JSX.Element {
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
+            <div className={`rounded-2xl border p-8 text-center transition-colors duration-500 spring-hover ${
               dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
             }`}>
               <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>
@@ -95,7 +95,7 @@ export function PainPointStats(): React.JSX.Element {
           </FadeIn>
 
           <FadeIn delay={0.15}>
-            <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
+            <div className={`rounded-2xl border p-8 text-center transition-colors duration-500 spring-hover ${
               dark ? 'border-[#6E0F1A]/20 bg-[#6E0F1A]/5' : 'border-[#6E0F1A]/20 bg-[#6E0F1A]/5'
             }`}>
               <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>

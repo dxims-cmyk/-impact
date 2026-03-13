@@ -32,10 +32,10 @@ export function TrustSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className="py-20 sm:py-28 scroll-mt-20">
+    <section className="py-24 sm:py-32 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
-          <div className="text-center mb-14">
+          <div className="text-center mb-16">
             <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-4 transition-colors duration-700 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
@@ -49,10 +49,10 @@ export function TrustSection(): React.JSX.Element {
           </div>
         </FadeIn>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {credentials.map((item, i) => (
             <FadeIn key={item.title} delay={i * 0.08}>
-              <div className={`rounded-xl border p-6 h-full transition-colors duration-700 ${
+              <div className={`rounded-xl border p-8 h-full transition-colors duration-700 ${
                 dark
                   ? 'border-zinc-800 bg-zinc-900/30'
                   : 'border-gray-200 bg-white shadow-sm'

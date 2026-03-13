@@ -17,7 +17,7 @@ export function SecuritySection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className={`py-16 sm:py-20 transition-colors duration-700 ${
+    <section className={`py-20 sm:py-24 transition-colors duration-700 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

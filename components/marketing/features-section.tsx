@@ -53,7 +53,7 @@ export function FeaturesSection(): React.JSX.Element {
   const inView = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section id="features" className="py-20 sm:py-28 scroll-mt-20">
+    <section id="features" className="py-24 sm:py-32 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-4 transition-colors duration-700 ${
@@ -69,14 +69,14 @@ export function FeaturesSection(): React.JSX.Element {
         </FadeIn>
 
         {/* Bento grid */}
-        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {features.map((feature, i) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.07, type: 'spring', stiffness: 300, damping: 30 }}
-              className={`group rounded-xl border p-6 flex flex-col spring-hover ${feature.span} ${
+              className={`group rounded-xl border p-8 flex flex-col spring-hover ${feature.span} ${
                 dark
                   ? 'border-zinc-800/60 bg-zinc-900/30 hover:border-zinc-700'
                   : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'

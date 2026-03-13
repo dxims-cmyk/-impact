@@ -93,12 +93,12 @@ export function FaqSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section id="faq" className={`py-20 sm:py-28 scroll-mt-20 transition-colors duration-700 ${
+    <section id="faq" className={`py-24 sm:py-32 scroll-mt-20 transition-colors duration-700 ${
       dark ? 'bg-[#0F0F0F]' : 'bg-gray-50'
     }`}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
-          <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-12 transition-colors duration-700 ${
+          <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-16 transition-colors duration-700 ${
             dark ? 'text-white' : 'text-[#0B1220]'
           }`}>
             Questions?

@@ -11,7 +11,7 @@ export function CtaSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className="py-20 sm:py-28">
+    <section className="py-24 sm:py-32">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <FadeIn>
           <h2 className={`font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight transition-colors duration-500 ${
@@ -24,7 +24,7 @@ export function CtaSection(): React.JSX.Element {
         </FadeIn>
 
         <FadeIn delay={0.05}>
-          <p className={`text-lg max-w-lg mx-auto mb-10 transition-colors duration-500 ${
+          <p className={`text-lg max-w-lg mx-auto mb-12 transition-colors duration-500 ${
             dark ? 'text-zinc-400' : 'text-gray-600'
           }`}>
             Get early access to Impact. Hands-on setup. Priority support. Limited spots.

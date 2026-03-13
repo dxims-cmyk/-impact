@@ -58,10 +58,10 @@ export function PricingSection(): React.JSX.Element {
   const [hovered, setHovered] = useState<number | null>(null)
 
   return (
-    <section id="pricing" className="py-20 sm:py-28 scroll-mt-20">
+    <section id="pricing" className="py-24 sm:py-32 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
-          <div className="text-center mb-14">
+          <div className="text-center mb-16">
             <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-4 transition-colors duration-700 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
@@ -75,13 +75,13 @@ export function PricingSection(): React.JSX.Element {
           </div>
         </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {tiers.map((tier, i) => (
             <FadeIn key={tier.name} delay={i * 0.08}>
               <motion.div
                 onHoverStart={() => setHovered(i)}
                 onHoverEnd={() => setHovered(null)}
-                className={`relative rounded-2xl p-7 flex flex-col h-full transition-all duration-300 ${
+                className={`relative rounded-2xl p-8 flex flex-col h-full transition-all duration-300 ${
                   tier.highlight
                     ? 'border-2 border-[#6E0F1A]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#6E0F1A]/5')
                     : dark

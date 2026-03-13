@@ -31,7 +31,7 @@ const steps = [
     icon: Target,
     label: 'Close',
     title: 'Pick up the phone. Close the deal.',
-    description: 'Speed wins. You get the lead alert, you call them. That\'s how deals close — a real conversation within seconds. With the AI Receptionist add-on, a voice AI can call the lead in 30 seconds, vet them, then transfer them live to your phone or book a meeting on your behalf.',
+    description: 'Speed wins. You get the lead alert, you call them. That\'s how deals close. A real conversation within seconds. With the AI Receptionist add-on, a voice AI can call the lead in 30 seconds, vet them, then transfer them live to your phone or book a meeting on your behalf.',
     screenshot: '/screenshots/dashboard-main.png',
     alt: 'Impact dashboard with pipeline stages, KPIs, recent leads, and campaign analytics',
   },
@@ -44,12 +44,12 @@ export function ProductShowcase(): React.JSX.Element {
   const step = steps[activeStep]
 
   return (
-    <section id="how-it-works" className={`py-20 sm:py-28 transition-colors duration-700 ${
+    <section id="how-it-works" className={`py-24 sm:py-32 transition-colors duration-700 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
-          <div className="text-center mb-14">
+          <div className="text-center mb-16">
             <p className={`text-sm font-medium uppercase tracking-widest mb-4 transition-colors duration-700 ${
               dark ? 'text-zinc-500' : 'text-gray-500'
             }`}>
@@ -65,7 +65,7 @@ export function ProductShowcase(): React.JSX.Element {
 
         {/* Step tabs */}
         <FadeIn delay={0.1}>
-          <div className="flex justify-center mb-10">
+          <div className="flex justify-center mb-12">
             <div className={`inline-flex rounded-xl p-1 transition-colors duration-500 ${
               dark ? 'bg-zinc-900 border border-zinc-800' : 'bg-gray-100 border border-gray-200'
             }`}>
@@ -96,9 +96,9 @@ export function ProductShowcase(): React.JSX.Element {
         </FadeIn>
 
         {/* Content area */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-10 lg:gap-16 items-center">
           {/* Left: Copy */}
-          <div className="lg:col-span-2">
+          <div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeStep}
@@ -135,7 +135,7 @@ export function ProductShowcase(): React.JSX.Element {
           </div>
 
           {/* Right: Screenshot */}
-          <div className="lg:col-span-3">
+          <div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeStep}

@@ -7,7 +7,6 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { FadeIn } from '@/components/marketing/fade-in'
 import { useMarketingTheme } from '@/components/marketing/theme-provider'
-import { FluidBackground } from '@/components/marketing/fluid-background'
 
 const spring = { type: 'spring' as const, stiffness: 400, damping: 17 }
 
@@ -18,11 +17,6 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
 
   return (
     <div ref={ref} className="relative">
-      {/* Glow */}
-      <div className={`absolute inset-0 scale-125 rounded-full blur-[100px] transition-colors duration-500 ${
-        dark ? 'bg-[#6E0F1A]/[0.08]' : 'bg-[#6E0F1A]/[0.10]'
-      }`} />
-
       <motion.div
         initial={{ opacity: 0, y: 30, rotateX: 8 }}
         animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
@@ -78,7 +72,6 @@ export function HeroSection(): React.JSX.Element {
 
   return (
     <section className="relative pt-28 sm:pt-36 lg:pt-44 pb-12 sm:pb-20 overflow-hidden">
-      <FluidBackground />
       <div className="absolute inset-0 -z-10">
         <div className={`absolute inset-0 transition-opacity duration-500 ${
           dark ? 'opacity-100' : 'opacity-20'
@@ -137,7 +130,7 @@ export function HeroSection(): React.JSX.Element {
                   { value: '5', label: 'Channels, one inbox' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center lg:text-left">
-                    <div className={`text-2xl sm:text-3xl font-bold text-[#6E0F1A] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
+                    <div className={`text-2xl sm:text-3xl font-bold text-[#6E0F1A]`}>{stat.value}</div>
                     <div className={`text-[11px] sm:text-xs transition-colors duration-500 ${
                       dark ? 'text-zinc-500' : 'text-gray-500'
                     }`}>{stat.label}</div>
@@ -213,10 +206,6 @@ export function HeroSection(): React.JSX.Element {
                 className="w-full h-auto"
                 priority
               />
-              {/* Glow */}
-              <div className={`absolute -inset-px -z-10 rounded-2xl blur-xl transition-colors duration-500 ${
-                dark ? 'bg-gradient-to-b from-[#6E0F1A]/10 to-transparent' : 'bg-gradient-to-b from-[#6E0F1A]/5 to-transparent'
-              }`} />
             </div>
           </div>
         </FadeIn>

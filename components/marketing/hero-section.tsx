@@ -27,28 +27,33 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
         initial={{ opacity: 0, y: 30, rotateX: 8 }}
         animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative w-[260px] sm:w-[300px] lg:w-[320px] rounded-[3rem] border-[6px] overflow-hidden shadow-2xl ${
+        className="relative w-[260px] sm:w-[300px] lg:w-[320px]"
+        style={{ perspective: '800px' }}
+      >
+        {/* Phone bezel frame */}
+        <div className={`relative rounded-[3rem] border-[6px] shadow-2xl ${
           dark
             ? 'border-zinc-800 bg-black shadow-black/60'
             : 'border-gray-900 bg-black shadow-gray-400/50'
-        }`}
-        style={{ perspective: '800px' }}
-      >
-        {/* Dynamic Island / Notch */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-[90px] h-[26px] bg-black rounded-full" />
+        }`}>
+          {/* Dynamic Island */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-[90px] h-[26px] bg-black rounded-full" />
 
-        {/* Screenshot */}
-        <Image
-          src="/screenshots/whatsapp-notifications-cropped.png"
-          alt="Real WhatsApp notifications showing new lead alerts from Impact"
-          width={430}
-          height={932}
-          className="w-full h-auto"
-          priority
-        />
+          {/* Screenshot — no overflow hidden, rounded corners clip naturally */}
+          <div className="rounded-[2.5rem] overflow-hidden">
+            <Image
+              src="/screenshots/whatsapp-notifications-cropped.png"
+              alt="Real WhatsApp notifications showing new lead alerts from Impact"
+              width={1320}
+              height={2150}
+              className="w-full h-auto block"
+              priority
+            />
+          </div>
 
-        {/* Home indicator */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/30 rounded-full" />
+          {/* Home indicator */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 w-[100px] h-[4px] bg-white/30 rounded-full" />
+        </div>
       </motion.div>
     </div>
   )

@@ -57,11 +57,9 @@ export function TrustSection(): React.JSX.Element {
                   ? 'border-zinc-800 bg-zinc-900/30'
                   : 'border-gray-200 bg-white shadow-sm'
               }`}>
-                <div className="w-10 h-10 flex items-center justify-center mb-4">
-                  <item.icon className={`w-5 h-5 ${
-                    dark ? 'text-zinc-400' : 'text-gray-500'
-                  }`} />
-                </div>
+                <item.icon className={`w-5 h-5 mb-4 ${
+                  dark ? 'text-zinc-400' : 'text-gray-500'
+                }`} />
                 <h3 className={`font-display text-base font-semibold mb-2 transition-colors duration-700 ${
                   dark ? 'text-white' : 'text-[#0B1220]'
                 }`}>

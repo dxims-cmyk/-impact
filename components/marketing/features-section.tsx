@@ -82,11 +82,9 @@ export function FeaturesSection(): React.JSX.Element {
                   : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
               }`}
             >
-              <div className="mb-4">
-                <feature.icon className={`w-5 h-5 transition-colors group-hover:text-[#6E0F1A] ${
-                  dark ? 'text-zinc-400' : 'text-gray-500'
-                }`} />
-              </div>
+              <feature.icon className={`w-5 h-5 mb-4 transition-colors group-hover:text-[#6E0F1A] ${
+                dark ? 'text-zinc-400' : 'text-gray-500'
+              }`} />
               <h3 className={`font-display text-base font-semibold mb-2 transition-colors duration-700 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>

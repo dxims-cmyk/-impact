@@ -45,9 +45,7 @@ export function WhoItsFor(): React.JSX.Element {
                   ? 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
                   : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
               }`}>
-                <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-5 transition-colors group-hover:bg-[#6E0F1A]/10 ${
-                  dark ? 'bg-zinc-800' : 'bg-gray-100'
-                }`}>
+                <div className="w-11 h-11 flex items-center justify-center mb-5">
                   <item.icon className={`w-5 h-5 transition-colors group-hover:text-[#6E0F1A] ${
                     dark ? 'text-zinc-400' : 'text-gray-500'
                   }`} />

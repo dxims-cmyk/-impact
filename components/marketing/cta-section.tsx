@@ -19,7 +19,7 @@ export function CtaSection(): React.JSX.Element {
           }`}>
             Your competitors are already
             <br />
-            <span className="text-[#E8642C]">responding faster.</span>
+            <span className="text-[#6E0F1A]">responding faster.</span>
           </h2>
         </FadeIn>
 
@@ -41,7 +41,7 @@ export function CtaSection(): React.JSX.Element {
             >
               <Link
                 href="/demo"
-                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-lg bg-[#E8642C] text-white font-semibold text-base hover:bg-[#d55a25] shadow-lg shadow-[#E8642C]/20 hover:shadow-xl hover:shadow-[#E8642C]/30"
+                className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-lg bg-[#6E0F1A] text-white font-semibold text-base hover:bg-[#8B1422] shadow-lg shadow-[#6E0F1A]/20 hover:shadow-xl hover:shadow-[#6E0F1A]/30"
                 style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
               >
                 Get Early Access

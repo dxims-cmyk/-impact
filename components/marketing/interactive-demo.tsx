@@ -82,7 +82,7 @@ function ConnectStep({ onNext }: { onNext: () => void }): React.JSX.Element {
               className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 connecting
                   ? dark ? 'bg-zinc-800 text-zinc-500' : 'bg-gray-100 text-gray-400'
-                  : 'bg-[#E8642C] text-white hover:bg-[#d55a25]'
+                  : 'bg-[#6E0F1A] text-white hover:bg-[#8B1422]'
               }`}
             >
               {connecting ? (
@@ -209,7 +209,7 @@ function AlertStep({ onNext }: { onNext: () => void }): React.JSX.Element {
                         <br />
                         Source: Meta Ads - Summer Campaign
                         <br />
-                        <span className="text-[#E8642C] font-semibold">AI Score: 92/100</span>
+                        <span className="text-[#6E0F1A] font-semibold">AI Score: 92/100</span>
                       </div>
                     </div>
                   </div>
@@ -278,8 +278,8 @@ function ScoreStep({ onNext }: { onNext: () => void }): React.JSX.Element {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E8642C]/10 flex items-center justify-center">
-                <span className="text-[9px] font-bold text-[#E8642C]">
+              <div className="w-8 h-8 rounded-full bg-[#6E0F1A]/10 flex items-center justify-center">
+                <span className="text-[9px] font-bold text-[#6E0F1A]">
                   {lead.name.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
@@ -302,14 +302,14 @@ function ScoreStep({ onNext }: { onNext: () => void }): React.JSX.Element {
                   initial={{ width: 0 }}
                   animate={{ width: animate ? `${lead.score}%` : 0 }}
                   transition={{ duration: 0.8, delay: 0.3 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  className="h-full rounded-full bg-[#E8642C]"
+                  className="h-full rounded-full bg-[#6E0F1A]"
                 />
               </div>
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: animate ? 1 : 0 }}
                 transition={{ delay: 0.6 + i * 0.15 }}
-                className="text-xs font-bold font-mono text-[#E8642C] w-6 text-right"
+                className="text-xs font-bold font-mono text-[#6E0F1A] w-6 text-right"
               >
                 {lead.score}
               </motion.span>
@@ -352,8 +352,8 @@ function CloseStep(): React.JSX.Element {
           dark ? 'border-zinc-800 bg-zinc-900' : 'border-gray-100 bg-gray-50'
         }`}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-[#E8642C]/10 flex items-center justify-center">
-              <span className="text-[8px] font-bold text-[#E8642C]">SM</span>
+            <div className="w-6 h-6 rounded-full bg-[#6E0F1A]/10 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-[#6E0F1A]">SM</span>
             </div>
             <span className={`text-xs font-semibold ${dark ? 'text-white' : 'text-[#0B1220]'}`}>
               Sarah Mitchell
@@ -383,7 +383,7 @@ function CloseStep(): React.JSX.Element {
               >
                 <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                   msg.from === 'you'
-                    ? 'bg-[#E8642C] text-white rounded-br-sm'
+                    ? 'bg-[#6E0F1A] text-white rounded-br-sm'
                     : dark
                       ? 'bg-zinc-800 text-zinc-200 rounded-bl-sm'
                       : 'bg-gray-100 text-gray-700 rounded-bl-sm'
@@ -423,7 +423,7 @@ function CloseStep(): React.JSX.Element {
           <div key={stat.label} className={`text-center rounded-lg p-2 transition-colors ${
             dark ? 'bg-zinc-900/40' : 'bg-gray-50'
           }`}>
-            <div className="text-lg font-bold text-[#E8642C]">{stat.value}</div>
+            <div className="text-lg font-bold text-[#6E0F1A]">{stat.value}</div>
             <div className={`text-[9px] ${dark ? 'text-zinc-500' : 'text-gray-400'}`}>{stat.label}</div>
           </div>
         ))}
@@ -453,7 +453,7 @@ export function InteractiveDemo(): React.JSX.Element {
     <section id="interactive-demo" className={`py-20 sm:py-28 scroll-mt-20 transition-colors duration-500 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
           <p className={`text-xs font-medium uppercase tracking-[0.2em] mb-4 ${
@@ -492,7 +492,7 @@ export function InteractiveDemo(): React.JSX.Element {
                     animate={{
                       scale: isActive ? 1 : 0.85,
                       backgroundColor: isActive
-                        ? '#E8642C'
+                        ? '#6E0F1A'
                         : isDone
                           ? dark ? '#27272a' : '#e5e7eb'
                           : dark ? '#18181b' : '#f3f4f6',
@@ -509,7 +509,7 @@ export function InteractiveDemo(): React.JSX.Element {
                     )}
                   </motion.div>
                   <span className={`text-[10px] font-medium transition-colors ${
-                    isActive ? 'text-[#E8642C]' : dark ? 'text-zinc-600' : 'text-gray-400'
+                    isActive ? 'text-[#6E0F1A]' : dark ? 'text-zinc-600' : 'text-gray-400'
                   }`}>
                     {step.label}
                   </span>
@@ -523,7 +523,7 @@ export function InteractiveDemo(): React.JSX.Element {
             <motion.div
               animate={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full bg-[#E8642C] rounded-full"
+              className="h-full bg-[#6E0F1A] rounded-full"
             />
           </div>
 
@@ -564,7 +564,7 @@ export function InteractiveDemo(): React.JSX.Element {
               {currentStep < STEPS.length - 1 ? (
                 <button
                   onClick={() => { setCurrentStep(currentStep + 1); setAutoPlaying(false) }}
-                  className="px-4 py-2 rounded-lg text-xs font-medium bg-[#E8642C] text-white hover:bg-[#d55a25] transition-colors"
+                  className="px-4 py-2 rounded-lg text-xs font-medium bg-[#6E0F1A] text-white hover:bg-[#8B1422] transition-colors"
                 >
                   Next Step
                 </button>
@@ -574,7 +574,7 @@ export function InteractiveDemo(): React.JSX.Element {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   transition={spring}
-                  className="px-4 py-2 rounded-lg text-xs font-medium bg-[#E8642C] text-white hover:bg-[#d55a25] transition-colors"
+                  className="px-4 py-2 rounded-lg text-xs font-medium bg-[#6E0F1A] text-white hover:bg-[#8B1422] transition-colors"
                 >
                   Replay Demo
                 </motion.button>

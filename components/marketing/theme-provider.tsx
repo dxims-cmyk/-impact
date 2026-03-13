@@ -22,7 +22,7 @@ export function MarketingThemeProvider({ children }: { children: ReactNode }): R
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       <div
-        className={`min-h-screen transition-colors duration-700 ease-in-out custom-cursor-active ${
+        className={`min-h-screen transition-colors duration-700 ease-in-out ${
           dark ? 'bg-[#0A0A0A] text-white' : 'bg-[#FAFAF8] text-[#0B1220]'
         }`}
       >

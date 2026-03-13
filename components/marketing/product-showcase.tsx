@@ -30,8 +30,8 @@ const steps = [
     id: 'close',
     icon: Target,
     label: 'Close',
-    title: 'Reply from one inbox. Book meetings. Track your pipeline.',
-    description: 'WhatsApp, SMS, email, Instagram, and Messenger in one timeline per lead. Leads can book directly into your calendar. See which ads bring revenue and which waste money.',
+    title: 'Pick up the phone. Close the deal.',
+    description: 'Speed wins. You get the lead alert, you call them. That\'s how deals close — a real conversation within seconds. With the AI Receptionist add-on, a voice AI can call the lead in 30 seconds, vet them, then transfer them live to your phone or book a meeting on your behalf.',
     screenshot: '/screenshots/dashboard-main.png',
     alt: 'Impact dashboard with pipeline stages, KPIs, recent leads, and campaign analytics',
   },
@@ -86,7 +86,7 @@ export function ProductShowcase(): React.JSX.Element {
                           : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-[#E8642C]' : ''}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-[#6E0F1A]' : ''}`} />
                     <span className="hidden sm:inline">{s.label}</span>
                   </button>
                 )
@@ -109,8 +109,8 @@ export function ProductShowcase(): React.JSX.Element {
               >
                 {/* Step number */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[#E8642C]/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-[#E8642C]">{activeStep + 1}</span>
+                  <div className="w-8 h-8 rounded-lg bg-[#6E0F1A]/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-[#6E0F1A]">{activeStep + 1}</span>
                   </div>
                   <div className={`text-xs font-medium uppercase tracking-wider transition-colors ${
                     dark ? 'text-zinc-500' : 'text-gray-400'

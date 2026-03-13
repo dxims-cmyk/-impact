@@ -45,7 +45,7 @@ export function PainPointStats(): React.JSX.Element {
     <section className={`py-20 sm:py-28 border-t transition-colors duration-500 ${
       dark ? 'border-zinc-900' : 'border-gray-200'
     }`}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Provocation headline */}
         <FadeIn>
           <h2 className={`font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-4 transition-colors duration-500 ${
@@ -66,7 +66,7 @@ export function PainPointStats(): React.JSX.Element {
             <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
               dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
             }`}>
-              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#E8642C] mb-2 ${dark ? 'neon-glow' : ''}`}>
+              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>
                 <AnimatedCounter target={47} suffix="h" />
               </div>
               <p className={`text-sm font-medium mb-1 transition-colors duration-500 ${dark ? 'text-white' : 'text-[#0B1220]'}`}>
@@ -82,7 +82,7 @@ export function PainPointStats(): React.JSX.Element {
             <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
               dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
             }`}>
-              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#E8642C] mb-2 ${dark ? 'neon-glow' : ''}`}>
+              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>
                 <AnimatedCounter target={78} suffix="%" />
               </div>
               <p className={`text-sm font-medium mb-1 transition-colors duration-500 ${dark ? 'text-white' : 'text-[#0B1220]'}`}>
@@ -96,15 +96,15 @@ export function PainPointStats(): React.JSX.Element {
 
           <FadeIn delay={0.15}>
             <div className={`rounded-2xl border p-6 text-center transition-colors duration-500 spring-hover ${
-              dark ? 'border-[#E8642C]/20 bg-[#E8642C]/5' : 'border-[#E8642C]/20 bg-[#E8642C]/5'
+              dark ? 'border-[#6E0F1A]/20 bg-[#6E0F1A]/5' : 'border-[#6E0F1A]/20 bg-[#6E0F1A]/5'
             }`}>
-              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#E8642C] mb-2 ${dark ? 'neon-glow' : ''}`}>
+              <div className={`font-display text-4xl sm:text-5xl font-extrabold text-[#6E0F1A] mb-2 ${dark ? 'neon-glow' : ''}`}>
                 5s
               </div>
               <p className={`text-sm font-medium mb-1 transition-colors duration-500 ${dark ? 'text-white' : 'text-[#0B1220]'}`}>
                 Impact alerts you on WhatsApp
               </p>
-              <p className="text-xs text-[#E8642C] font-semibold">
+              <p className="text-xs text-[#6E0F1A] font-semibold">
                 That is 33,840x faster.
               </p>
             </div>

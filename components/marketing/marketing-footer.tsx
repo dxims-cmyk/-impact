@@ -12,7 +12,7 @@ export function MarketingFooter(): React.JSX.Element {
     <footer className={`border-t transition-colors duration-700 ${
       dark ? 'border-zinc-900 bg-[#070707]' : 'border-gray-200 bg-white'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
           {/* Brand column */}
           <div className="md:col-span-2">
@@ -21,7 +21,7 @@ export function MarketingFooter(): React.JSX.Element {
               <span className={`font-semibold text-lg tracking-tight font-display transition-colors duration-700 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>
-                <span className="text-[#E8642C]">:</span>Impact
+                <span className="text-[#6E0F1A]">:</span>Impact
               </span>
             </div>
             <p className={`text-sm leading-relaxed max-w-sm mb-6 transition-colors duration-700 ${

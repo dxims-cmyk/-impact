@@ -16,7 +16,7 @@ export function ClientCarousel(): React.JSX.Element {
 
   return (
     <section className="py-10 sm:py-14">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <p className={`text-xs font-medium uppercase tracking-[0.2em] text-center mb-8 transition-colors duration-500 ${
             dark ? 'text-zinc-600' : 'text-gray-400'
@@ -46,7 +46,7 @@ export function ClientCarousel(): React.JSX.Element {
                 }`}>
                   {client.type}
                 </div>
-                <div className="text-[11px] font-medium mt-2 text-[#E8642C]">
+                <div className="text-[11px] font-medium mt-2 text-[#6E0F1A]">
                   {client.metric}
                 </div>
               </div>

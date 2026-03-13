@@ -18,29 +18,37 @@ function PhoneHero({ dark }: { dark: boolean }): React.JSX.Element {
 
   return (
     <div ref={ref} className="relative">
-      <div className={`absolute inset-0 scale-110 rounded-full blur-[80px] transition-colors duration-500 ${
-        dark ? 'bg-[#E8642C]/[0.06]' : 'bg-[#E8642C]/[0.08]'
+      {/* Glow behind phone */}
+      <div className={`absolute inset-0 scale-125 rounded-full blur-[100px] transition-colors duration-500 ${
+        dark ? 'bg-[#6E0F1A]/[0.08]' : 'bg-[#6E0F1A]/[0.10]'
       }`} />
 
       <motion.div
         initial={{ opacity: 0, y: 30, rotateX: 8 }}
         animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative w-[200px] sm:w-[230px] rounded-[2.5rem] border-[3px] overflow-hidden shadow-2xl ${
+        className={`relative w-[260px] sm:w-[300px] lg:w-[320px] rounded-[3rem] border-[6px] overflow-hidden shadow-2xl ${
           dark
-            ? 'border-zinc-700 bg-black shadow-black/50'
-            : 'border-gray-300 bg-black shadow-gray-300/50'
+            ? 'border-zinc-800 bg-black shadow-black/60'
+            : 'border-gray-900 bg-black shadow-gray-400/50'
         }`}
         style={{ perspective: '800px' }}
       >
+        {/* Dynamic Island / Notch */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-[90px] h-[26px] bg-black rounded-full" />
+
+        {/* Screenshot */}
         <Image
           src="/screenshots/whatsapp-notifications-cropped.png"
           alt="Real WhatsApp notifications showing new lead alerts from Impact"
           width={430}
-          height={700}
+          height={932}
           className="w-full h-auto"
           priority
         />
+
+        {/* Home indicator */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/30 rounded-full" />
       </motion.div>
     </div>
   )
@@ -76,7 +84,7 @@ export function HeroSection(): React.JSX.Element {
         }} />
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Two-column hero: Copy left, Phone right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-center">
           {/* Left: Copy */}
@@ -90,7 +98,7 @@ export function HeroSection(): React.JSX.Element {
               <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 transition-colors duration-500 ${
                 dark ? 'bg-zinc-800/80 text-zinc-300' : 'bg-gray-100 text-gray-600'
               }`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E8642C] animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#6E0F1A] animate-pulse" />
                 Early access. Limited spots.
               </div>
             </motion.div>
@@ -103,7 +111,7 @@ export function HeroSection(): React.JSX.Element {
                 <br />
                 in 5 minutes.
                 <br />
-                <span className="text-[#E8642C]">Impact responds in 5 seconds.</span>
+                <span className="text-[#6E0F1A]">Impact responds in 5 seconds.</span>
               </h1>
             </motion.div>
 
@@ -125,7 +133,7 @@ export function HeroSection(): React.JSX.Element {
                   { value: '5', label: 'Channels, one inbox' },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center lg:text-left">
-                    <div className={`text-xl sm:text-2xl font-bold text-[#E8642C] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
+                    <div className={`text-xl sm:text-2xl font-bold text-[#6E0F1A] ${dark ? 'neon-glow' : ''}`}>{stat.value}</div>
                     <div className={`text-[10px] sm:text-xs transition-colors duration-500 ${
                       dark ? 'text-zinc-500' : 'text-gray-500'
                     }`}>{stat.label}</div>
@@ -144,7 +152,7 @@ export function HeroSection(): React.JSX.Element {
                 >
                   <Link
                     href="/demo"
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-[#E8642C] text-white font-semibold text-sm hover:bg-[#d55a25] shadow-lg shadow-[#E8642C]/20 hover:shadow-xl hover:shadow-[#E8642C]/30"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-[#6E0F1A] text-white font-semibold text-sm hover:bg-[#8B1422] shadow-lg shadow-[#6E0F1A]/20 hover:shadow-xl hover:shadow-[#6E0F1A]/30"
                     style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
                   >
                     Get Early Access
@@ -174,7 +182,7 @@ export function HeroSection(): React.JSX.Element {
 
         {/* Real product screenshot below hero */}
         <FadeIn delay={0.3}>
-          <div className="mt-20 sm:mt-28 max-w-5xl mx-auto">
+          <div className="mt-20 sm:mt-28 max-w-6xl mx-auto">
             <div className={`relative rounded-2xl border overflow-hidden shadow-2xl transition-colors duration-500 ${
               dark ? 'border-zinc-800 shadow-black/40' : 'border-gray-200 shadow-gray-300/40'
             }`}>
@@ -201,7 +209,7 @@ export function HeroSection(): React.JSX.Element {
               />
               {/* Glow behind screenshot */}
               <div className={`absolute -inset-px -z-10 rounded-2xl blur-xl transition-colors duration-500 ${
-                dark ? 'bg-gradient-to-b from-[#E8642C]/10 to-transparent' : 'bg-gradient-to-b from-[#E8642C]/5 to-transparent'
+                dark ? 'bg-gradient-to-b from-[#6E0F1A]/10 to-transparent' : 'bg-gradient-to-b from-[#6E0F1A]/5 to-transparent'
               }`} />
             </div>
           </div>

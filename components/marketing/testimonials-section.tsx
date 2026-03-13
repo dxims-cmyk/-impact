@@ -91,9 +91,9 @@ export function TestimonialsSection(): React.JSX.Element {
               <div className="flex flex-col sm:flex-row gap-8 items-start">
                 {/* Metric highlight */}
                 <div className={`shrink-0 w-full sm:w-36 text-center sm:text-left rounded-xl p-5 transition-colors duration-700 ${
-                  dark ? 'bg-[#E8642C]/5 border border-[#E8642C]/20' : 'bg-[#E8642C]/5 border border-[#E8642C]/10'
+                  dark ? 'bg-[#6E0F1A]/5 border border-[#6E0F1A]/20' : 'bg-[#6E0F1A]/5 border border-[#6E0F1A]/10'
                 }`}>
-                  <div className="font-display text-3xl sm:text-4xl font-extrabold text-[#E8642C]">
+                  <div className="font-display text-3xl sm:text-4xl font-extrabold text-[#6E0F1A]">
                     {t.metric}
                   </div>
                   <div className={`text-xs mt-1 font-medium transition-colors duration-700 ${
@@ -154,7 +154,7 @@ export function TestimonialsSection(): React.JSX.Element {
                   onClick={() => { setDirection(i > active ? 1 : -1); setActive(i) }}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     i === active
-                      ? 'w-6 bg-[#E8642C]'
+                      ? 'w-6 bg-[#6E0F1A]'
                       : `w-1.5 ${dark ? 'bg-zinc-700 hover:bg-zinc-600' : 'bg-gray-300 hover:bg-gray-400'}`
                   }`}
                   aria-label={`Go to testimonial ${i + 1}`}

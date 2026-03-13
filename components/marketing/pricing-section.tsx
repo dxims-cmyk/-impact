@@ -83,7 +83,7 @@ export function PricingSection(): React.JSX.Element {
                 onHoverEnd={() => setHovered(null)}
                 className={`relative rounded-2xl p-7 flex flex-col h-full transition-all duration-300 ${
                   tier.highlight
-                    ? 'border-2 border-[#E8642C]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#E8642C]/5')
+                    ? 'border-2 border-[#6E0F1A]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#6E0F1A]/5')
                     : dark
                       ? 'border border-zinc-800 bg-zinc-900/30'
                       : 'border border-gray-200 bg-white shadow-sm'
@@ -91,7 +91,7 @@ export function PricingSection(): React.JSX.Element {
               >
                 {tier.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E8642C] text-white text-xs font-semibold">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6E0F1A] text-white text-xs font-semibold">
                       <Sparkles className="w-3 h-3" />
                       {tier.badge}
                     </span>
@@ -103,7 +103,7 @@ export function PricingSection(): React.JSX.Element {
                   <h3 className={`font-display text-lg font-bold mb-1 transition-colors duration-700 ${
                     dark ? 'text-white' : 'text-[#0B1220]'
                   }`}>
-                    <span className="text-[#E8642C]">:</span>Impact {tier.name}
+                    <span className="text-[#6E0F1A]">:</span>Impact {tier.name}
                   </h3>
                   <p className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>
                     {tier.tagline}
@@ -127,7 +127,7 @@ export function PricingSection(): React.JSX.Element {
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
                       <Check className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        tier.highlight ? 'text-[#E8642C]' : dark ? 'text-zinc-500' : 'text-gray-400'
+                        tier.highlight ? 'text-[#6E0F1A]' : dark ? 'text-zinc-500' : 'text-gray-400'
                       }`} />
                       <span className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-300' : 'text-gray-700'}`}>
                         {feature}
@@ -141,7 +141,7 @@ export function PricingSection(): React.JSX.Element {
                   href="/demo"
                   className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm transition-all spring-hover ${
                     tier.highlight
-                      ? 'bg-[#E8642C] text-white hover:bg-[#d55a25]'
+                      ? 'bg-[#6E0F1A] text-white hover:bg-[#8B1422]'
                       : dark
                         ? 'bg-zinc-800 text-white hover:bg-zinc-700'
                         : 'bg-[#0B1220] text-white hover:bg-[#0B1220]/90'

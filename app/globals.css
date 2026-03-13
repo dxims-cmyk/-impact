@@ -247,13 +247,6 @@
   filter: saturate(1.18);
 }
 
-/* Custom cursor: hide default on desktop */
-@media (pointer: fine) {
-  .custom-cursor-active,
-  .custom-cursor-active * {
-    cursor: none !important;
-  }
-}
 
 /* Neon data glow for dark mode stat accents */
 .neon-glow {

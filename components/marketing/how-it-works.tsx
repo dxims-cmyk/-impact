@@ -97,9 +97,9 @@ export function HowItWorks(): React.JSX.Element {
                 <span className={`text-sm transition-colors duration-700 ${dark ? 'text-white' : 'text-[#0B1220]'}`}>{lead.name}</span>
                 <div className="flex items-center gap-2">
                   <div className="w-16 h-2 rounded-full bg-zinc-800 overflow-hidden">
-                    <div className="h-full rounded-full bg-[#E8642C]" style={{ width: `${lead.score}%` }} />
+                    <div className="h-full rounded-full bg-[#6E0F1A]" style={{ width: `${lead.score}%` }} />
                   </div>
-                  <span className="text-xs font-semibold text-[#E8642C]">{lead.score}</span>
+                  <span className="text-xs font-semibold text-[#6E0F1A]">{lead.score}</span>
                 </div>
               </div>
             ))}
@@ -122,7 +122,7 @@ export function HowItWorks(): React.JSX.Element {
           }`}>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <div className="text-2xl font-bold text-[#E8642C]">40%</div>
+                <div className="text-2xl font-bold text-[#6E0F1A]">40%</div>
                 <div className={`text-[10px] transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>Higher close rate</div>
               </div>
               <div>
@@ -169,8 +169,8 @@ export function HowItWorks(): React.JSX.Element {
             dark ? 'border-zinc-800 bg-zinc-900/50' : 'border-gray-200 bg-white shadow-sm'
           }`}>
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-[#E8642C]/10 flex items-center justify-center mx-auto mb-3 hover:bg-[#E8642C]/20 transition-colors cursor-pointer">
-                <Play className="w-6 h-6 text-[#E8642C] ml-0.5" />
+              <div className="w-16 h-16 rounded-full bg-[#6E0F1A]/10 flex items-center justify-center mx-auto mb-3 hover:bg-[#6E0F1A]/20 transition-colors cursor-pointer">
+                <Play className="w-6 h-6 text-[#6E0F1A] ml-0.5" />
               </div>
               <p className={`text-sm font-medium transition-colors duration-700 ${dark ? 'text-zinc-400' : 'text-gray-500'}`}>
                 Watch the full walkthrough

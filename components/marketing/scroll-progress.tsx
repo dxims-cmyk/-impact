@@ -12,7 +12,7 @@ export function ScrollProgress(): React.JSX.Element {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 h-[2px] bg-[#E8642C] z-[60] origin-left"
+      className="fixed top-0 left-0 right-0 h-[2px] bg-[#6E0F1A] z-[60] origin-left"
       style={{ scaleX }}
     />
   )

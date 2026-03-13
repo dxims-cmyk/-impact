@@ -7,8 +7,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useMarketingTheme } from '@/components/marketing/theme-provider'
 
 const navLinks = [
-  { href: '#how-it-works', label: 'Product' },
+  { href: '#how-it-works', label: 'How It Works' },
+  { href: '#features', label: 'Features' },
   { href: '#pricing', label: 'Pricing' },
+  { href: '#faq', label: 'FAQ' },
 ]
 
 export function MobileNav(): React.JSX.Element {
@@ -63,7 +65,7 @@ export function MobileNav(): React.JSX.Element {
                 <Link
                   href="/demo"
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-[#E8642C] text-white text-sm font-semibold hover:bg-[#d55a25] transition-colors"
+                  className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-[#6E0F1A] text-white text-sm font-semibold hover:bg-[#8B1422] transition-colors"
                 >
                   Book a Demo
                 </Link>

@@ -68,7 +68,7 @@ function VideoCard({ src, label, speaker }: { src: string; label: string; speake
         {/* Play overlay */}
         {!playing && (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity">
-            <div className="w-16 h-16 rounded-full bg-[#E8642C] flex items-center justify-center shadow-lg shadow-[#E8642C]/30">
+            <div className="w-16 h-16 rounded-full bg-[#6E0F1A] flex items-center justify-center shadow-lg shadow-[#6E0F1A]/30">
               <Play className="w-7 h-7 text-white fill-white ml-1" />
             </div>
           </div>
@@ -97,7 +97,7 @@ function VideoCard({ src, label, speaker }: { src: string; label: string; speake
 export function VideoAdsSection(): React.JSX.Element {
   return (
     <section className="py-20 sm:py-28 bg-[#0B1220] overflow-hidden">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -105,11 +105,11 @@ export function VideoAdsSection(): React.JSX.Element {
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
-          <p className="text-sm font-medium text-[#E8642C] uppercase tracking-widest mb-4">
+          <p className="text-sm font-medium text-[#6E0F1A] uppercase tracking-widest mb-4">
             See it in action
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-            Watch what <span className="text-[#E8642C]">:Impact</span> does
+            Watch what <span className="text-[#6E0F1A]">:Impact</span> does
           </h2>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
             30 seconds. That&apos;s all you need to understand why speed-to-lead changes everything.

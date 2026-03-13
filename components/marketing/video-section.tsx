@@ -51,7 +51,7 @@ function VideoCard({ title, src, dark }: { title: string; src: string; dark: boo
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
           playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'
         }`}>
-          <div className="w-14 h-14 rounded-full bg-[#E8642C] flex items-center justify-center shadow-lg shadow-[#E8642C]/20 group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-full bg-[#6E0F1A] flex items-center justify-center shadow-lg shadow-[#6E0F1A]/20 group-hover:scale-110 transition-transform">
             {playing ? (
               <Pause className="w-5 h-5 text-white" fill="white" />
             ) : (

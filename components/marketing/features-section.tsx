@@ -82,10 +82,10 @@ export function FeaturesSection(): React.JSX.Element {
                   : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
               }`}
             >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-colors group-hover:bg-[#E8642C]/10 ${
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-colors group-hover:bg-[#6E0F1A]/10 ${
                 dark ? 'bg-zinc-800' : 'bg-gray-100'
               }`}>
-                <feature.icon className={`w-5 h-5 transition-colors group-hover:text-[#E8642C] ${
+                <feature.icon className={`w-5 h-5 transition-colors group-hover:text-[#6E0F1A] ${
                   dark ? 'text-zinc-400' : 'text-gray-500'
                 }`} />
               </div>

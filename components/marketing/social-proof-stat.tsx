@@ -17,7 +17,7 @@ export function SocialProofSection(): React.JSX.Element {
     <section className={`py-20 sm:py-28 transition-colors duration-700 ${
       dark ? 'bg-[#0A0A0A]' : 'bg-[#FAFAF8]'
     }`}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <div className="text-center mb-14">
             <p className={`text-sm font-medium uppercase tracking-widest mb-4 transition-colors duration-700 ${
@@ -56,7 +56,7 @@ export function SocialProofSection(): React.JSX.Element {
                 dark ? 'border-zinc-800 bg-zinc-900/40' : 'border-gray-200 bg-white shadow-sm'
               }`}
             >
-              <div className="font-display text-2xl sm:text-3xl font-bold text-[#E8642C]">
+              <div className="font-display text-2xl sm:text-3xl font-bold text-[#6E0F1A]">
                 {stat.value}
               </div>
               <p className={`text-xs mt-1 transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>

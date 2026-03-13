@@ -51,7 +51,7 @@ export function MarketingHeader(): React.JSX.Element {
       }`}
       style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-18">
           <Link href="/" className="flex items-center gap-2.5">
             <img
@@ -62,34 +62,30 @@ export function MarketingHeader(): React.JSX.Element {
             <span className={`font-semibold text-lg tracking-tight font-display transition-colors duration-500 ${
               dark ? 'text-white' : 'text-[#0B1220]'
             }`}>
-              <span className="text-[#E8642C]">:</span>Impact
+              <span className="text-[#6E0F1A]">:</span>Impact
             </span>
           </Link>
 
-          {/* 4-item nav - Pentagram confidence pattern */}
-          <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="#how-it-works"
-              className={`text-sm font-medium transition-colors duration-300 ${
-                dark
-                  ? 'text-zinc-400 hover:text-white'
-                  : 'text-gray-500 hover:text-[#0B1220]'
-              }`}
-              style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
-            >
-              Product
-            </a>
-            <a
-              href="#pricing"
-              className={`text-sm font-medium transition-colors duration-300 ${
-                dark
-                  ? 'text-zinc-400 hover:text-white'
-                  : 'text-gray-500 hover:text-[#0B1220]'
-              }`}
-              style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
-            >
-              Pricing
-            </a>
+          <nav className="hidden md:flex items-center gap-7">
+            {[
+              { href: '#how-it-works', label: 'How It Works' },
+              { href: '#features', label: 'Features' },
+              { href: '#pricing', label: 'Pricing' },
+              { href: '#faq', label: 'FAQ' },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-medium transition-colors duration-300 ${
+                  dark
+                    ? 'text-zinc-400 hover:text-white'
+                    : 'text-gray-500 hover:text-[#0B1220]'
+                }`}
+                style={{ transitionTimingFunction: 'var(--ease-out-spring)' }}
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -103,7 +99,7 @@ export function MarketingHeader(): React.JSX.Element {
             </Link>
             <Link
               href="/demo"
-              className="hidden sm:inline-flex items-center px-5 py-2.5 rounded-lg bg-[#E8642C] text-white text-sm font-semibold spring-hover hover:bg-[#d55a25] hover:shadow-lg hover:shadow-[#E8642C]/20"
+              className="hidden sm:inline-flex items-center px-5 py-2.5 rounded-lg bg-[#6E0F1A] text-white text-sm font-semibold spring-hover hover:bg-[#8B1422] hover:shadow-lg hover:shadow-[#6E0F1A]/20"
               style={{ transitionTimingFunction: 'var(--ease-bounce)' }}
             >
               Get Early Access

@@ -3,7 +3,6 @@ import { MarketingThemeProvider } from '@/components/marketing/theme-provider'
 import { MarketingHeader } from '@/components/marketing/marketing-header'
 import { MarketingFooter } from '@/components/marketing/marketing-footer'
 import { ScrollProgress } from '@/components/marketing/scroll-progress'
-import { CustomCursor } from '@/components/marketing/custom-cursor'
 
 const siteUrl = 'https://driveimpact.io'
 
@@ -194,7 +193,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         })}}
       />
       <ScrollProgress />
-      <CustomCursor />
       <MarketingHeader />
       <main className="monochrome-zone">{children}</main>
       <MarketingFooter />

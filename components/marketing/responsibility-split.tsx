@@ -94,9 +94,7 @@ export function ResponsibilitySplit(): React.JSX.Element {
             }`}
           >
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#6E0F1A]/10">
-                <Zap className="w-4 h-4 text-[#6E0F1A]" />
-              </div>
+              <img src="/ampm-logo.png" alt="AM:PM" className="w-8 h-8 rounded-lg object-cover" />
               <h3 className={`font-display text-lg font-bold transition-colors duration-700 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>

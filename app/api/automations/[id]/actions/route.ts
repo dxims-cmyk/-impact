@@ -1,6 +1,6 @@
 // app/api/automations/[id]/actions/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const actionTypes = [
@@ -34,7 +34,8 @@ async function verifyAutomationAccess(
   userId: string,
   automationId: string
 ) {
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', userId)

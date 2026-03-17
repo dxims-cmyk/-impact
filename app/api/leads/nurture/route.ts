@@ -1,7 +1,7 @@
 // app/api/leads/nurture/route.ts
 // Manual trigger for pipeline nurture — runs for the authenticated user's org
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { nurturePipelineTask } from '@/trigger/jobs/nurture-pipeline'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

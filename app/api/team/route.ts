@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get user's org
-  const { data: userData } = await supabase
+  // Get user's org (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Get team members
-  const { data: members, error } = await supabase
+  const { data: members, error } = await adminSupabase
     .from('users')
     .select('id, email, full_name, avatar_url, role, created_at')
     .eq('organization_id', userData.organization_id)
@@ -55,8 +56,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get user's org and role
-  const { data: userData } = await supabase
+  // Get user's org and role (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)

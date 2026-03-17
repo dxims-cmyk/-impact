@@ -1,6 +1,6 @@
 // app/api/campaigns/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 // GET /api/campaigns - List campaigns
@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -158,7 +159,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
@@ -241,7 +243,8 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await supabase
+  const adminSupabase3 = createAdminClient()
+  const { data: userData } = await adminSupabase3
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

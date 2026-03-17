@@ -1,6 +1,6 @@
 // app/api/integrations/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/integrations/[id]
 export async function GET(
@@ -17,7 +17,8 @@ export async function GET(
   }
 
   // Get user's org for filtering
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)
@@ -59,7 +60,8 @@ export async function DELETE(
   }
 
   // Get user's role
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)

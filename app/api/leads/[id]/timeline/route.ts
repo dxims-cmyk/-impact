@@ -1,6 +1,6 @@
 // app/api/leads/[id]/timeline/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/leads/[id]/timeline - Get lead activities
 export async function GET(
@@ -58,7 +58,8 @@ export async function POST(
   }
 
   // Get user's organization
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

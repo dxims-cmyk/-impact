@@ -1,6 +1,6 @@
 // app/api/conversations/[id]/ai-control/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const aiControlSchema = z.object({
@@ -22,7 +22,8 @@ export async function POST(
   }
 
   // Verify user has permission (owner, admin, or member)
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role, is_agency_user')
     .eq('id', user.id)

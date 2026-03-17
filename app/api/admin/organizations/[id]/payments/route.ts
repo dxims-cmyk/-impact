@@ -26,7 +26,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await (supabase.from('users') as any)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await (adminSupabase.from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -35,7 +36,7 @@ export async function GET(
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  const admin = createAdminClient()
+  const admin = adminSupabase
   const { data: payments, error } = await (admin.from('membership_payments') as any)
     .select('*')
     .eq('organization_id', params.id)
@@ -60,7 +61,8 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await (supabase.from('users') as any)
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await (adminSupabase2.from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -76,7 +78,7 @@ export async function POST(
   }
 
   const { amount, currency, payment_method, period_start, period_end, reference, notes } = validation.data
-  const admin = createAdminClient()
+  const admin = adminSupabase2
 
   try {
     // 1. Insert payment record

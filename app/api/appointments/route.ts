@@ -1,6 +1,6 @@
 // app/api/appointments/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const createAppointmentSchema = z.object({
@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -99,7 +100,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

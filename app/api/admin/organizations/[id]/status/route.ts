@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const statusSchema = z.object({
@@ -18,8 +18,9 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check if admin/agency user
-  const { data: userData } = await supabase
+  // Check if admin/agency user (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('is_agency_user')
     .eq('id', user.id)

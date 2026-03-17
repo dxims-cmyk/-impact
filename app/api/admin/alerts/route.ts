@@ -1,6 +1,6 @@
 // app/api/admin/alerts/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 interface Alert {
   id: string // unique key for dismiss tracking
@@ -30,8 +30,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verify admin
-  const { data: userData } = await supabase
+  // Verify admin (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('is_agency_user')
     .eq('id', user.id)

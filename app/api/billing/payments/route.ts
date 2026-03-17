@@ -1,7 +1,7 @@
 // app/api/billing/payments/route.ts
 // Client views own payment history
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/billing/payments — Get payment history for current user's org
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -12,7 +12,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

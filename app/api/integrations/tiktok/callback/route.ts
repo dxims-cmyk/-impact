@@ -1,6 +1,6 @@
 // app/api/integrations/tiktok/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getAdvertiserInfo } from '@/lib/integrations/tiktok-ads'
 import { encryptTokens } from '@/lib/encryption'
 
@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Verify user belongs to the org in state
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

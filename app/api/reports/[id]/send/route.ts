@@ -1,6 +1,6 @@
 // app/api/reports/[id]/send/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/integrations/resend'
 
 // POST /api/reports/[id]/send - Email a report to the user
@@ -18,7 +18,8 @@ export async function POST(
   }
 
   // Get user details
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('full_name, email, organization_id')
     .eq('id', user.id)

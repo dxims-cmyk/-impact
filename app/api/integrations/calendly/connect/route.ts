@@ -1,6 +1,6 @@
 // app/api/integrations/calendly/connect/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { getCalendlyAuthUrl } from '@/lib/integrations/calendly'
 
 // GET /api/integrations/calendly/connect - Redirect to Calendly OAuth
@@ -14,7 +14,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

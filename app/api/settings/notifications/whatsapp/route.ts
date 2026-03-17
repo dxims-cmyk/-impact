@@ -1,6 +1,6 @@
 // app/api/settings/notifications/whatsapp/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const phoneRegex = /^\+[1-9]\d{6,14}$/
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Get user's org (or admin viewing client org)
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -56,7 +57,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

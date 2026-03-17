@@ -14,8 +14,9 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Admin check
-  const { data: userData } = await (supabase
+  // Admin check (admin client bypasses RLS)
+  const admin = createAdminClient()
+  const { data: userData } = await (admin
     .from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
@@ -25,7 +26,6 @@ export async function GET(
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  const admin = createAdminClient()
   const { data: org, error } = await (admin
     .from('organizations') as any)
     .select('id, name, slug, subscription_tier, subscription_status, plan, plan_changed_at, created_at, settings, account_status, account_locked_at, account_lock_reason, stripe_customer_id, stripe_subscription_id, membership_status, payment_method, membership_started_at, membership_paid_until, membership_grace_until, membership_paused_at, membership_cancelled_at, total_months_paid')
@@ -56,8 +56,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Admin check
-  const { data: userData } = await (supabase
+  // Admin check (admin client bypasses RLS)
+  const admin = createAdminClient()
+  const { data: userData } = await (admin
     .from('users') as any)
     .select('is_agency_user, organization_id')
     .eq('id', user.id)

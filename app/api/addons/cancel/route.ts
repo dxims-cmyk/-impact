@@ -22,7 +22,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user, role')
     .eq('id', user.id)
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const { addon_key } = parsed.data
-  const admin = createAdminClient()
+  const admin = adminSupabase
 
   const { data: addon } = await (admin as any)
     .from('account_addons')

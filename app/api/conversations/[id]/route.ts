@@ -1,6 +1,6 @@
 // app/api/conversations/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const updateConversationSchema = z.object({
@@ -9,7 +9,8 @@ const updateConversationSchema = z.object({
 
 // Helper: get user's org
 async function getUserOrg(supabase: ReturnType<typeof createClient>, userId: string) {
-  const { data } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', userId)

@@ -1,6 +1,6 @@
 // app/api/appointments/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { sendAppointmentStatusEmail } from '@/lib/integrations/resend'
 
@@ -28,7 +28,8 @@ export async function GET(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -88,7 +89,8 @@ export async function PATCH(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -186,7 +188,8 @@ export async function DELETE(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase3 = createAdminClient()
+  const { data: userData } = await adminSupabase3
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

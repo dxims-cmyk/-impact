@@ -12,7 +12,8 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
 
-  const { data } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data } = await adminSupabase
     .from('users')
     .select('is_agency_user')
     .eq('id', user.id)

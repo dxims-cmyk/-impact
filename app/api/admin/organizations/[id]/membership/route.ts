@@ -23,7 +23,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await (supabase.from('users') as any)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await (adminSupabase.from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -32,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  const admin = createAdminClient()
+  const admin = adminSupabase
   const { data: org, error } = await (admin.from('organizations') as any)
     .select('id, name, membership_status, payment_method, membership_started_at, membership_paid_until, membership_grace_until, membership_paused_at, membership_cancelled_at, total_months_paid, account_status')
     .eq('id', params.id)
@@ -57,7 +58,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await (supabase.from('users') as any)
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await (adminSupabase2.from('users') as any)
     .select('is_agency_user')
     .eq('id', user.id)
     .single()
@@ -73,7 +75,7 @@ export async function PATCH(
   }
 
   const { action, paid_until, payment_method, reason } = validation.data
-  const admin = createAdminClient()
+  const admin = adminSupabase2
 
   // Get current org state
   const { data: org, error: orgError } = await (admin.from('organizations') as any)

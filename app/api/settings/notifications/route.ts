@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 const DEFAULT_PREFERENCES: Record<string, { email: boolean; push: boolean; sms: boolean }> = {
   new_lead: { email: true, push: false, sms: false },
@@ -31,7 +31,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data } = await adminSupabase
     .from('users')
     .select('notification_preferences')
     .eq('id', user.id)
@@ -52,8 +53,9 @@ export async function PATCH(req: Request): Promise<NextResponse> {
 
   const updates = await req.json() as Record<string, { email?: boolean; push?: boolean; sms?: boolean }>
 
-  // Fetch current preferences first to merge
-  const { data: userData } = await supabase
+  // Fetch current preferences first to merge (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('notification_preferences')
     .eq('id', user.id)

@@ -1,6 +1,6 @@
 // app/api/team/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const updateMemberSchema = z.object({
@@ -22,7 +22,8 @@ export async function PATCH(
   }
 
   // Get user's org and role
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)
@@ -49,7 +50,7 @@ export async function PATCH(
   }
 
   // Verify target user is in same org
-  const { data: targetUser } = await supabase
+  const { data: targetUser } = await adminSupabase
     .from('users')
     .select('id, organization_id, role')
     .eq('id', id)
@@ -65,7 +66,7 @@ export async function PATCH(
   }
 
   // Update role
-  const { data: member, error } = await supabase
+  const { data: member, error } = await adminSupabase
     .from('users')
     .update({ role: validation.data.role })
     .eq('id', id)
@@ -94,7 +95,8 @@ export async function DELETE(
   }
 
   // Get user's org and role
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)
@@ -115,7 +117,7 @@ export async function DELETE(
   }
 
   // Verify target user is in same org
-  const { data: targetUser } = await supabase
+  const { data: targetUser } = await adminSupabase2
     .from('users')
     .select('id, organization_id, role')
     .eq('id', id)
@@ -131,7 +133,7 @@ export async function DELETE(
   }
 
   // Remove from organization (set org to null)
-  const { error } = await supabase
+  const { error } = await adminSupabase2
     .from('users')
     .update({ organization_id: null, role: 'member' })
     .eq('id', id)

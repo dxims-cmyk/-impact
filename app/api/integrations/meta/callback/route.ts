@@ -1,6 +1,6 @@
 // app/api/integrations/meta/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, getLongLivedToken, getAdAccounts, getPages, subscribePageToLeadgen } from '@/lib/integrations/meta-ads'
 import { encryptTokens } from '@/lib/encryption'
 
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Verify user belongs to the org in state (prevents CSRF org hijacking)
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

@@ -1,6 +1,6 @@
 // app/api/integrations/vapi/setup/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import {
   createAssistant,
@@ -37,8 +37,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get user's org and role
-  const { data: userData } = await supabase
+  // Get user's org and role (admin client bypasses RLS)
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)

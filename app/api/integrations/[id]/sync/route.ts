@@ -1,6 +1,6 @@
 // app/api/integrations/[id]/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { syncMetaAdsData, getLongLivedToken } from '@/lib/integrations/meta-ads'
 import { syncGoogleAdsData } from '@/lib/integrations/google-ads'
 import { syncTikTokAdsData } from '@/lib/integrations/tiktok-ads'
@@ -21,7 +21,8 @@ export async function POST(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

@@ -1,6 +1,6 @@
 // app/api/settings/reputation/platforms/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // DELETE /api/settings/reputation/platforms/[id] - Remove a platform
 export async function DELETE(
@@ -15,7 +15,8 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)

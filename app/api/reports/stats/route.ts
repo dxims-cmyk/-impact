@@ -1,6 +1,6 @@
 // app/api/reports/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/reports/stats - Real chart data for reports page
 export async function GET(_request: NextRequest): Promise<NextResponse> {
@@ -13,7 +13,8 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

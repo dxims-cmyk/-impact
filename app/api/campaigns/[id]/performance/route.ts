@@ -1,6 +1,6 @@
 // app/api/campaigns/[id]/performance/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/campaigns/[id]/performance - Get daily performance data for a campaign
 export async function GET(
@@ -17,7 +17,8 @@ export async function GET(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

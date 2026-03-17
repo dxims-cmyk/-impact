@@ -1,6 +1,6 @@
 // app/api/leads/[id]/invoice/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import {
   ensureValidToken,
@@ -38,7 +38,8 @@ export async function POST(
   }
 
   // Get user's org and role
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)

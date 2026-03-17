@@ -2,7 +2,7 @@
 // Authenticated endpoint: creates a Stripe Customer Portal session for self-service billing
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { createBillingPortalSession } from '@/lib/integrations/stripe-billing'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Get user's org
-  const { data: userData } = await (supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await (adminSupabase
     .from('users') as any)
     .select('organization_id')
     .eq('id', user.id)

@@ -1,6 +1,6 @@
 // app/api/integrations/google-calendar/callback/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { exchangeGoogleCalendarCode } from '@/lib/integrations/google-calendar'
 import { encryptTokens } from '@/lib/encryption'
 
@@ -49,7 +49,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // Verify user belongs to the org in state
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

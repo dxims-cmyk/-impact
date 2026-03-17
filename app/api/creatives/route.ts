@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const supabase = createClient()
@@ -12,7 +12,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   // Verify user belongs to this org (or is agency user)
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -46,7 +47,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Check if admin
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('is_agency_user')
     .eq('id', user.id)

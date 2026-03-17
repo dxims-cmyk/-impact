@@ -1,6 +1,6 @@
 // app/api/conversations/[id]/messages/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { sendSMS } from '@/lib/integrations/twilio'
 import { sendEmail } from '@/lib/integrations/resend'
 import { sendWhatsAppText } from '@/lib/integrations/whatsapp'
@@ -27,7 +27,8 @@ export async function GET(
   }
 
   // Verify conversation belongs to user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)
@@ -87,7 +88,8 @@ export async function POST(
   }
 
   // Get user's org for ownership check
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id, is_agency_user')
     .eq('id', user.id)

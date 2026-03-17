@@ -1,6 +1,6 @@
 // app/api/automations/[id]/toggle/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // POST /api/automations/[id]/toggle - Toggle automation active state
 export async function POST(
@@ -17,7 +17,8 @@ export async function POST(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

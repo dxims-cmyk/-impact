@@ -1,6 +1,6 @@
 // app/api/settings/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const updateProfileSchema = z.object({
@@ -32,7 +32,8 @@ export async function PATCH(request: NextRequest) {
   }
 
   // Update user profile
-  const { data: profile, error } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: profile, error } = await adminSupabase
     .from('users')
     .update(validation.data)
     .eq('id', user.id)

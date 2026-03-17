@@ -1,6 +1,6 @@
 // app/api/automations/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const triggerTypes = [
@@ -26,7 +26,8 @@ async function getUserOrgAndAutomation(
   userId: string,
   automationId: string
 ) {
-  const { data: userData } = await supabase
+  const adminSupabase = createAdminClient()
+  const { data: userData } = await adminSupabase
     .from('users')
     .select('organization_id')
     .eq('id', userId)
@@ -66,7 +67,8 @@ export async function GET(
   }
 
   // Get user's org
-  const { data: userData } = await supabase
+  const adminSupabase2 = createAdminClient()
+  const { data: userData } = await adminSupabase2
     .from('users')
     .select('organization_id')
     .eq('id', user.id)

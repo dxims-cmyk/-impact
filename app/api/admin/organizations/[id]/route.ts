@@ -73,8 +73,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Cannot delete your own organization' }, { status: 400 })
   }
 
-  const admin = createAdminClient()
-
   // Verify org exists
   const { data: org } = await (admin
     .from('organizations') as any)

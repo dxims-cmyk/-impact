@@ -1,6 +1,6 @@
 // app/api/user/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/user - Get current user
 export async function GET(request: NextRequest) {
@@ -12,8 +12,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Use admin client to bypass RLS for user profile fetch
+  const adminSupabase = createAdminClient()
+
   // Get user profile with organization
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await adminSupabase
     .from('users')
     .select(`
       *,

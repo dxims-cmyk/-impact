@@ -63,12 +63,10 @@ export function ProductShowcase(): React.JSX.Element {
           </div>
         </FadeIn>
 
-        {/* Step tabs */}
+        {/* Step tabs - redesigned */}
         <FadeIn delay={0.1}>
           <div className="flex justify-center mb-12">
-            <div className={`inline-flex rounded-xl p-1 transition-colors duration-500 ${
-              dark ? 'bg-zinc-900 border border-zinc-800' : 'bg-gray-100 border border-gray-200'
-            }`}>
+            <div className="inline-flex gap-2">
               {steps.map((s, i) => {
                 const Icon = s.icon
                 const active = i === activeStep
@@ -76,18 +74,16 @@ export function ProductShowcase(): React.JSX.Element {
                   <button
                     key={s.id}
                     onClick={() => setActiveStep(i)}
-                    className={`relative flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    className={`relative flex items-center gap-2.5 px-5 sm:px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
                       active
-                        ? dark
-                          ? 'bg-zinc-800 text-white shadow-sm'
-                          : 'bg-white text-[#0B1220] shadow-sm'
+                        ? 'bg-[#6E0F1A] text-white shadow-lg shadow-[#6E0F1A]/20'
                         : dark
-                          ? 'text-zinc-500 hover:text-zinc-300'
-                          : 'text-gray-500 hover:text-gray-700'
+                          ? 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-600'
+                          : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 shadow-sm'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${active ? 'text-[#6E0F1A]' : ''}`} />
-                    <span className="hidden sm:inline">{s.label}</span>
+                    <Icon className={`w-4 h-4 ${active ? 'text-white' : ''}`} />
+                    <span className="font-bold">{s.label}</span>
                   </button>
                 )
               })}
@@ -109,14 +105,12 @@ export function ProductShowcase(): React.JSX.Element {
               >
                 {/* Step number */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-[#6E0F1A]/10 flex items-center justify-center">
-                    <span className="text-sm font-bold text-[#6E0F1A]">{activeStep + 1}</span>
-                  </div>
-                  <div className={`text-xs font-medium uppercase tracking-wider transition-colors ${
-                    dark ? 'text-zinc-500' : 'text-gray-400'
+                  <span className="text-3xl font-extrabold text-[#6E0F1A]">{activeStep + 1}</span>
+                  <span className={`text-sm font-bold uppercase tracking-wider transition-colors ${
+                    dark ? 'text-zinc-300' : 'text-gray-700'
                   }`}>
                     {step.label}
-                  </div>
+                  </span>
                 </div>
 
                 <h3 className={`font-display text-2xl sm:text-3xl font-bold mb-4 leading-tight transition-colors ${
@@ -144,7 +138,7 @@ export function ProductShowcase(): React.JSX.Element {
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.35 }}
                 className={`relative rounded-2xl border overflow-hidden shadow-xl transition-colors duration-500 ${
-                  dark ? 'border-zinc-800 shadow-black/30' : 'border-gray-200 shadow-gray-200/60'
+                  dark ? 'border-zinc-800 shadow-black/30' : 'border-gray-200 shadow-gray-200/60 bg-white'
                 }`}
               >
                 {/* Mini browser chrome */}

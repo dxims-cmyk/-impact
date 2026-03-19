@@ -91,8 +91,10 @@ export function MarketingHeader(): React.JSX.Element {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className={`hidden sm:inline-flex text-sm font-medium px-4 py-2 transition-colors duration-300 ${
-                dark ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-[#0B1220]'
+              className={`hidden sm:inline-flex items-center text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-300 ${
+                dark
+                  ? 'border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white bg-zinc-900/50'
+                  : 'border-gray-300 text-[#0B1220] hover:border-gray-400 hover:bg-gray-50'
               }`}
             >
               Sign In

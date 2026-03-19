@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FadeIn } from '@/components/marketing/fade-in'
@@ -96,24 +97,57 @@ export function FaqSection(): React.JSX.Element {
     <section id="faq" className={`py-24 sm:py-32 scroll-mt-20 transition-colors duration-700 ${
       dark ? 'bg-[#0F0F0F]' : 'bg-gray-50'
     }`}>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeIn>
-          <h2 className={`font-display text-3xl sm:text-4xl font-bold text-center mb-16 transition-colors duration-700 ${
-            dark ? 'text-white' : 'text-[#0B1220]'
-          }`}>
-            Questions?
-          </h2>
-        </FadeIn>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 lg:gap-16 items-start">
+          {/* Left: Questions */}
+          <div>
+            <FadeIn>
+              <h2 className={`font-display text-3xl sm:text-4xl font-bold mb-10 transition-colors duration-700 ${
+                dark ? 'text-white' : 'text-[#0B1220]'
+              }`}>
+                Questions?
+              </h2>
+            </FadeIn>
 
-        <FadeIn delay={0.1}>
-          <div className={`rounded-xl border px-6 transition-colors duration-700 ${
-            dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
-          }`}>
-            {faqs.map((faq) => (
-              <FaqItem key={faq.question} {...faq} />
-            ))}
+            <FadeIn delay={0.1}>
+              <div className={`rounded-xl border px-6 transition-colors duration-700 ${
+                dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
+              }`}>
+                {faqs.map((faq) => (
+                  <FaqItem key={faq.question} {...faq} />
+                ))}
+              </div>
+            </FadeIn>
           </div>
-        </FadeIn>
+
+          {/* Right: Visual */}
+          <FadeIn delay={0.2}>
+            <div className="hidden lg:block sticky top-32">
+              {/* Phone mockup showing WhatsApp */}
+              <div className={`relative rounded-[2rem] border-[4px] shadow-2xl mx-auto w-[260px] ${
+                dark ? 'border-zinc-800 bg-black shadow-black/60' : 'border-gray-900 bg-black shadow-gray-400/40'
+              }`}>
+                <div className="absolute top-[5px] left-1/2 -translate-x-1/2 z-10 w-[60px] h-[18px] bg-black rounded-full" />
+                <div className="rounded-[1.6rem] overflow-hidden">
+                  <Image
+                    src="/screenshots/whatsapp-notifications-cropped.png"
+                    alt="WhatsApp lead notification"
+                    width={1320}
+                    height={2868}
+                    className="w-full h-auto block"
+                  />
+                </div>
+                <div className="absolute bottom-[4px] left-1/2 -translate-x-1/2 z-10 w-[64px] h-[3px] bg-white/30 rounded-full" />
+              </div>
+              {/* Caption */}
+              <p className={`text-center text-xs mt-4 transition-colors ${
+                dark ? 'text-zinc-600' : 'text-gray-400'
+              }`}>
+                Real lead alert. Under 5 seconds.
+              </p>
+            </div>
+          </FadeIn>
+        </div>
       </div>
     </section>
   )

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, ChevronDown } from 'lucide-react'
+import { ArrowRight, ChevronDown, MessageCircle, Brain, Inbox } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { FadeIn } from '@/components/marketing/fade-in'
@@ -71,7 +71,7 @@ export function HeroSection(): React.JSX.Element {
   const dark = theme === 'dark'
 
   return (
-    <section className="relative pt-28 sm:pt-36 lg:pt-44 pb-12 sm:pb-20 overflow-hidden">
+    <section className="relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-14 overflow-hidden">
       <div className="absolute inset-0 -z-10">
         <div className={`absolute inset-0 transition-opacity duration-500 ${
           dark ? 'opacity-100' : 'opacity-20'
@@ -123,17 +123,22 @@ export function HeroSection(): React.JSX.Element {
 
             {/* Stats strip */}
             <motion.div variants={entranceChild}>
-              <div className="mt-8 flex items-center justify-center lg:justify-start gap-8">
+              <div className="mt-8 flex items-center justify-center lg:justify-start gap-6 sm:gap-8">
                 {[
-                  { value: '5s', label: 'WhatsApp alert' },
-                  { value: '1-10', label: 'AI lead score' },
-                  { value: '5', label: 'Channels, one inbox' },
+                  { value: '5s', label: 'WhatsApp alert', Icon: MessageCircle },
+                  { value: '1-10', label: 'AI lead score', Icon: Brain },
+                  { value: '5', label: 'Channels, one inbox', Icon: Inbox },
                 ].map((stat) => (
-                  <div key={stat.label} className="text-center lg:text-left">
-                    <div className={`text-2xl sm:text-3xl font-bold text-[#6E0F1A]`}>{stat.value}</div>
-                    <div className={`text-[11px] sm:text-xs transition-colors duration-500 ${
-                      dark ? 'text-zinc-500' : 'text-gray-500'
-                    }`}>{stat.label}</div>
+                  <div key={stat.label} className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-[#6E0F1A]/10 flex items-center justify-center">
+                      <stat.Icon className="w-4 h-4 text-[#6E0F1A]" />
+                    </div>
+                    <div>
+                      <div className="text-xl sm:text-2xl font-extrabold text-[#6E0F1A] leading-none">{stat.value}</div>
+                      <div className={`text-[10px] sm:text-xs font-medium transition-colors duration-500 ${
+                        dark ? 'text-zinc-500' : 'text-gray-500'
+                      }`}>{stat.label}</div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -181,9 +186,9 @@ export function HeroSection(): React.JSX.Element {
 
         {/* Dashboard screenshot */}
         <FadeIn delay={0.3}>
-          <div className="mt-24 sm:mt-32">
+          <div className="mt-16 sm:mt-20">
             <div className={`relative rounded-2xl border overflow-hidden shadow-2xl transition-colors duration-500 ${
-              dark ? 'border-zinc-800 shadow-black/40' : 'border-gray-200 shadow-gray-300/40'
+              dark ? 'border-zinc-800 shadow-black/40' : 'border-gray-200 shadow-gray-300/40 bg-white'
             }`}>
               {/* Browser chrome */}
               <div className={`flex items-center gap-2 px-4 py-2.5 border-b transition-colors duration-500 ${

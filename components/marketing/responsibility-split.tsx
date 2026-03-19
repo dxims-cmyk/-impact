@@ -52,11 +52,9 @@ export function ResponsibilitySplit(): React.JSX.Element {
               dark ? 'border-zinc-800 bg-zinc-900/30' : 'border-gray-200 bg-white shadow-sm'
             }`}
           >
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <User className={`w-4 h-4 ${dark ? 'text-zinc-400' : 'text-gray-500'}`} />
-              </div>
-              <h3 className={`font-display text-lg font-bold transition-colors duration-700 ${
+            <div className="flex items-center gap-3 mb-6">
+              <User className={`w-5 h-5 ${dark ? 'text-zinc-400' : 'text-gray-500'}`} />
+              <h3 className={`font-display text-xl font-bold transition-colors duration-700 ${
                 dark ? 'text-white' : 'text-[#0B1220]'
               }`}>
                 You

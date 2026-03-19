@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Check, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Sparkles, Crown } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/marketing/fade-in'
 import { useMarketingTheme } from '@/components/marketing/theme-provider'
@@ -21,6 +21,7 @@ const tiers = [
       'Lead analytics and campaign tracking',
     ],
     highlight: false,
+    tier: 'core' as const,
   },
   {
     name: 'Growth',
@@ -35,6 +36,7 @@ const tiers = [
       'Priority support',
     ],
     highlight: true,
+    tier: 'growth' as const,
   },
   {
     name: 'Pro',
@@ -49,6 +51,7 @@ const tiers = [
       'Strategy calls',
     ],
     highlight: false,
+    tier: 'pro' as const,
   },
 ]
 
@@ -81,14 +84,26 @@ export function PricingSection(): React.JSX.Element {
               <motion.div
                 onHoverStart={() => setHovered(i)}
                 onHoverEnd={() => setHovered(null)}
-                className={`relative rounded-2xl p-8 flex flex-col h-full transition-all duration-300 ${
-                  tier.highlight
-                    ? 'border-2 border-[#6E0F1A]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#6E0F1A]/5')
-                    : dark
-                      ? 'border border-zinc-800 bg-zinc-900/30'
-                      : 'border border-gray-200 bg-white shadow-sm'
+                className={`relative rounded-2xl p-8 flex flex-col h-full transition-all duration-300 overflow-hidden ${
+                  tier.tier === 'pro'
+                    ? dark
+                      ? 'border-2 border-[#6E0F1A]/40 bg-gradient-to-b from-[#6E0F1A]/10 via-zinc-900/80 to-zinc-900/60'
+                      : 'border-2 border-[#6E0F1A]/30 bg-gradient-to-b from-[#6E0F1A]/[0.04] via-white to-white shadow-lg'
+                    : tier.highlight
+                      ? 'border-2 border-[#6E0F1A]' + (dark ? ' bg-zinc-900/60' : ' bg-white shadow-lg shadow-[#6E0F1A]/5')
+                      : dark
+                        ? 'border border-zinc-800 bg-zinc-900/30'
+                        : 'border border-gray-200 bg-white shadow-sm'
                 } ${hovered === i ? (dark ? 'border-zinc-600' : 'border-gray-400 shadow-md') : ''}`}
               >
+                {/* Pro premium background pattern */}
+                {tier.tier === 'pro' && (
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-[#6E0F1A]/[0.06] blur-3xl" />
+                    <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-[#6E0F1A]/[0.04] blur-3xl" />
+                  </div>
+                )}
+
                 {tier.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6E0F1A] text-white text-xs font-semibold">
@@ -98,13 +113,17 @@ export function PricingSection(): React.JSX.Element {
                   </div>
                 )}
 
-                {/* Header */}
-                <div className="mb-6">
-                  <h3 className={`font-display text-lg font-bold mb-1 transition-colors duration-700 ${
-                    dark ? 'text-white' : 'text-[#0B1220]'
-                  }`}>
-                    <span className="text-[#6E0F1A]">:</span>Impact {tier.name}
-                  </h3>
+                {/* Header with Impact logo */}
+                <div className="relative mb-6">
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <img src="/ampm-logo.png" alt="" className="w-6 h-6 rounded-md object-cover" />
+                    <h3 className={`font-display text-lg font-bold transition-colors duration-700 ${
+                      dark ? 'text-white' : 'text-[#0B1220]'
+                    }`}>
+                      <span className="text-[#6E0F1A]">:</span>Impact {tier.name}
+                      {tier.tier === 'pro' && <Crown className="w-4 h-4 inline-block ml-1.5 text-[#6E0F1A] -mt-0.5" />}
+                    </h3>
+                  </div>
                   <p className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-500' : 'text-gray-500'}`}>
                     {tier.tagline}
                   </p>
@@ -113,7 +132,7 @@ export function PricingSection(): React.JSX.Element {
                 {/* Price */}
                 <div className="flex items-baseline gap-1 mb-6">
                   <span className={`font-display text-4xl font-extrabold transition-colors duration-700 ${
-                    dark ? 'text-white' : 'text-[#0B1220]'
+                    tier.tier === 'pro' ? 'text-[#6E0F1A]' : dark ? 'text-white' : 'text-[#0B1220]'
                   }`}>
                     &pound;{tier.price}
                   </span>
@@ -127,7 +146,7 @@ export function PricingSection(): React.JSX.Element {
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
                       <Check className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        tier.highlight ? 'text-[#6E0F1A]' : dark ? 'text-zinc-500' : 'text-gray-400'
+                        tier.highlight || tier.tier === 'pro' ? 'text-[#6E0F1A]' : dark ? 'text-zinc-500' : 'text-gray-400'
                       }`} />
                       <span className={`text-sm transition-colors duration-700 ${dark ? 'text-zinc-300' : 'text-gray-700'}`}>
                         {feature}
@@ -139,12 +158,14 @@ export function PricingSection(): React.JSX.Element {
                 {/* CTA */}
                 <Link
                   href="/demo"
-                  className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm transition-all spring-hover ${
-                    tier.highlight
-                      ? 'bg-[#6E0F1A] text-white hover:bg-[#8B1422]'
-                      : dark
-                        ? 'bg-zinc-800 text-white hover:bg-zinc-700'
-                        : 'bg-[#0B1220] text-white hover:bg-[#0B1220]/90'
+                  className={`relative flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm transition-all spring-hover ${
+                    tier.tier === 'pro'
+                      ? 'bg-[#6E0F1A] text-white hover:bg-[#8B1422] shadow-lg shadow-[#6E0F1A]/20'
+                      : tier.highlight
+                        ? 'bg-[#6E0F1A] text-white hover:bg-[#8B1422]'
+                        : dark
+                          ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                          : 'bg-[#0B1220] text-white hover:bg-[#0B1220]/90'
                   }`}
                 >
                   Get Early Access

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // Admin emails that should get owner role (configurable via ADMIN_EMAILS env var)
@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const redirect = searchParams.get('redirect') || '/dashboard'
 
   const supabase = createClient()
+  const admin = createAdminClient()
   let user = null
 
   // Handle PKCE code exchange (OAuth, magic link via PKCE)
@@ -34,8 +35,8 @@ export async function GET(request: Request) {
   }
 
   if (user) {
-    // Check if user exists in our users table
-    const { data: existingUser } = await supabase
+    // Check if user exists in our users table (use admin client to bypass RLS)
+    const { data: existingUser } = await admin
       .from('users')
       .select('id')
       .eq('id', user.id)
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
         ? `${user.user_metadata.full_name}'s Organization`
         : `${user.email?.split('@')[0]}'s Organization`
 
-      const { data: org, error: orgError } = await supabase
+      const { data: org, error: orgError } = await admin
         .from('organizations')
         .insert({
           name: orgName,
@@ -65,8 +66,8 @@ export async function GET(request: Request) {
       // Determine role
       const isAdmin = ADMIN_EMAILS.includes(user.email || '')
 
-      // Create user record
-      const { error: userError } = await supabase
+      // Create user record (use admin client to bypass RLS INSERT restriction)
+      const { error: userError } = await admin
         .from('users')
         .insert({
           id: user.id,

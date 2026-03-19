@@ -172,6 +172,30 @@ export function HeroSection(): React.JSX.Element {
                 </a>
               </div>
             </motion.div>
+
+            {/* Social proof avatar cluster */}
+            <motion.div variants={entranceChild}>
+              <div className="mt-8 flex items-center justify-center lg:justify-start gap-3">
+                <div className="flex -space-x-2.5">
+                  {['/people/avatar-1.jpg', '/people/avatar-2.jpg', '/people/avatar-3.jpg', '/people/avatar-4.jpg'].map((src, i) => (
+                    <Image
+                      key={src}
+                      src={src}
+                      alt=""
+                      width={36}
+                      height={36}
+                      className="w-9 h-9 rounded-full border-2 border-white object-cover"
+                      style={{ zIndex: 4 - i }}
+                    />
+                  ))}
+                </div>
+                <p className={`text-xs font-medium transition-colors duration-500 ${
+                  dark ? 'text-zinc-400' : 'text-gray-500'
+                }`}>
+                  Founding clients onboarding now
+                </p>
+              </div>
+            </motion.div>
           </motion.div>
 
           {/* Right: Phone — golden ratio minor side, height-constrained */}

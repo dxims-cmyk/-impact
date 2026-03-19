@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { FadeIn } from '@/components/marketing/fade-in'
@@ -24,11 +25,35 @@ export function CtaSection(): React.JSX.Element {
         </FadeIn>
 
         <FadeIn delay={0.05}>
-          <p className={`text-lg max-w-lg mx-auto mb-12 transition-colors duration-500 ${
+          <p className={`text-lg max-w-lg mx-auto mb-8 transition-colors duration-500 ${
             dark ? 'text-zinc-400' : 'text-gray-600'
           }`}>
             Get early access to Impact. Hands-on setup. Priority support. Limited spots.
           </p>
+        </FadeIn>
+
+        {/* Avatar cluster */}
+        <FadeIn delay={0.08}>
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <div className="flex -space-x-2">
+              {['/people/avatar-1.jpg', '/people/avatar-2.jpg', '/people/avatar-3.jpg', '/people/avatar-4.jpg'].map((src, i) => (
+                <Image
+                  key={src}
+                  src={src}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                  style={{ zIndex: 4 - i }}
+                />
+              ))}
+            </div>
+            <p className={`text-sm font-medium transition-colors duration-500 ${
+              dark ? 'text-zinc-400' : 'text-gray-500'
+            }`}>
+              Join our founding clients
+            </p>
+          </div>
         </FadeIn>
 
         <FadeIn delay={0.1}>

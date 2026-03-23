@@ -70,7 +70,7 @@ export async function PATCH(req: Request): Promise<NextResponse> {
     }
   }
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from('users')
     .update({ notification_preferences: current })
     .eq('id', user.id)

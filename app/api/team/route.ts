@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
-  // Check if user already exists
-  const { data: existingUser } = await supabase
+  // Check if user already exists (admin client bypasses RLS)
+  const { data: existingUser } = await adminSupabase
     .from('users')
     .select('id')
     .eq('email', validation.data.email)

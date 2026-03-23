@@ -1,5 +1,8 @@
 .git
 node_modules
+.trigger
+research
+scripts
 .env*.local
 *.md
 !README.md

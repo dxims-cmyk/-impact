@@ -271,3 +271,168 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ============================================
+   WELCOME PACK — client onboarding document
+   ============================================ */
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+.welcome-doc {
+  font-family: var(--font-body);
+  color: #0B1220;
+}
+
+.prose-welcome p {
+  margin: 0 0 1.1em;
+}
+.prose-welcome p.muted {
+  color: rgba(11, 18, 32, 0.55);
+  font-size: 0.95em;
+  margin-top: -0.6em;
+}
+.prose-welcome p.signature {
+  margin-top: 2.2em;
+  line-height: 1.7;
+}
+.prose-welcome h3 {
+  font-family: var(--font-jakarta, var(--font-body));
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0B1220;
+  margin: 2em 0 0.6em;
+  letter-spacing: -0.01em;
+}
+.prose-welcome ul,
+.prose-welcome ol {
+  margin: 0 0 1.4em;
+  padding-left: 1.4em;
+}
+.prose-welcome ul { list-style: none; padding-left: 0; }
+.prose-welcome ul > li {
+  position: relative;
+  padding-left: 1.4em;
+  margin-bottom: 0.55em;
+}
+.prose-welcome ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 0.5em;
+  height: 1px;
+  background: #6E0F1A;
+}
+.prose-welcome ol > li {
+  margin-bottom: 0.55em;
+  padding-left: 0.4em;
+}
+.prose-welcome ul.checklist > li::before {
+  content: '☐';
+  background: none;
+  top: 0;
+  width: auto;
+  height: auto;
+  font-size: 1.05em;
+  color: rgba(11, 18, 32, 0.45);
+}
+.prose-welcome ul.checklist > li.done {
+  color: rgba(11, 18, 32, 0.45);
+  text-decoration: line-through;
+  text-decoration-color: rgba(11, 18, 32, 0.25);
+}
+.prose-welcome ul.checklist > li.done::before {
+  content: '☑';
+  color: #2D4A3E;
+}
+.prose-welcome ul.checklist > li .done-tag {
+  display: inline-block;
+  margin-left: 0.7em;
+  padding: 0.05em 0.5em;
+  font-family: var(--font-jakarta, var(--font-body));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2D4A3E;
+  background: rgba(45, 74, 62, 0.1);
+  border-radius: 3px;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.prose-welcome blockquote {
+  border-left: 3px solid #6E0F1A;
+  margin: 1.4em 0;
+  padding: 0.4em 0 0.4em 1.2em;
+  background: rgba(110, 15, 26, 0.03);
+  font-style: normal;
+  color: #0B1220;
+}
+.prose-welcome blockquote p { margin: 0 0 0.7em; }
+.prose-welcome blockquote p:last-child { margin-bottom: 0; }
+.prose-welcome strong { color: #0B1220; font-weight: 600; }
+
+.prose-welcome .spec-box {
+  background: #FFFFFF;
+  border: 1px solid rgba(11, 18, 32, 0.1);
+  border-radius: 6px;
+  padding: 1.2em 1.4em;
+  margin: 1.4em 0 1.8em;
+}
+.prose-welcome .spec-box dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7em;
+  margin: 0;
+}
+.prose-welcome .spec-box dl > div {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 0.8em;
+  align-items: baseline;
+}
+.prose-welcome .spec-box dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(11, 18, 32, 0.55);
+  font-weight: 600;
+}
+.prose-welcome .spec-box dd { margin: 0; color: #0B1220; }
+
+.prose-welcome table.faq-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4em 0 2em;
+  font-size: 0.96em;
+}
+.prose-welcome table.faq-table th,
+.prose-welcome table.faq-table td {
+  text-align: left;
+  padding: 0.75em 0.9em;
+  border-bottom: 1px solid rgba(11, 18, 32, 0.08);
+  vertical-align: top;
+}
+.prose-welcome table.faq-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(11, 18, 32, 0.55);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(11, 18, 32, 0.2);
+}
+.prose-welcome table.faq-table td:first-child {
+  width: 50%;
+  font-weight: 500;
+  color: #0B1220;
+}
+
+@media print {
+  body { background: #FFFFFF !important; }
+  .welcome-doc { color: #000; }
+  .welcome-page { padding: 1.5cm 2cm !important; max-width: none !important; }
+  .prose-welcome blockquote { background: transparent; }
+  a { color: #000; text-decoration: none; }
+}
+

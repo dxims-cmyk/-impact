@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Marketing / public routes that never need auth or Supabase
-  const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify', '/offline', '/book', '/form', '/auth/callback', '/auth/confirm', '/terms', '/privacy', '/demo']
+  const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify', '/offline', '/book', '/form', '/auth/callback', '/auth/confirm', '/terms', '/privacy', '/demo', '/welcome']
   const isPublicRoute = publicRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   )
